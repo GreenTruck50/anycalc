@@ -9,10 +9,13 @@ coverage/
 build/
 .flet/
 
-# --- virtualenv / tooling caches ---
+# --- local environment & tooling caches ---
 .venv/
 .pytest_cache/
 .dart_tool/
+
+# --- editor settings (per-machine, not part of the project) ---
+.vscode/
 
 # --- misc ---
 *.log

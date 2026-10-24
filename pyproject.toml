@@ -1,12 +1,13 @@
 # anycalc - project metadata, runtime dependencies and Flet packaging config.
 #
-#   install deps:  .venv/bin/pip install -e .          (dev: pip install -e ".[dev]")
-#   run:           .venv/bin/flet run                 (or .venv/bin/python src/main.py)
-#   test:          .venv/bin/flet test                 (pytest flags only; -k engine
+#   install deps:  pip install -e .                   (dev: pip install -e ".[dev]")
+#   run:           flet run                           (or python src/main.py)
+#   test:          flet test                          (pytest flags only; -k engine
 #                  skips the app host and runs just the conversion-engine tests)
-#   package:       flet build linux                  - run from THIS directory (the
-#                  workspace root), not from src/; [tool.flet.app] below tells Flet
-#                  that the app itself lives in src/ and main.py is its entry point.
+#   package:       flet build linux|macos|windows|apk|aab|ipa|ios-simulator|web
+#                  - run from THIS directory (the workspace root), not from src/;
+#                  [tool.flet.app] below tells Flet that the app itself lives in
+#                  src/ and main.py is its entry point.
 #
 # src/ is Flet's import root, not a Python package: the modules inside it import
 # each other by bare name (from ui import AnycalcApp), and pytest is given the
@@ -15,15 +16,17 @@
 [project]
 name = "anycalc"
 version = "0.1.0"
-description = "Calculate anything - a Flet desktop calculator: expressions, scientific mode, named variables, history and live unit conversions."
+description = "Calculate anything - a Flet calculator for desktop and mobile: expressions, scientific mode, named variables, history and live unit conversions."
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     # UI framework. The [desktop] extra installs flet-desktop, the desktop client
-    # that ft.run() opens a window with - plain "flet" does not include it, and
-    # Flet then pip-installs it silently on first launch. The [cli] extra provides
-    # the "flet" command (flet run / flet build). Flet pins these extras to its own
-    # exact version, so the bracket group can never drift from the SDK.
+    # that ft.run() opens a window with while developing - plain "flet" does not
+    # include it, and Flet then pip-installs it silently on first launch. The [cli]
+    # extra provides the "flet" command (flet run / flet build / flet test). Flet
+    # pins these extras to its own exact version, so the bracket group can never
+    # drift from the SDK. Mobile targets (flet build apk / aab / ipa) compile the
+    # same src/ and do not use flet-desktop - it is only the local run client.
     "flet[cli,desktop]>=1.0.4",
     # Parses src/assets/conversions.yaml (imported as `yaml`)
     "PyYAML>=6.0.3",
@@ -58,12 +61,16 @@ packages = []
 py-modules = []
 
 # --- Flet build configuration ------------------------------------------------
-# Read by `flet build <platform>` (and `flet run`). The app's source is in src/
-# and its entry point is src/main.py - declaring it here is what makes
-# `flet build linux` work from the workspace root instead of from src/.
+# Read by `flet build <target>` (and `flet run`), for every target: linux, macos,
+# windows, apk, aab, ipa, ios-simulator, web. The app's source is in src/ and its
+# entry point is src/main.py - declaring it here is what makes `flet build
+# <target>` work from the workspace root instead of from src/.
 [tool.flet]
-org = "com.github.greentruck50"          # reverse-domain id used for the app/bundle id
-product = "anycalc"          # name shown to the user (window / .desktop entry)
+org = "com.github.greentruck50"          # reverse-domain prefix of the app id: on Android this
+                             # becomes the applicationId com.github.greentruck50.anycalc, on iOS
+                             # the bundle id
+product = "anycalc"          # name shown to the user (window title, .desktop entry,
+                             # Android / iOS app label)
 
 [tool.flet.app]
 path = "src"                 # Flet app directory, relative to this file

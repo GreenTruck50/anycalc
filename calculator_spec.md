@@ -253,9 +253,17 @@ There should be a conversions.yaml file that says "There should be this tab with
   `pip install` only resolves the dependencies.
 - The app only starts when that module is executed as `__main__`; importing it
   (e.g. from tests) must not open a window.
-- Desktop packaging is `flet build linux`, run from the workspace root - not
-  from `src/`. The artifact must contain the app, `src/assets/conversions.yaml`
-  and the declared dependencies.
+- The app targets desktop **and** mobile. The same `src/` is packaged with
+  `flet build linux|macos|windows` (desktop), `flet build apk|aab` (Android
+  `.apk` / Play Store `.aab`), `flet build ipa|ios-simulator` (iOS - needs a
+  macOS host with Xcode) and `flet build web`. Every target is run from the
+  workspace root - not from `src/`.
+- The artifact must contain the app, `src/assets/conversions.yaml` and the
+  declared dependencies. `org` and `product` in `[tool.flet]` are what become the
+  application/bundle id (`com.github.greentruck50.anycalc`) and the name the platform shows.
+- Keep `src/` platform-neutral: no module may branch on the running platform or
+  import a desktop-only package. The only platform-specific calls are the window
+  size and minimum size set on the page in `ui.py`, which a mobile build ignores.
 - `src/` is an *import root*, not a Python package - the stock Flet convention.
   Flet packages the contents of the app folder as the artifact's import root, so
   inside the artifact the modules sit side by side as top-level modules
@@ -267,5 +275,9 @@ There should be a conversions.yaml file that says "There should be this tab with
   workspace, in the tests and inside the artifact.
 - The host is given that same root by `pythonpath = ["src"]` under
   `[tool.pytest.ini_options]`; an editor needs the equivalent
-  `python.analysis.extraPaths` setting (kept in `.vscode/settings.json`).
+  `python.analysis.extraPaths` setting, which lives in that machine's own editor
+  settings - `.vscode/` is not tracked in this repository.
+- Only sources and project configuration are tracked. Everything a build or a
+  test run regenerates (`build/`, the Python/pytest/Dart caches) stays ignored,
+  along with each machine's own Python environment and editor settings.
 

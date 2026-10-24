@@ -1,7 +1,7 @@
 # anycalc
 
-Calculate anything — a Flet desktop calculator: expressions, scientific mode,
-named variables, history and live unit conversions.
+Calculate anything — a Flet calculator for desktop and mobile: expressions,
+scientific mode, named variables, history and live unit conversions.
 
 ## Layout
 
@@ -41,15 +41,16 @@ follow are in the "Volume and weight conversions" section of
 
 ## Setup
 
+The project needs Python 3.11+. Install its dependencies:
+
 ```bash
-python3 -m venv .venv
-.venv/bin/pip install -e .          # add ".[dev]" for test tooling
+pip install -e .                # add ".[dev]" for the test tooling
 ```
 
 ## Run
 
 ```bash
-.venv/bin/flet run               # or: .venv/bin/python src/main.py
+flet run                        # or: python src/main.py
 ```
 
 `src/` is Flet's import root, not a package: the modules import each other by
@@ -59,14 +60,14 @@ sees them.
 ## Tests
 
 ```bash
-.venv/bin/flet test            # everything; provisions a test host, then runs pytest
-.venv/bin/flet test -k engine  # the two engine test files only, no Flutter host
-.venv/bin/flet test -k app     # the Flet UI tests only
+flet test            # everything; provisions a test host, then runs pytest
+flet test -k engine  # the two engine test files only, no Flutter host
+flet test -k app     # the Flet UI tests only
 ```
 
 `flet test` takes pytest flags, not file paths (select with `-k`); flags after
 `--` are passed to pytest verbatim. The pure-logic tests can also be run without
-Flet at all: `.venv/bin/python -m pytest -k engine`.
+Flet at all: `python -m pytest -k engine`.
 
 Two layers live in `tests/` (a sibling of `src/`, which is what gets packaged
 into the app):
@@ -92,22 +93,33 @@ test host (slow, and it leaves a ~1 GB `build/` directory behind); later runs ar
 cached. Screenshot goldens are Android/iOS only — the desktop suite compares no
 images.
 
-## Build a desktop package
+## Build packages — desktop & mobile
 
-Run from the workspace root — `[tool.flet.app]` in `pyproject.toml` points Flet
-at `src/main.py`, so no `cd src` is needed:
+The same `src/` ships to desktop and to phone. Run from the workspace root —
+`[tool.flet.app]` in `pyproject.toml` points Flet at `src/main.py`, so no
+`cd src` is needed:
 
 ```bash
-.venv/bin/flet build linux          # artifact in build/linux/, app in build/flutter/
+flet build linux           # desktop bundle -> build/linux/
+flet build apk             # Android .apk
+flet build aab             # Android .aab (Play Store)
+flet build ipa             # iOS - needs macOS with Xcode
+flet build web             # static web bundle
 ```
 
-The artifact is the relocatable bundle `build/linux/` (executable `anycalc`,
-`app/`, `site-packages/`, `python3.14/`, `data/`, `share/`); pass `-o <dir>` to
-put it somewhere else.
+Desktop: the artifact is the relocatable bundle `build/linux/` (executable
+`anycalc`, `app/`, `site-packages/`, `python3.14/`, `data/`, `share/`); pass
+`-o <dir>` to put it somewhere else.
 
+Mobile: `apk` / `aab` go through the Flutter SDK and need an Android SDK plus a
+JDK (here: `~/Android/Sdk`, `java`, `adb` on PATH); `ipa` builds only on macOS
+with Xcode. `org` / `product` in `[tool.flet]` set the application id and the
+app label, and `src/` contains no platform-specific code — every target packages
+the same source.
 
-Requires the Flutter SDK at the version Flet pins (managed copy in
-`~/flutter/<version>`); `flet build` installs it there on demand.
+Every target needs the Flutter SDK at the version Flet pins (managed copy in
+`~/flutter/<version>`); `flet build` installs it there on demand. Of the targets
+above, only the Linux one has been built from this workspace so far.
 
 Note: once a build exists, `flet run` / `python src/main.py` reuse the built
 client at `build/linux/anycalc` instead of the normal desktop client — move or
