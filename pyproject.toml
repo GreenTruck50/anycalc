@@ -1,0 +1,88 @@
+# anycalc - project metadata, runtime dependencies and Flet packaging config.
+#
+#   install deps:  .venv/bin/pip install -e .          (dev: pip install -e ".[dev]")
+#   run:           .venv/bin/flet run                 (or .venv/bin/python src/main.py)
+#   test:          .venv/bin/flet test                 (pytest flags only; -k engine
+#                  skips the app host and runs just the conversion-engine tests)
+#   package:       flet build linux                  - run from THIS directory (the
+#                  workspace root), not from src/; [tool.flet.app] below tells Flet
+#                  that the app itself lives in src/ and main.py is its entry point.
+#
+# src/ is Flet's import root, not a Python package: the modules inside it import
+# each other by bare name (from ui import AnycalcApp), and pytest is given the
+# same root through pythonpath = ["src"] below.
+
+[project]
+name = "anycalc"
+version = "0.1.0"
+description = "Calculate anything - a Flet desktop calculator: expressions, scientific mode, named variables, history and live unit conversions."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    # UI framework. The [desktop] extra installs flet-desktop, the desktop client
+    # that ft.run() opens a window with - plain "flet" does not include it, and
+    # Flet then pip-installs it silently on first launch. The [cli] extra provides
+    # the "flet" command (flet run / flet build). Flet pins these extras to its own
+    # exact version, so the bracket group can never drift from the SDK.
+    "flet[cli,desktop]>=1.0.4",
+    # Parses src/assets/conversions.yaml (imported as `yaml`)
+    "PyYAML>=6.0.3",
+]
+# Everything else the app imports is stdlib: ast, asyncio, math, operator, re,
+# collections, dataclasses, decimal, pathlib, typing.
+
+[project.optional-dependencies]
+# Not needed to run the app; installed with `pip install -e ".[dev]"`.
+dev = [
+    # flet[test] is the extra that makes `flet test` work: it brings pytest,
+    # pytest-asyncio and the screenshot-comparison libraries (numpy, pillow,
+    # scikit-image). The app under test is the real built app, so the Flet
+    # version in the extra must track the runtime version above.
+    "flet[test]>=1.0.4",
+    # Pinned explicitly because the tests import them directly.
+    "pytest>=8.3",
+    "pytest-asyncio>=1.1",
+]
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# The app is deliberately NOT installed as a Python package: src/ is Flet's
+# import root (bare-name imports), so installing loose modules called main, ui,
+# config ... into site-packages would only pollute it. This metadata exists so
+# `pip install .` / `pip install -e ".[dev]"` resolve the dependencies; the app
+# itself is started with `flet run` or run from a `flet build` artifact.
+packages = []
+py-modules = []
+
+# --- Flet build configuration ------------------------------------------------
+# Read by `flet build <platform>` (and `flet run`). The app's source is in src/
+# and its entry point is src/main.py - declaring it here is what makes
+# `flet build linux` work from the workspace root instead of from src/.
+[tool.flet]
+org = "com.github.greentruck50"          # reverse-domain id used for the app/bundle id
+product = "anycalc"          # name shown to the user (window / .desktop entry)
+
+[tool.flet.app]
+path = "src"                 # Flet app directory, relative to this file
+module = "main"              # entry point -> src/main.py
+
+[tool.flet.linux]
+categories = ["Utility"]
+
+# --- Test configuration ------------------------------------------------------
+# `flet test` (and plain `pytest`) both read this. asyncio_mode = "auto" is
+# REQUIRED for the on-device integration tests: it runs each async test on the
+# same event loop as the `flet_app` fixture that boots the app. Tests live in
+# tests/ - a sibling of src/, because src/ is what gets packaged into the app
+# while the test code stays on the host and drives the app from outside.
+# pythonpath = ["src"] puts src/ on sys.path, i.e. it gives the host the same
+# import root the packaged app has - that is what makes the bare-name imports
+# in both the app and the tests resolve.
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["src"]
+

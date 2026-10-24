@@ -1,0 +1,20 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+coverage/
+
+# --- Flet: `flet build` / `flet test` regenerate all of this (≈10 GB locally) ---
+build/
+.flet/
+
+# --- virtualenv / tooling caches ---
+.venv/
+.pytest_cache/
+.dart_tool/
+
+# --- misc ---
+*.log
+.history
+*.swp

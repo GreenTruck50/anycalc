@@ -1,0 +1,1271 @@
+version: 1.0
+# Units Definitions
+units:
+  - name: "Length"
+    units:
+      - name: "Nanometer"
+        symbol: "nm"
+        id: "length_nanometer"
+      - name: "Micrometer"
+        symbol: "μm"
+        id: "length_micrometer"
+      - name: "Millimeter"
+        symbol: "mm"
+        id: "length_millimeter"
+      - name: "Centimeter"
+        symbol: "cm"
+        id: "length_centimeter"
+      - name: "Meter"
+        symbol: "m"
+        id: "length_meter"
+      - name: "Kilometer"
+        symbol: "km"
+        id: "length_kilometer"
+      - name: "Inch"
+        symbol: "in"
+        id: "length_inch"
+      - name: "Foot"
+        symbol: "ft"
+        id: "length_foot"
+      - name: "Yard"
+        symbol: "yd"
+        id: "length_yard"
+      - name: "Mile"
+        symbol: "mi"
+        id: "length_mile"
+      - name: "Nautical Mile"
+        symbol: "nmi"
+        id: "length_nautical_mile"
+      - name: "Astronomical Unit"
+        symbol: "AU"
+        id: "length_astronomical_unit"
+      - name: "Light-Year"
+        symbol: "ly"
+        id: "length_light_year"
+      - name: "Parsec"
+        symbol: "pc"
+        id: "length_parsec"
+      - name: "Kiloparsec"
+        symbol: "kpc"
+        id: "length_kiloparsec"
+      - name: "Megaparsec"
+        symbol: "Mpc"
+        id: "length_megaparsec"
+      - name: "Gigaparsec"
+        symbol: "Gpc"
+        id: "length_gigaparsec"
+      - name: "Terameter"
+        symbol: "Tm"
+        id: "length_terameter"
+  - name: "Time"
+    units:
+      - name: "Picosecond"
+        symbol: "ps"
+        id: "time_picosecond"
+      - name: "Nanosecond"
+        symbol: "ns"
+        id: "time_nanosecond"
+      - name: "Microsecond"
+        symbol: "µs"
+        id: "time_microsecond"
+      - name: "Millisecond"
+        symbol: "ms"
+        id: "time_millisecond"
+      - name: "Second"
+        symbol: "s"
+        id: "time_second"
+      - name: "Minute"
+        symbol: "min"
+        id: "time_minute"
+      - name: "Hour"
+        symbol: "h"
+        id: "time_hour"
+      - name: "Day"
+        symbol: "d"
+        id: "time_day"
+      - name: "Week"
+        symbol: "wk"
+        id: "time_week"
+      - name: "Fortnight"
+        symbol: "fn"
+        id: "time_fortnight"
+      - name: "Month (30d)"
+        symbol: "mo"
+        id: "time_month30"
+      - name: "Month (31d)"
+        symbol: "mo"
+        id: "time_month31"
+      - name: "Month (avg)"
+        symbol: "mo"
+        id: "time_monthavg"
+      - name: "Year (non-leap)"
+        symbol: "yr"
+        id: "time_year"
+      - name: "Year (leap)"
+        symbol: "yr"
+        id: "time_year_leap"
+  - name: "Temperature"
+    units:
+      - name: "Celsius"
+        symbol: "°C"
+        id: "temperature_celsius"
+      - name: "Fahrenheit"
+        symbol: "°F"
+        id: "temperature_fahrenheit"      
+      - name: "Kelvin"
+        symbol: "K"
+        id: "temperature_kelvin"
+      - name: "Rankine"
+        symbol: "°R"
+        id: "temperature_rankine"
+  - name: "Data"
+    units:
+      # Basic Units
+      - name: "Bit"
+        symbol: "bit"
+        id: "data_bit"
+      - name: "Nibble"
+        symbol: "nibble"
+        id: "data_nibble"
+      - name: "Byte"
+        symbol: "B"
+        id: "data_byte"
+
+      # Decimal Bit Units (SI: powers of 1000)
+      - name: "Kilobit"
+        symbol: "kbit"
+        id: "data_kilobit"
+      - name: "Kilobyte"
+        symbol: "kB"
+        id: "data_kilobyte"
+      - name: "Megabit"
+        symbol: "Mbit"
+        id: "data_megabit"
+      - name: "Megabyte"
+        symbol: "MB"
+        id: "data_megabyte"
+      - name: "Gigabit"
+        symbol: "Gbit"
+        id: "data_gigabit"
+      - name: "Gigabyte"
+        symbol: "GB"
+        id: "data_gigabyte"
+      - name: "Terabit"
+        symbol: "Tbit"
+        id: "data_terabit"
+      - name: "Terabyte"
+        symbol: "TB"
+        id: "data_terabyte"
+      - name: "Petabit"
+        symbol: "Pbit"
+        id: "data_petabit"
+      - name: "Petabyte"
+        symbol: "PB"
+        id: "data_petabyte"
+      - name: "Exabit"
+        symbol: "Ebit"
+        id: "data_exabit"
+      - name: "Exabyte"
+        symbol: "EB"
+        id: "data_exabyte"
+      - name: "Zettabit"
+        symbol: "Zbit"
+        id: "data_zettabit"
+      - name: "Zettabyte"
+        symbol: "ZB"
+        id: "data_zettabyte"
+      - name: "Yottabit"
+        symbol: "Ybit"
+        id: "data_yottabit"
+      - name: "Yottabyte"
+        symbol: "YB"
+        id: "data_yottabyte"
+      - name: "Ronnabit"
+        symbol: "Rbit"
+        id: "data_ronnabit"
+      - name: "Ronnabyte"
+        symbol: "RB"
+        id: "data_ronnabyte"
+      - name: "Quettabit"
+        symbol: "Qbit"
+        id: "data_quettabit"
+      - name: "Quettabyte"
+        symbol: "QB"
+        id: "data_quettabyte"
+
+      # Binary Bit Units (IEC: powers of 1024)
+      - name: "Kibibit"
+        symbol: "Kibit"
+        id: "data_kibibit"
+      - name: "Kibibyte"
+        symbol: "KiB"
+        id: "data_kibibyte"
+      - name: "Mebibit"
+        symbol: "Mibit"
+        id: "data_mebibit"
+      - name: "Mebibyte"
+        symbol: "MiB"
+        id: "data_mebibyte"
+      - name: "Gibibit"
+        symbol: "Gibit"
+        id: "data_gibibit"
+      - name: "Gibibyte"
+        symbol: "GiB"
+        id: "data_gibibyte"
+      - name: "Tebibit"
+        symbol: "Tibit"
+        id: "data_tebibit"
+      - name: "Tebibyte"
+        symbol: "TiB"
+        id: "data_tebibyte"
+      - name: "Pebibit"
+        symbol: "Pibit"
+        id: "data_pebibit"
+      - name: "Pebibyte"
+        symbol: "PiB"
+        id: "data_pebibyte"
+      - name: "Exbibit"
+        symbol: "Eibit"
+        id: "data_exbibit"
+      - name: "Exbibyte"
+        symbol: "EiB"
+        id: "data_exbibyte"
+      - name: "Zebibit"
+        symbol: "Zibit"
+        id: "data_zebibit"
+      - name: "Zebibyte"
+        symbol: "ZiB"
+        id: "data_zebibyte"
+      - name: "Yobibit"
+        symbol: "Yibit"
+        id: "data_yobibit"
+      - name: "Yobibyte"
+        symbol: "YiB"
+        id: "data_yobibyte"
+      - name: "Robibit"
+        symbol: "Ribit"
+        id: "data_robibit"
+      - name: "Robibyte"
+        symbol: "RiB"
+        id: "data_robibyte"
+      - name: "Quebibit"
+        symbol: "Qibit"
+        id: "data_quebibit"
+      - name: "Quebibyte"
+        symbol: "QiB"
+        id: "data_quebibyte"
+  - name: "Volume"
+    units:
+      # Metric cubic units
+      - name: "Cubic Millimeter"
+        symbol: "mm³"
+        id: "volume_cubic_millimeter"
+      - name: "Cubic Centimeter"
+        symbol: "cm³"
+        id: "volume_cubic_centimeter"
+      - name: "Cubic Decimeter"
+        symbol: "dm³"
+        id: "volume_cubic_decimeter"
+      - name: "Cubic Meter"
+        symbol: "m³"
+        id: "volume_cubic_meter"
+      - name: "Cubic Kilometer"
+        symbol: "km³"
+        id: "volume_cubic_kilometer"
+
+      # Metric liquid units
+      - name: "Microliter"
+        symbol: "μL"
+        id: "volume_microliter"
+      - name: "Milliliter"
+        symbol: "mL"
+        id: "volume_milliliter"
+      - name: "Centiliter"
+        symbol: "cL"
+        id: "volume_centiliter"
+      - name: "Deciliter"
+        symbol: "dL"
+        id: "volume_deciliter"
+      - name: "Liter"
+        symbol: "L"
+        id: "volume_liter"
+      - name: "Hectoliter"
+        symbol: "hL"
+        id: "volume_hectoliter"
+      - name: "Kiloliter"
+        symbol: "kL"
+        id: "volume_kiloliter"
+
+      # Culinary metric units (defined in milliliters)
+      - name: "Teaspoon (metric)"
+        symbol: "tsp"
+        id: "volume_metric_teaspoon"
+      - name: "Tablespoon (metric)"
+        symbol: "tbsp"
+        id: "volume_metric_tablespoon"
+      - name: "Cup (metric, 250 mL)"
+        symbol: "cup"
+        id: "volume_metric_cup"
+      - name: "Cup (US legal, 240 mL)"
+        symbol: "cup"
+        id: "volume_us_legal_cup"
+
+      # Imperial / US customary cubic units
+      - name: "Cubic Inch"
+        symbol: "in³"
+        id: "volume_cubic_inch"
+      - name: "Cubic Foot"
+        symbol: "ft³"
+        id: "volume_cubic_foot"
+      - name: "Cubic Yard"
+        symbol: "yd³"
+        id: "volume_cubic_yard"
+      - name: "Cubic Mile"
+        symbol: "mi³"
+        id: "volume_cubic_mile"
+      - name: "Acre-Foot"
+        symbol: "acre-ft"
+        id: "volume_acre_foot"
+
+      # US customary liquid units
+      - name: "Teaspoon (US)"
+        symbol: "tsp"
+        id: "volume_us_teaspoon"
+      - name: "Tablespoon (US)"
+        symbol: "tbsp"
+        id: "volume_us_tablespoon"
+      - name: "Fluid Ounce (US)"
+        symbol: "fl oz"
+        id: "volume_us_fluid_ounce"
+      - name: "Gill (US)"
+        symbol: "gi"
+        id: "volume_us_gill"
+      - name: "Cup (US)"
+        symbol: "cup"
+        id: "volume_us_cup"
+      - name: "Pint (US liquid)"
+        symbol: "pt"
+        id: "volume_us_pint"
+      - name: "Quart (US liquid)"
+        symbol: "qt"
+        id: "volume_us_quart"
+      - name: "Gallon (US liquid)"
+        symbol: "gal"
+        id: "volume_us_gallon"
+      - name: "Barrel (petroleum)"
+        symbol: "bbl"
+        id: "volume_petroleum_barrel"
+
+      # US customary dry units
+      - name: "Pint (US dry)"
+        symbol: "pt"
+        id: "volume_us_dry_pint"
+      - name: "Quart (US dry)"
+        symbol: "qt"
+        id: "volume_us_dry_quart"
+      - name: "Gallon (US dry)"
+        symbol: "gal"
+        id: "volume_us_dry_gallon"
+
+      # Imperial liquid units
+      - name: "Fluid Dram (imperial)"
+        symbol: "fl dr"
+        id: "volume_imperial_fluid_dram"
+      - name: "Fluid Ounce (imperial)"
+        symbol: "fl oz"
+        id: "volume_imperial_fluid_ounce"
+      - name: "Gill (imperial)"
+        symbol: "gi"
+        id: "volume_imperial_gill"
+      - name: "Pint (imperial)"
+        symbol: "pt"
+        id: "volume_imperial_pint"
+      - name: "Quart (imperial)"
+        symbol: "qt"
+        id: "volume_imperial_quart"
+      - name: "Gallon (imperial)"
+        symbol: "gal"
+        id: "volume_imperial_gallon"
+  - name: "Weight"
+    units:
+      # Metric units
+      - name: "Microgram"
+        symbol: "μg"
+        id: "weight_microgram"
+      - name: "Milligram"
+        symbol: "mg"
+        id: "weight_milligram"
+      - name: "Gram"
+        symbol: "g"
+        id: "weight_gram"
+      - name: "Kilogram"
+        symbol: "kg"
+        id: "weight_kilogram"
+      - name: "Tonne (metric ton)"
+        symbol: "t"
+        id: "weight_tonne"
+      - name: "Quintal"
+        symbol: "q"
+        id: "weight_quintal"
+      - name: "Carat (metric)"
+        symbol: "ct"
+        id: "weight_carat"
+
+      # Avoirdupois units (US customary / imperial)
+      - name: "Grain"
+        symbol: "gr"
+        id: "weight_grain"
+      - name: "Dram (US)"
+        symbol: "dr"
+        id: "weight_dram"
+      - name: "Ounce (US)"
+        symbol: "oz"
+        id: "weight_ounce"
+      - name: "Pound (US / imperial)"
+        symbol: "lb"
+        id: "weight_pound"
+      - name: "Stone (imperial)"
+        symbol: "st"
+        id: "weight_stone"
+      - name: "Hundredweight (US short)"
+        symbol: "cwt"
+        id: "weight_hundredweight_short"
+      - name: "Hundredweight (imperial long)"
+        symbol: "cwt"
+        id: "weight_hundredweight_long"
+      - name: "Ton (US short)"
+        symbol: "ton"
+        id: "weight_short_ton"
+      - name: "Ton (imperial long)"
+        symbol: "ton"
+        id: "weight_long_ton"
+
+      # Troy units (precious metals)
+      - name: "Pennyweight"
+        symbol: "dwt"
+        id: "weight_pennyweight"
+      - name: "Ounce (troy)"
+        symbol: "oz t"
+        id: "weight_troy_ounce"
+      - name: "Pound (troy)"
+        symbol: "lb t"
+        id: "weight_troy_pound"
+
+      # Apothecaries' units
+      - name: "Scruple (apothecary)"
+        symbol: "㉈"
+        id: "weight_scruple"
+      - name: "Dram (apothecary)"
+        symbol: "ℨ"
+        id: "weight_apothecaries_dram"
+      - name: "Ounce (apothecary)"
+        symbol: "℥"
+        id: "weight_apothecaries_ounce"
+      - name: "Pound (apothecary)"
+        symbol: "℔"
+        id: "weight_apothecaries_pound"
+# Conversion Formulas
+# Each conversion item has its own menu item in the "Unit Conversions" section.
+# X is the input value.
+# Each id corresponds to a unit defined in the units section above.
+# The ids are used to map the input and output units to the correct formulas.
+# A conversion path will be automatically found using the input and output unit ids, and the corresponding formulas will be applied in sequence to get the final result.
+# Conversion paths can also go backwards if it is a MD type
+# Types:
+# MD: Multi-Directional (can convert both ways) - the program will automatically reverse the formula by swapping the operations (eg. X * 1000 becomes X / 1000, 500 + 123 becomes 500 - 123 and vice versa) if it cannot find a path forwards.
+# UD: Uni-Directional (can only convert one way) - the program will not reverse the formula and error if it cannot find a path backwards.
+# X should be x (lowercase) in the formula, and it will be replaced with the input value during the conversion process.
+conversions:
+  - name: "Length Conversion"
+    icon: "ft.Icons.STRAIGHTEN"
+    description: "Convert between meters, kilometers, etc."
+    formulas:
+      # Metric units - exact by definition of the SI prefixes, so every hop is a
+      # power of ten and stays exact in both directions.
+      1:
+        type: "MD"
+        input_unit_id: "length_nanometer"
+        output_unit_id: "length_micrometer"
+        formula: "x / 1000"
+      2:
+        type: "MD"
+        input_unit_id: "length_micrometer"
+        output_unit_id: "length_millimeter"
+        formula: "x / 1000"
+      3:
+        type: "MD"
+        input_unit_id: "length_millimeter"
+        output_unit_id: "length_centimeter"
+        formula: "x / 10"
+      4:
+        type: "MD"
+        input_unit_id: "length_centimeter"
+        output_unit_id: "length_meter"
+        formula: "x / 100"
+      5:
+        type: "MD"
+        input_unit_id: "length_meter"
+        output_unit_id: "length_kilometer"
+        formula: "x / 1000"
+      # Imperial units - the 1959 international yard and pound agreement defines
+      # the yard as exactly 0.9144 m, hence the inch as exactly 25.4 mm and the
+      # mile as exactly 1609.344 m; the nautical mile is exactly 1852 m. The
+      # bridges to the metric chain are written as the exact multiplication, so a
+      # route from an imperial unit to a metric one never starts with a division
+      # that cannot be written in decimal.
+      6:
+        type: "MD"
+        input_unit_id: "length_inch"
+        output_unit_id: "length_millimeter"
+        formula: "x * 25.4"
+      7:
+        type: "MD"
+        input_unit_id: "length_inch"
+        output_unit_id: "length_foot"
+        formula: "x / 12"
+      8:
+        type: "MD"
+        input_unit_id: "length_foot"
+        output_unit_id: "length_yard"
+        formula: "x / 3"
+      9:
+        type: "MD"
+        input_unit_id: "length_yard"
+        output_unit_id: "length_mile"
+        formula: "x / 1760"
+      10:
+        type: "MD"
+        input_unit_id: "length_mile"
+        output_unit_id: "length_meter"
+        formula: "x * 1609.344"
+      11:
+        type: "MD"
+        input_unit_id: "length_nautical_mile"
+        output_unit_id: "length_meter"
+        formula: "x * 1852"
+      # Astronomical units - exact by IAU resolution: 1 AU = 149597870700 m and a
+      # light-year, being c over a Julian year, is exactly 9460730472580800 m. An
+      # integer literal stays exact however long it is; only decimal literals are
+      # limited to the 15 significant digits the engine can parse.
+      12:
+        type: "MD"
+        input_unit_id: "length_kilometer"
+        output_unit_id: "length_astronomical_unit"
+        formula: "x / 149597870.7"
+      13:
+        type: "MD"
+        input_unit_id: "length_light_year"
+        output_unit_id: "length_meter"
+        formula: "x * 9460730472580800"
+      # A parsec is 648000/pi astronomical units, so its factor is not a rational
+      # number at all. This is the one Length hop that cannot be written exactly,
+      # and it carries the most digits the engine can parse.
+      14:
+        type: "MD"
+        input_unit_id: "length_light_year"
+        output_unit_id: "length_parsec"
+        formula: "x / 3.2615637771674"
+      15:
+        type: "MD"
+        input_unit_id: "length_parsec"
+        output_unit_id: "length_kiloparsec"
+        formula: "x / 1000"
+      16:
+        type: "MD"
+        input_unit_id: "length_kiloparsec"
+        output_unit_id: "length_megaparsec"
+        formula: "x / 1000"
+      17:
+        type: "MD"
+        input_unit_id: "length_megaparsec"
+        output_unit_id: "length_gigaparsec"
+        formula: "x / 1000"
+      18:
+        type: "MD"
+        input_unit_id: "length_terameter"
+        output_unit_id: "length_meter"
+        formula: "x * 1000000000000"
+
+  - name: "Time Conversion"
+    icon: "ft.Icons.ACCESS_TIME"
+    description: "Convert between seconds, hours, etc."
+    formulas:
+      1:
+        type: "MD"
+        input_unit_id: "time_second"
+        output_unit_id: "time_minute"
+        formula: "x / 60"
+      2:
+        type: "MD"
+        input_unit_id: "time_minute"
+        output_unit_id: "time_hour"
+        formula: "x / 60"
+      3:
+        type: "MD"
+        input_unit_id: "time_hour"
+        output_unit_id: "time_day"
+        formula: "x / 24"
+      4:
+        type: "MD"
+        input_unit_id: "time_day"
+        output_unit_id: "time_week"
+        formula: "x / 7"
+      5:
+        type: "MD"
+        input_unit_id: "time_day"
+        output_unit_id: "time_month30"
+        formula: "x / 30"
+      6:
+        type: "MD"
+        input_unit_id: "time_day"
+        output_unit_id: "time_month31"
+        formula: "x / 31"
+      7:
+        type: "MD"
+        input_unit_id: "time_day"
+        output_unit_id: "time_monthavg"
+        formula: "x / 30.44"
+      8:
+        type: "MD"
+        input_unit_id: "time_day"
+        output_unit_id: "time_year"
+        formula: "x / 365"
+      9:
+        type: "MD"
+        input_unit_id: "time_day"
+        output_unit_id: "time_year_leap"
+        formula: "x / 366"
+      10:
+        type: "MD"
+        input_unit_id: "time_millisecond"
+        output_unit_id: "time_second"
+        formula: "x / 1000"
+      11:
+        type: "MD"
+        input_unit_id: "time_nanosecond"
+        output_unit_id: "time_microsecond"
+        formula: "x / 1000"
+      12:
+        type: "MD"
+        input_unit_id: "time_microsecond"
+        output_unit_id: "time_millisecond"
+        formula: "x / 1000"
+      13:
+        type: "MD"
+        input_unit_id: "time_picosecond"
+        output_unit_id: "time_nanosecond"
+        formula: "x / 1000" 
+      14:
+        type: "MD"
+        input_unit_id: "time_day"
+        output_unit_id: "time_fortnight"
+        formula: "x / 14"
+  
+  - name: "Temperature Conversion"
+    icon: "ft.Icons.THERMOSTAT"
+    description: "Convert between Celsius, Fahrenheit, Kelvin, etc."
+    formulas:
+      1:
+        type: "UD"
+        input_unit_id: "temperature_celsius"
+        output_unit_id: "temperature_fahrenheit"
+        formula: "(x * 9/5) + 32"
+      2:
+        type: "UD"
+        input_unit_id: "temperature_fahrenheit"
+        output_unit_id: "temperature_celsius"
+        formula: "(x - 32) * 5/9"
+      3:
+        type: "MD"
+        input_unit_id: "temperature_celsius"
+        output_unit_id: "temperature_kelvin"
+        formula: "x + 273.15"
+      4:
+        type: "MD"
+        input_unit_id: "temperature_fahrenheit"
+        output_unit_id: "temperature_rankine"
+        formula: "x + 459.67"
+  - name: "Data Conversion"
+    icon: "ft.Icons.DATA_OBJECT"
+    description: "Convert between decimal and binary data units."
+    formulas:
+      # Basic Units
+      1:
+        type: "MD"
+        input_unit_id: "data_bit"
+        output_unit_id: "data_nibble"
+        formula: "x / 4"
+      2:
+        type: "MD"
+        input_unit_id: "data_nibble"
+        output_unit_id: "data_byte"
+        formula: "x / 2"
+
+      # Decimal Byte Units
+      3:
+        type: "MD"
+        input_unit_id: "data_byte"
+        output_unit_id: "data_kilobyte"
+        formula: "x / 1000"
+      4:
+        type: "MD"
+        input_unit_id: "data_kilobyte"
+        output_unit_id: "data_megabyte"
+        formula: "x / 1000"
+      5:
+        type: "MD"
+        input_unit_id: "data_megabyte"
+        output_unit_id: "data_gigabyte"
+        formula: "x / 1000"
+      6:
+        type: "MD"
+        input_unit_id: "data_gigabyte"
+        output_unit_id: "data_terabyte"
+        formula: "x / 1000"
+      7:
+        type: "MD"
+        input_unit_id: "data_terabyte"
+        output_unit_id: "data_petabyte"
+        formula: "x / 1000"
+      8:
+        type: "MD"
+        input_unit_id: "data_petabyte"
+        output_unit_id: "data_exabyte"
+        formula: "x / 1000"
+      9:
+        type: "MD"
+        input_unit_id: "data_exabyte"
+        output_unit_id: "data_zettabyte"
+        formula: "x / 1000"
+      10:
+        type: "MD"
+        input_unit_id: "data_zettabyte"
+        output_unit_id: "data_yottabyte"
+        formula: "x / 1000"
+      11:
+        type: "MD"
+        input_unit_id: "data_yottabyte"
+        output_unit_id: "data_ronnabyte"
+        formula: "x / 1000"
+      12:
+        type: "MD"
+        input_unit_id: "data_ronnabyte"
+        output_unit_id: "data_quettabyte"
+        formula: "x / 1000"
+
+      # Binary Byte Units
+      13:
+        type: "MD"
+        input_unit_id: "data_byte"
+        output_unit_id: "data_kibibyte"
+        formula: "x / 1024"
+      14:
+        type: "MD"
+        input_unit_id: "data_kibibyte"
+        output_unit_id: "data_mebibyte"
+        formula: "x / 1024"
+      15:
+        type: "MD"
+        input_unit_id: "data_mebibyte"
+        output_unit_id: "data_gibibyte"
+        formula: "x / 1024"
+      16:
+        type: "MD"
+        input_unit_id: "data_gibibyte"
+        output_unit_id: "data_tebibyte"
+        formula: "x / 1024"
+      17:
+        type: "MD"
+        input_unit_id: "data_tebibyte"
+        output_unit_id: "data_pebibyte"
+        formula: "x / 1024"
+      18:
+        type: "MD"
+        input_unit_id: "data_pebibyte"
+        output_unit_id: "data_exbibyte"
+        formula: "x / 1024"
+      19:
+        type: "MD"
+        input_unit_id: "data_exbibyte"
+        output_unit_id: "data_zebibyte"
+        formula: "x / 1024"
+      20:
+        type: "MD"
+        input_unit_id: "data_zebibyte"
+        output_unit_id: "data_yobibyte"
+        formula: "x / 1024"
+      21:
+        type: "MD"
+        input_unit_id: "data_yobibyte"
+        output_unit_id: "data_robibyte"
+        formula: "x / 1024"
+      22:
+        type: "MD"
+        input_unit_id: "data_robibyte"
+        output_unit_id: "data_quebibyte"
+        formula: "x / 1024"
+
+      # Decimal Bit Units
+      23:
+        type: "MD"
+        input_unit_id: "data_bit"
+        output_unit_id: "data_kilobit"
+        formula: "x / 1000"
+      24:
+        type: "MD"
+        input_unit_id: "data_kilobit"
+        output_unit_id: "data_megabit"
+        formula: "x / 1000"
+      25:
+        type: "MD"
+        input_unit_id: "data_megabit"
+        output_unit_id: "data_gigabit"
+        formula: "x / 1000"
+      26:
+        type: "MD"
+        input_unit_id: "data_gigabit"
+        output_unit_id: "data_terabit"
+        formula: "x / 1000"
+      27:
+        type: "MD"
+        input_unit_id: "data_terabit"
+        output_unit_id: "data_petabit"
+        formula: "x / 1000"
+      28:
+        type: "MD"
+        input_unit_id: "data_petabit"
+        output_unit_id: "data_exabit"
+        formula: "x / 1000"
+      29:
+        type: "MD"
+        input_unit_id: "data_exabit"
+        output_unit_id: "data_zettabit"
+        formula: "x / 1000"
+      30:
+        type: "MD"
+        input_unit_id: "data_zettabit"
+        output_unit_id: "data_yottabit"
+        formula: "x / 1000"
+      31:
+        type: "MD"
+        input_unit_id: "data_yottabit"
+        output_unit_id: "data_ronnabit"
+        formula: "x / 1000"
+      32:
+        type: "MD"
+        input_unit_id: "data_ronnabit"
+        output_unit_id: "data_quettabit"
+        formula: "x / 1000"
+
+      # Binary Bit Units
+      33:
+        type: "MD"
+        input_unit_id: "data_bit"
+        output_unit_id: "data_kibibit"
+        formula: "x / 1024"
+      34:
+        type: "MD"
+        input_unit_id: "data_kibibit"
+        output_unit_id: "data_mebibit"
+        formula: "x / 1024"
+      35:
+        type: "MD"
+        input_unit_id: "data_mebibit"
+        output_unit_id: "data_gibibit"
+        formula: "x / 1024"
+      36:
+        type: "MD"
+        input_unit_id: "data_gibibit"
+        output_unit_id: "data_tebibit"
+        formula: "x / 1024"
+      37:
+        type: "MD"
+        input_unit_id: "data_tebibit"
+        output_unit_id: "data_pebibit"
+        formula: "x / 1024"
+      38:
+        type: "MD"
+        input_unit_id: "data_pebibit"
+        output_unit_id: "data_exbibit"
+        formula: "x / 1024"
+      39:
+        type: "MD"
+        input_unit_id: "data_exbibit"
+        output_unit_id: "data_zebibit"
+        formula: "x / 1024"
+      40:
+        type: "MD"
+        input_unit_id: "data_zebibit"
+        output_unit_id: "data_yobibit"
+        formula: "x / 1024"
+      41:
+        type: "MD"
+        input_unit_id: "data_yobibit"
+        output_unit_id: "data_robibit"
+        formula: "x / 1024"
+      42:
+        type: "MD"
+        input_unit_id: "data_robibit"
+        output_unit_id: "data_quebibit"
+        formula: "x / 1024"
+
+  - name: "Volume Conversion"
+    icon: "ft.Icons.WATER_DROP"
+    description: "Convert between liters, milliliters, gallons, cups, cubic inches, etc."
+    formulas:
+      # Metric cubic units - exact by definition of the SI prefixes.
+      1:
+        type: "MD"
+        input_unit_id: "volume_cubic_millimeter"
+        output_unit_id: "volume_cubic_centimeter"
+        formula: "x / 1000"
+      2:
+        type: "MD"
+        input_unit_id: "volume_cubic_centimeter"
+        output_unit_id: "volume_cubic_decimeter"
+        formula: "x / 1000"
+      3:
+        type: "MD"
+        input_unit_id: "volume_cubic_decimeter"
+        output_unit_id: "volume_cubic_meter"
+        formula: "x / 1000"
+      4:
+        type: "MD"
+        input_unit_id: "volume_cubic_meter"
+        output_unit_id: "volume_cubic_kilometer"
+        formula: "x / 1000000000"
+
+      # Metric liquid units - the liter is exactly one cubic decimeter,
+      # so cm3 = mL and dm3 = L exactly.
+      5:
+        type: "MD"
+        input_unit_id: "volume_cubic_centimeter"
+        output_unit_id: "volume_milliliter"
+        formula: "x"
+      6:
+        type: "MD"
+        input_unit_id: "volume_milliliter"
+        output_unit_id: "volume_microliter"
+        formula: "x * 1000"
+      7:
+        type: "MD"
+        input_unit_id: "volume_milliliter"
+        output_unit_id: "volume_centiliter"
+        formula: "x / 10"
+      8:
+        type: "MD"
+        input_unit_id: "volume_centiliter"
+        output_unit_id: "volume_deciliter"
+        formula: "x / 10"
+      9:
+        type: "MD"
+        input_unit_id: "volume_deciliter"
+        output_unit_id: "volume_liter"
+        formula: "x / 10"
+      10:
+        type: "MD"
+        input_unit_id: "volume_liter"
+        output_unit_id: "volume_hectoliter"
+        formula: "x / 100"
+      11:
+        type: "MD"
+        input_unit_id: "volume_hectoliter"
+        output_unit_id: "volume_kiloliter"
+        formula: "x / 10"
+
+      # Metric culinary units - defined as exact numbers of milliliters.
+      12:
+        type: "MD"
+        input_unit_id: "volume_metric_teaspoon"
+        output_unit_id: "volume_milliliter"
+        formula: "x * 5"
+      13:
+        type: "MD"
+        input_unit_id: "volume_metric_tablespoon"
+        output_unit_id: "volume_milliliter"
+        formula: "x * 15"
+      14:
+        type: "MD"
+        input_unit_id: "volume_metric_cup"
+        output_unit_id: "volume_milliliter"
+        formula: "x * 250"
+      15:
+        # US legal cup as used in FDA nutrition labeling (21 CFR 101.9).
+        type: "MD"
+        input_unit_id: "volume_us_legal_cup"
+        output_unit_id: "volume_milliliter"
+        formula: "x * 240"
+
+      # Imperial / US customary cubic units.
+      # The international inch is exactly 2.54 cm, so one cubic inch is exactly
+      # 16.387064 cm3; every larger cubic unit is chained through exact integers
+      # instead of one long factor, which keeps every hop exact.
+      16:
+        type: "MD"
+        input_unit_id: "volume_cubic_inch"
+        output_unit_id: "volume_cubic_centimeter"
+        formula: "x * 16.387064"
+      17:
+        type: "MD"
+        input_unit_id: "volume_cubic_inch"
+        output_unit_id: "volume_cubic_foot"
+        formula: "x / 1728"
+      18:
+        type: "MD"
+        input_unit_id: "volume_cubic_foot"
+        output_unit_id: "volume_cubic_yard"
+        formula: "x / 27"
+      19:
+        # 1 mi = 1760 yd exactly, so 1 mi3 = 1760^3 yd3.
+        type: "MD"
+        input_unit_id: "volume_cubic_yard"
+        output_unit_id: "volume_cubic_mile"
+        formula: "x / 5451776000"
+      20:
+        # 1 acre-foot = 43560 ft2 x 1 ft = 75271680 in3 exactly.
+        type: "MD"
+        input_unit_id: "volume_acre_foot"
+        output_unit_id: "volume_cubic_inch"
+        formula: "x * 75271680"
+
+      # US customary liquid units - the US liquid gallon is exactly 231 in3.
+      21:
+        type: "MD"
+        input_unit_id: "volume_us_gallon"
+        output_unit_id: "volume_cubic_inch"
+        formula: "x * 231"
+      22:
+        type: "MD"
+        input_unit_id: "volume_us_gallon"
+        output_unit_id: "volume_us_quart"
+        formula: "x * 4"
+      23:
+        type: "MD"
+        input_unit_id: "volume_us_quart"
+        output_unit_id: "volume_us_pint"
+        formula: "x * 2"
+      24:
+        type: "MD"
+        input_unit_id: "volume_us_pint"
+        output_unit_id: "volume_us_cup"
+        formula: "x * 2"
+      25:
+        type: "MD"
+        input_unit_id: "volume_us_cup"
+        output_unit_id: "volume_us_fluid_ounce"
+        formula: "x * 8"
+      26:
+        type: "MD"
+        input_unit_id: "volume_us_fluid_ounce"
+        output_unit_id: "volume_us_tablespoon"
+        formula: "x * 2"
+      27:
+        type: "MD"
+        input_unit_id: "volume_us_tablespoon"
+        output_unit_id: "volume_us_teaspoon"
+        formula: "x * 3"
+      28:
+        type: "MD"
+        input_unit_id: "volume_us_gill"
+        output_unit_id: "volume_us_fluid_ounce"
+        formula: "x * 4"
+      29:
+        # 1 petroleum barrel = 42 US liquid gallons exactly.
+        type: "MD"
+        input_unit_id: "volume_petroleum_barrel"
+        output_unit_id: "volume_us_gallon"
+        formula: "x * 42"
+
+      # US customary dry units - the US dry gallon is exactly 268.8025 in3.
+      30:
+        type: "MD"
+        input_unit_id: "volume_us_dry_gallon"
+        output_unit_id: "volume_cubic_inch"
+        formula: "x * 268.8025"
+      31:
+        type: "MD"
+        input_unit_id: "volume_us_dry_gallon"
+        output_unit_id: "volume_us_dry_quart"
+        formula: "x * 4"
+      32:
+        type: "MD"
+        input_unit_id: "volume_us_dry_quart"
+        output_unit_id: "volume_us_dry_pint"
+        formula: "x * 2"
+
+      # Imperial liquid units - the imperial gallon is legally exactly 4.54609 L.
+      33:
+        type: "MD"
+        input_unit_id: "volume_imperial_gallon"
+        output_unit_id: "volume_liter"
+        formula: "x * 4.54609"
+      34:
+        type: "MD"
+        input_unit_id: "volume_imperial_gallon"
+        output_unit_id: "volume_imperial_quart"
+        formula: "x * 4"
+      35:
+        type: "MD"
+        input_unit_id: "volume_imperial_quart"
+        output_unit_id: "volume_imperial_pint"
+        formula: "x * 2"
+      36:
+        type: "MD"
+        input_unit_id: "volume_imperial_pint"
+        output_unit_id: "volume_imperial_gill"
+        formula: "x * 4"
+      37:
+        type: "MD"
+        input_unit_id: "volume_imperial_gill"
+        output_unit_id: "volume_imperial_fluid_ounce"
+        formula: "x * 5"
+      38:
+        type: "MD"
+        input_unit_id: "volume_imperial_fluid_ounce"
+        output_unit_id: "volume_imperial_fluid_dram"
+        formula: "x * 8"
+
+      # The US spoon measures also get a direct milliliter definition (exact:
+      # 1 US fl oz = 231/128 in3 = 29.5735295625 mL, so 1 tbsp = 14.78676478125 mL
+      # and 1 tsp = 4.92892159375 mL). Without it a route from a spoon measure to
+      # a metric one has to divide by 3 first, which cannot be written exactly in
+      # decimal; the direct hop keeps every such route exact.
+      39:
+        type: "MD"
+        input_unit_id: "volume_us_tablespoon"
+        output_unit_id: "volume_milliliter"
+        formula: "x * 14.78676478125"
+      40:
+        type: "MD"
+        input_unit_id: "volume_us_teaspoon"
+        output_unit_id: "volume_milliliter"
+        formula: "x * 4.92892159375"
+
+  - name: "Weight Conversion"
+    icon: "ft.Icons.BALANCE"
+    description: "Convert between grams, kilograms, pounds, ounces, tons, carats, etc."
+    formulas:
+      # Metric units - exact by definition of the SI prefixes.
+      1:
+        type: "MD"
+        input_unit_id: "weight_microgram"
+        output_unit_id: "weight_milligram"
+        formula: "x / 1000"
+      2:
+        type: "MD"
+        input_unit_id: "weight_milligram"
+        output_unit_id: "weight_gram"
+        formula: "x / 1000"
+      3:
+        type: "MD"
+        input_unit_id: "weight_gram"
+        output_unit_id: "weight_kilogram"
+        formula: "x / 1000"
+      4:
+        type: "MD"
+        input_unit_id: "weight_kilogram"
+        output_unit_id: "weight_tonne"
+        formula: "x / 1000"
+      5:
+        type: "MD"
+        input_unit_id: "weight_kilogram"
+        output_unit_id: "weight_quintal"
+        formula: "x / 100"
+      6:
+        # 1 metric carat = 0.2 g exactly.
+        type: "MD"
+        input_unit_id: "weight_gram"
+        output_unit_id: "weight_carat"
+        formula: "x * 5"
+
+      # Avoirdupois units - since the 1959 international yard and pound
+      # agreement the pound is defined as exactly 0.45359237 kg, and the grain
+      # as exactly 1/7000 lb, i.e. exactly 0.00006479891 kg. Both bridges are
+      # written as exact decimal factors so no hop needs a rounded division.
+      7:
+        type: "MD"
+        input_unit_id: "weight_pound"
+        output_unit_id: "weight_kilogram"
+        formula: "x * 0.45359237"
+      8:
+        type: "MD"
+        input_unit_id: "weight_grain"
+        output_unit_id: "weight_kilogram"
+        formula: "x * 0.00006479891"
+      9:
+        type: "MD"
+        input_unit_id: "weight_pound"
+        output_unit_id: "weight_ounce"
+        formula: "x * 16"
+      10:
+        type: "MD"
+        input_unit_id: "weight_ounce"
+        output_unit_id: "weight_dram"
+        formula: "x * 16"
+      11:
+        type: "MD"
+        input_unit_id: "weight_pound"
+        output_unit_id: "weight_stone"
+        formula: "x / 14"
+      12:
+        # 1 US short hundredweight = 100 lb exactly.
+        type: "MD"
+        input_unit_id: "weight_pound"
+        output_unit_id: "weight_hundredweight_short"
+        formula: "x / 100"
+      13:
+        type: "MD"
+        input_unit_id: "weight_hundredweight_short"
+        output_unit_id: "weight_short_ton"
+        formula: "x / 20"
+      14:
+        # 1 imperial long hundredweight = 112 lb exactly.
+        type: "MD"
+        input_unit_id: "weight_pound"
+        output_unit_id: "weight_hundredweight_long"
+        formula: "x / 112"
+      15:
+        type: "MD"
+        input_unit_id: "weight_hundredweight_long"
+        output_unit_id: "weight_long_ton"
+        formula: "x / 20"
+
+      # Troy units - 1 pennyweight = 24 gr, 1 oz t = 20 dwt, 1 lb t = 12 oz t.
+      16:
+        type: "MD"
+        input_unit_id: "weight_grain"
+        output_unit_id: "weight_pennyweight"
+        formula: "x / 24"
+      17:
+        type: "MD"
+        input_unit_id: "weight_pennyweight"
+        output_unit_id: "weight_troy_ounce"
+        formula: "x / 20"
+      18:
+        type: "MD"
+        input_unit_id: "weight_troy_ounce"
+        output_unit_id: "weight_troy_pound"
+        formula: "x / 12"
+
+      # Apothecaries' units - 1 ap dr = 3 s, 1 ap oz = 8 ap dr, 1 ap lb = 12 ap oz,
+      # so 1 ap oz = 480 gr, the same mass as the troy ounce.
+      19:
+        type: "MD"
+        input_unit_id: "weight_grain"
+        output_unit_id: "weight_scruple"
+        formula: "x / 20"
+      20:
+        type: "MD"
+        input_unit_id: "weight_scruple"
+        output_unit_id: "weight_apothecaries_dram"
+        formula: "x / 3"
+      21:
+        type: "MD"
+        input_unit_id: "weight_apothecaries_dram"
+        output_unit_id: "weight_apothecaries_ounce"
+        formula: "x / 8"
+      22:
+        type: "MD"
+        input_unit_id: "weight_apothecaries_ounce"
+        output_unit_id: "weight_apothecaries_pound"
+        formula: "x / 12"

@@ -1,0 +1,3 @@
+Remember to use Trilium notes for project documentation instead of keeping it only in the codebase or separate text files.
+Also you may create subnotes of the project note.
+Only edit under the AI note.

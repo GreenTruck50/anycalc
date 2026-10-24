@@ -1,0 +1,8 @@
+{
+    // src/ is Flet's import root, not a package, so the app's modules import
+    // each other by bare name (`from ui import AnycalcApp`). Pylance needs the
+    // same root pytest gets from `pythonpath = ["src"]` to resolve those imports.
+    "python.analysis.extraPaths": ["src"],
+    "python.testing.pytestEnabled": true,
+    "python.testing.pytestArgs": ["tests"]
+}
