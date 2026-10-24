@@ -66,11 +66,13 @@ py-modules = []
 # entry point is src/main.py - declaring it here is what makes `flet build
 # <target>` work from the workspace root instead of from src/.
 [tool.flet]
-org = "com.github.greentruck50"          # reverse-domain prefix of the app id: on Android this
-                             # becomes the applicationId com.github.greentruck50.anycalc, on iOS
-                             # the bundle id
-product = "anycalc"          # name shown to the user (window title, .desktop entry,
-                             # Android / iOS app label)
+org = "com.github.greentruck50"   # reverse-domain prefix of the app id: on Android
+                                  # this becomes the applicationId
+                                  # com.github.greentruck50.anycalc, on iOS the
+                                  # bundle id. Derived from the GitHub handle, not
+                                  # from a personal name.
+product = "anycalc"               # name shown to the user (window title, .desktop
+                                  # entry, Android / iOS app label)
 
 [tool.flet.app]
 path = "src"                 # Flet app directory, relative to this file

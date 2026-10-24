@@ -260,7 +260,12 @@ There should be a conversions.yaml file that says "There should be this tab with
   workspace root - not from `src/`.
 - The artifact must contain the app, `src/assets/conversions.yaml` and the
   declared dependencies. `org` and `product` in `[tool.flet]` are what become the
-  application/bundle id (`com.github.greentruck50.anycalc`) and the name the platform shows.
+  application/bundle id (`com.github.greentruck50.anycalc`) and the name the
+  platform shows.
+- The app id must be derived from the project's GitHub handle, never from a
+  personal name, e-mail address or machine path. Nothing tracked may carry
+  personal identifiers - no real name, e-mail, phone number or absolute path
+  under a user's home directory; `~`-relative paths are fine.
 - Keep `src/` platform-neutral: no module may branch on the running platform or
   import a desktop-only package. The only platform-specific calls are the window
   size and minimum size set on the page in `ui.py`, which a mobile build ignores.
