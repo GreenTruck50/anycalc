@@ -1,6 +1,8 @@
 # anycalc - project metadata, runtime dependencies and Flet packaging config.
 #
-#   install deps:  pip install -e .                   (dev: pip install -e ".[dev]")
+#   install deps:  pip install -e ".[dev]"           (the dev extra is what
+#                  provides the `flet` command; `pip install -e .` alone installs
+#                  only what the app needs at runtime, which cannot run flet run)
 #   run:           flet run                           (or python src/main.py)
 #   test:          flet test                          (pytest flags only; -k engine
 #                  skips the app host and runs just the conversion-engine tests)
@@ -20,28 +22,37 @@ description = "Calculate anything - a Flet calculator for desktop and mobile: ex
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    # UI framework. The [desktop] extra installs flet-desktop, the desktop client
-    # that ft.run() opens a window with while developing - plain "flet" does not
-    # include it, and Flet then pip-installs it silently on first launch. The [cli]
-    # extra provides the "flet" command (flet run / flet build / flet test). Flet
-    # pins these extras to its own exact version, so the bracket group can never
-    # drift from the SDK. Mobile targets (flet build apk / aab / ipa) compile the
-    # same src/ and do not use flet-desktop - it is only the local run client.
-    "flet[cli,desktop]>=1.0.4",
-    # Parses src/assets/conversions.yaml (imported as `yaml`)
+    # UI framework - the only Flet distribution the app itself imports.
+    # Keep this BARE (no extras): `flet build <target>` pip-installs
+    # project.dependencies INTO the artifact for that platform, so everything
+    # listed here must be packageable for it. The [cli] extra pulls flet-cli ->
+    # watchdog, which has no Android wheel, so `flet build apk|aab` dies with
+    # "No matching distribution found for watchdog>=4.0.0"; flet-desktop is the
+    # desktop run client and is meaningless on a phone. Both are host-only and
+    # live in the dev extra below. A flet build linux|macos|windows ships its own
+    # runner from the Flutter app shell, so it needs neither in the bundle.
+    "flet>=1.0.4",
+    # Parses src/assets/conversions.yaml (imported as `yaml`). Fine for mobile:
+    # Flet publishes Android wheels for PyYAML and its flet-libyaml helper on
+    # https://pypi.flet.dev, which the build adds as an extra index.
     "PyYAML>=6.0.3",
 ]
 # Everything else the app imports is stdlib: ast, asyncio, math, operator, re,
 # collections, dataclasses, decimal, pathlib, typing.
 
 [project.optional-dependencies]
-# Not needed to run the app; installed with `pip install -e ".[dev]"`.
+# Host / development tooling only - never shipped in an artifact. This is where
+# the `flet` command and the desktop run client live now, precisely because
+# `flet build apk|aab|ipa` pip-installs project.dependencies into the bundle and
+# flet-cli (via watchdog) has no Android wheel.
 dev = [
-    # flet[test] is the extra that makes `flet test` work: it brings pytest,
+    # One extra group covers everything a dev machine needs: [cli] = the `flet`
+    # command (flet run / flet build / flet test), [desktop] = the desktop client
+    # ft.run() opens a window with while developing, [test] = pytest,
     # pytest-asyncio and the screenshot-comparison libraries (numpy, pillow,
     # scikit-image). The app under test is the real built app, so the Flet
     # version in the extra must track the runtime version above.
-    "flet[test]>=1.0.4",
+    "flet[cli,desktop,test]>=1.0.4",
     # Pinned explicitly because the tests import them directly.
     "pytest>=8.3",
     "pytest-asyncio>=1.1",

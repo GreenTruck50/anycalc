@@ -172,9 +172,11 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Keep tests in a `tests/` folder at the workspace root, a sibling of `src/`:
   `src/` is what gets packaged into the app, test code stays on the host and
   drives the app from outside.
-- Take test tooling from the `flet[test]` extra inside the optional `dev` extra
-  (it provides pytest, pytest-asyncio and the screenshot-comparison libraries);
-  never add it to the runtime dependency set.
+- Take test tooling from the `flet[cli,desktop,test]` extra inside the optional
+  `dev` extra (it provides the `flet` command, the desktop run client, pytest,
+  pytest-asyncio and the screenshot-comparison libraries); never add it to the
+  runtime dependency set - the runtime set is what gets pip-installed into a
+  packaged app, and only the Android-incompatible reason for that is enough.
 - Configure pytest with `asyncio_mode = "auto"` and `testpaths = ["tests"]`; the
   `asyncio_mode` setting is required so each async test runs on the same event
   loop as the `flet_app` fixture.
@@ -241,10 +243,14 @@ There should be a conversions.yaml file that says "There should be this tab with
 ## Packaging & entry point
 
 - The project is configured by `pyproject.toml` at the workspace root; there is
-  no `requirements.txt`. Runtime dependencies are `flet[cli,desktop]` (the
-  desktop client and the `flet` command are declared, never pip-installed at
-  first launch) and `PyYAML`; test tooling belongs in the optional `dev` extra,
-  not in the runtime set.
+  no `requirements.txt`. Runtime dependencies are `flet` and `PyYAML` only. The
+  `cli`, `desktop` and `test` extras belong to the optional `dev` extra, because
+  every build pip-installs `project.dependencies` **into the artifact** for its
+  target platform: `flet-cli` pulls `watchdog`, which has no Android wheel, so
+  keeping the extras in the runtime set makes `flet build apk|aab` fail with
+  "No matching distribution found for watchdog". The `flet` command and the
+  desktop run client are therefore host tooling and are never part of a shipped
+  bundle; a desktop build ships its own runner from the Flutter app shell.
 - The app's entry point is `src/main.py`, declared to Flet with
   `[tool.flet.app] path = "src"` and `module = "main"`. There is no console
   script: the app is started with `flet run` (from the workspace root) or run
