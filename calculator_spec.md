@@ -210,6 +210,74 @@ There should be a conversions.yaml file that says "There should be this tab with
   rounded hops were the last such failure; fixing them removed the marker, and no
   inaccuracy is currently accepted.
 
+- On-device smoke testing runs against an Android emulator, not a second desktop
+  window: `flet emulators` lists and starts the virtual devices and
+  `flet devices android` lists what is attached, which is what `flet build apk`
+  and `flet run --android` then target. The installed debug APK is pushed with
+  `adb install -r build/apk/anycalc.apk` and started with
+  `adb shell am start -n com.github.greentruck50.anycalc/.MainActivity`; the
+  emulator's Android SDK lives in `~/Android/Sdk` and its AVDs in
+  `~/.android/avd`.
+- Keep an emulator usable for a GPU-composited app: the AVD defaults ship with the
+  emulated GPU disabled, which the app feels as a crawl, so the AVD's
+  `config.ini` must carry `hw.gpu.enabled=yes` with `hw.gpu.mode=host` (plus
+  more cores/RAM than the 2-core, 1536 MB default). Check the host accelerator
+  with `~/Android/Sdk/emulator/emulator-check accel` - it must report KVM usable,
+  which needs read/write access to `/dev/kvm`.
+- KVM being switched on is not proved by a process listing: check the fds the
+  running emulator holds (`/dev/kvm`, `kvm-vm` and one `kvm-vcpu:N` per core) or
+  ask it directly with `~/Android/Sdk/emulator/emulator-check accel`, which answers
+  `KVM (version 12) is installed and usable`. Never read the launch line for this:
+  emulators before 37 spelled the accelerator out as `-enable-kvm -smp cores=N -m MB`,
+  while 37 puts only `-avd <name>` in `argv` and configures acceleration internally,
+  so grepping the command line reports "no KVM" on a perfectly accelerated device.
+- Keep the emulator component current rather than trusting the version the SDK
+  bootstrap happened to download: `sdkmanager --list` compares what is installed
+  with what the repository serves, and `sdkmanager "emulator"` installs the latter
+  (the SDK here shipped 36.6.11 and now serves 37.2.12, build 16428233). Close the
+  running device first with `adb -s emulator-5554 emu kill`, because replacing a
+  binary that is in use fails, and boot the first run after an update cold with
+  `-no-snapshot-load`, since a snapshot written by another emulator version is not
+  reusable. A cold boot of this AVD completes in under a minute and a debug APK
+  then starts in about 2 s (`am start -W` reporting `Status: ok, TotalTime: 2004`).
+- An emulator window is an ordinary host window, so a host that saturates its CPU
+  or disk makes the *emulator* stall and the desktop shell declare that window
+  unresponsive. The liveness check is a `_NET_WM_PING` round-trip answered by
+  the client's *event loop*, not its render path, so a window can keep drawing
+  perfectly and still be called frozen - that message is not the app and no test
+  result depends on it. Running the emulator with `-no-window` drops the X11
+  client altogether - the only way to be unobservable to the desktop, and
+  scripted captures still work through `adb exec-out screencap -p`.
+  The shell blames one window rather than the program, and the emulator owns
+  several: the device screen, the vertical button strip docked beside it (54 px wide,
+  `_NET_WM_WINDOW_TYPE_UTILITY`) and Qt helper windows as small as 1x21 px - and every
+  one of them advertises `_NET_WM_PING`. Because the "not responding" banner is drawn
+  over the window that missed the ping, a victim that is 54 px or 1 px wide leaves the
+  banner no room for a single readable letter; an unreadable sliver over the sidebar is
+  the toolbar or a helper window being blamed, never the calculator. mutter's
+  `check-alive-timeout` (`gsettings get org.gnome.mutter check-alive-timeout`, 5000 ms
+  by default, `0` disables the check outright) is the only dial, and it is per desktop,
+  not per window - no client can opt one of its windows out of the ping.
+  Starve it less: keep `hw.cpu.ncore` below the host's core count instead of equal
+  to it (3 of 4 cores here), launch the emulator without `-verbose`, which writes
+  a debug line per rendered frame, and never run a full-disk scan next to a device
+  run - the emulator lowers its own scheduling priority, so it is the first thing
+  starved when the cores fill up. Launching it as
+  `ionice -c2 -n7 taskset -c 0-2 <emulator> -avd anycalc ...` reserves a core for
+  the desktop and makes it yield on disk I/O; wrapping it in `nice` is possible
+  but makes the emulator itself, not the desktop, the thing that stalls first.
+- Tell an app freeze from a host freeze by asking the guest, not the desktop:
+  `adb logcat -d | grep -c "ANR in"` must stay at 0 and the app must hold focus
+  (`dumpsys window` naming the app's `MainActivity` as `mCurrentFocus`), because a
+  real Android "isn't responding" dialog always takes that focus away.
+- Drive the running app from outside with `adb shell input tap x y` after reading
+  the widget tree from `adb shell uiautomator dump`: the app exposes every keypad
+  button as a clickable node carrying its label as the node description and the
+  display as an editable text node, so taps and assertions can be scripted
+  without the desktop test host.
+- A device run is a debug-signed artifact, not a release one: it proves the app
+  installs and renders on Android, and publishing still needs a real keystore.
+
 ## Source layout
 
 - Keep `src/main.py` as the only entry module: it builds the app and hands it to
