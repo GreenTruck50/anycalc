@@ -15,6 +15,7 @@ ACCENT = "#4F7DFF"              # "=" and the conversion icons
 KEY_DANGER = "#7B3340"          # AC and backspace
 KEY_OPERATOR = "#303B50"        # operator keys and the scientific rows
 KEY_DEFAULT = CARD_BACKGROUND   # digits and everything else
+KEY_INK = "#40FFFFFF"           # the ripple spreading through a pressed key
 
 # Text
 TEXT_PRIMARY = "#FFFFFF"

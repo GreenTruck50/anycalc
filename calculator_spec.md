@@ -113,6 +113,11 @@ There should be a conversions.yaml file that says "There should be this tab with
   `±`, and every keypad control keeps a unique `key-<label>` id.
 - Adding keys must not make the keypad taller: the regular pad stays at five rows
   (the utility keys share the top row) and the scientific pad at eight.
+- Every key acknowledges a press visually: a Material ink ripple spreads through
+  the tile while it is held, the same feedback the menu button, the history button
+  and the dialog buttons give. A key is a plain tap tile, so without that ripple
+  the pad would look dead next to those buttons - pressing one must be visible on
+  the key itself, not only in the display that changes.
 - The `%` key means two different things, one per pad.
 - On the Regular Calculator it is the percent key of a physical calculator: on its
   own it divides by a hundred, so `50%` is `0.5`; beside `+` or `−` it takes that

@@ -17,6 +17,7 @@ from styles import (
     ACCENT,
     KEY_DANGER,
     KEY_DEFAULT,
+    KEY_INK,
     KEY_OPERATOR,
     TEXT_PRIMARY,
 )
@@ -65,6 +66,11 @@ def make_key(
 ) -> ft.Container:
     """One key of the pad: a fixed-size tappable tile labelled ``label``.
 
+    A bare ``Container`` tap target has no press feedback of its own, which is
+    what makes the pad look dead next to the header's Material buttons - ``ink``
+    is what puts the same ripple inside the tile, coloured by ``KEY_INK`` so it
+    reads on both the dark keys and the accent ``=``.
+
     The ``key`` is ``key-<label>`` on purpose - the integration tests in
     ``tests/test_app.py`` address the keypad through it.
     """
@@ -86,5 +92,7 @@ def make_key(
         alignment=ft.Alignment.CENTER,
         expand=True,
         height=54,
+        ink=True,
+        ink_color=KEY_INK,
         on_click=handle_click,
     )
