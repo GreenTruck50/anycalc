@@ -5,6 +5,7 @@ Check calculator_spec.md and make sure the spec aligns with the app. Do not remo
 Never change the UI based on the specs file
 
 Use tools as much as possible and not use commands where possible.
+Use ripgrep instead of grep when possible (rg command)
 Fix any errors or pylance warnings if possible before finishing.
 If you need clarification from me, or my reasoning doesn't make sense, ask me!
 Keep pyproject.toml updated (runtime dependencies, the `[tool.flet]` build config and the `[tool.flet.app]` entry point `path = "src"` / `module = "main"`, plus the `[tool.pytest.ini_options]` config - requirements.txt is gone). There is deliberately **no `anycalc` console script**: the app is not installed as a Python package, so do not re-add `[project.scripts]`.
@@ -13,4 +14,4 @@ Keep pyproject.toml updated (runtime dependencies, the `[tool.flet]` build confi
 
 The app targets desktop **and** mobile - never describe it as desktop-only. `src/` stays free of platform-specific code and of desktop-only dependencies; the only platform-specific calls are the desktop window size/minimum in `ui.py`, which mobile ignores.
 
-Keep personal data out of anything tracked: no real name, e-mail address, phone number or absolute home path in files or commit messages. Identify the project by its GitHub handle instead - that is why `[tool.flet] org` is `com.github.greentruck50` and not a personal name.
+Keep personal data out of anything tracked: no real name, e-mail address, phone number or absolute home path in files or commit messages. Identify the project by its GitHub handle instead - that is why `[tool.flet] org` is `com.github.greentruck50` and not a personal name / computer username.
