@@ -171,6 +171,17 @@ There should be a conversions.yaml file that says "There should be this tab with
 
 ## Testing
 
+### The host path: the default for every change
+
+- Verify a change with the Flet tooling on the host and stop there: `flet run`
+  starts the app to look at it, `flet test` runs the whole suite, and
+  `flet test -k engine` the two engine files (the fast check - 178 tests in about
+  three seconds). Give the full suite about six minutes (185 tests; each UI test
+  boots its own app host), so a `flet test` that runs for minutes is working, not
+  hung. No emulator, device or APK is involved in this path, and it is
+  what a change is judged by unless Android testing is asked for; the device route
+  is the separate, opt-in path under "The Android emulator path: only when it is
+  asked for".
 - Run the suite with `flet test` (pytest flags only, no file paths - select with
   `-k`); the pure conversion-engine tests additionally run under plain `pytest`
   because they need no app host.
@@ -215,6 +226,15 @@ There should be a conversions.yaml file that says "There should be this tab with
   rounded hops were the last such failure; fixing them removed the marker, and no
   inaccuracy is currently accepted.
 
+### The Android emulator path: only when it is asked for
+
+- Take this path when testing on Android has been asked for - on-device, mobile or
+  APK testing named by the user - and otherwise stay on the host path above. The
+  emulator never replaces the host suite and no routine verification depends on it;
+  it is the slow route (a cold boot plus an APK build), so do not reach for it
+  uninvited. When it is asked for, work in this order: confirm the AVD is
+  accelerated (KVM), boot it, build the APK, install and start it, then drive and
+  read the running app from outside with `adb`.
 - On-device smoke testing runs against an Android emulator, not a second desktop
   window: `flet emulators` lists and starts the virtual devices and
   `flet devices android` lists what is attached, which is what `flet build apk`
@@ -223,6 +243,25 @@ There should be a conversions.yaml file that says "There should be this tab with
   `adb shell am start -n com.github.greentruck50.anycalc/.MainActivity`; the
   emulator's Android SDK lives in `~/Android/Sdk` and its AVDs in
   `~/.android/avd`.
+- Budget a device run honestly: `flet build apk` took about eight minutes from a
+  cold cache and most of that is Gradle, so the Gradle and Kotlin compile daemons
+  and the caches under `~/.gradle` are worth leaving alive between runs (`pgrep -f
+  GradleDaemon` finds them) - a rebuild into warm daemons costs a few minutes
+  instead. The AVD cold boot is the cheap part.
+- To look at something transient - a ripple, an animation, an in-between frame -
+  do not tap, hold the touch: `adb shell input motionevent DOWN x y` leaves the
+  guest in the pressed state, `adb exec-out screencap -p > /tmp/press.png` catches
+  the frame while it is held, and `adb shell input motionevent UP x y` completes
+  the press. One capture then proves both halves of a press - the effect and the
+  commit. `screencap` pixels map 1:1 onto `adb shell input` coordinates, and
+  `adb shell wm size` gives the extent.
+- A purely visual check of a running app is the one case the host path cannot
+  cover: no synthetic input reaches the real desktop window from a Wayland session
+  (X11 injectors such as xdotool cannot post events to Wayland clients, and are not
+  installed here), and a host screenshot only catches whichever frame happens to
+  be up plus the host's own windows on top. The emulator is fully scriptable
+  through `adb`. For that kind of check, ask before taking the device run rather
+  than assuming it.
 - Keep an emulator usable for a GPU-composited app: the AVD defaults ship with the
   emulated GPU disabled, which the app feels as a crawl, so the AVD's
   `config.ini` must carry `hw.gpu.enabled=yes` with `hw.gpu.mode=host` (plus
