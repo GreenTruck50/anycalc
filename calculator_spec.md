@@ -20,6 +20,13 @@ There should be a conversions.yaml file that says "There should be this tab with
 - While the value is empty or is not a number yet (for example `-`, `3.` or
   `abc`), clear the result and the chain without reporting anything. Only a real
   failure, such as having no valid route, is shown as an error.
+- Offer a "Swap units" button on the form that exchanges the From and To
+  selections and immediately re-converts the value already in the field, so
+  turning a conversion around needs no dropdown interaction at all.
+- Lay the conversion page out horizontally to the width of the content area: the
+  value field, the two unit dropdowns, the swap button, the result field and the
+  chain cards all stretch to the available width - the way the history cards in
+  the drawer do - rather than carrying fixed widths of their own.
 
 - Show the selected conversion form in the main content area used by the
   calculators, rather than in a popup.
@@ -94,6 +101,18 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Pressing `=` does not make that number disappear. It grows to the display
   size, takes the display colour, and slides up into the display box, after
   which the box holds the result.
+
+## System status bar
+
+- The app does not hide the mobile status bar; it keeps the bar and the app clear
+  of each other. The whole window sits inside a safe area, so the header row is
+  inset below the status bar, the display cutout and the navigation bar instead of
+  being drawn underneath them.
+- The status bar and the system navigation bar are painted in the app's background
+  colour with light icons, so they read as part of the app rather than floating
+  over it in platform colours.
+- A safe area has nothing to avoid on desktop and web, so the window is unchanged
+  there.
 
 ## Calculator navigation
 

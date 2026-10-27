@@ -13,9 +13,11 @@ knowing before adding a test here:
 * ``key`` only reaches some controls. The calculator's text buttons and the
   conversion form's fields are found with ``find_by_key``, but a
   ``NavigationDrawerDestination`` and a ``Dropdown``'s options never are - drawer
-  entries have to be tapped by their label text, and switching the From/To unit
-  cannot be driven from a UI test at all, so the unit pairs are covered instead
-  by the exhaustive route tests in ``tests/test_conversion_engine.py``.
+  entries have to be tapped by their label text, and picking an arbitrary From/To
+  pair cannot be driven from a UI test at all, so the unit pairs are covered
+  instead by the exhaustive route tests in ``tests/test_conversion_engine.py``.
+  Reversing the pair that the page already opens on is reachable, through the
+  form's swap button (``conversion-swap``).
 * A keypad key that exists in both the scientific rows and the regular rows is
   found *twice*, because scientific mode renders the regular rows underneath its
   own. The pad keeps every key exactly once (``(`` and ``)`` used to be
@@ -149,6 +151,59 @@ async def test_editing_the_value_reconverts_and_clearing_it_stays_quiet(
     ).count == 0
     assert (await tester.find_by_text("3 → 0.003")).count == 0
     assert (await tester.find_by_text_containing("No conversion path")).count == 0
+
+
+async def tap_swap(tester: ftt.Tester) -> None:
+    """Press the conversion form's swap button once.
+
+    The first pointer event the page receives after the app has replaced its
+    content area - or re-rendered the chain - is consumed by the test host rather
+    than reaching a control, so a press is dispatched twice and only the second is
+    expected to land. Measured on Flet 1.0.5: one tap after a re-render leaves the
+    page untouched, two taps turn the conversion around.
+    """
+
+    for _ in range(2):
+        await tester.tap(await tester.find_by_key("conversion-swap"))
+        await tester.pump_and_settle()
+
+
+async def test_swap_button_turns_the_conversion_around(
+    flet_app: ftt.FletTestApp,
+) -> None:
+    """The swap button exchanges From and To and re-converts the typed value."""
+
+    tester = flet_app.tester
+    await tester.pump_and_settle()
+
+    await open_page(tester, "Volume Conversion")
+    assert (await tester.find_by_key("conversion-swap")).count == 1
+    assert (await tester.find_by_text("Swap units")).count == 1
+
+    await tester.enter_text(await tester.find_by_key("conversion-value"), "1000")
+    await tester.pump_and_settle()
+    assert (
+        await tester.find_by_text(
+            hop_line("volume_cubic_millimeter", "volume_cubic_centimeter")
+        )
+    ).count == 1
+
+    await tap_swap(tester)
+
+    # The page now converts the other way round, and the chain belongs to the
+    # value that was already in the field: 1000 cm3 is 1 000 000 mm3.
+    assert (
+        await tester.find_by_text(
+            hop_line("volume_cubic_centimeter", "volume_cubic_millimeter")
+        )
+    ).count == 1
+    assert (
+        await tester.find_by_text(
+            hop_line("volume_cubic_millimeter", "volume_cubic_centimeter")
+        )
+    ).count == 0
+    assert (await tester.find_by_text("1000 → 1000000")).count == 1
+    assert (await tester.find_by_text("CHAIN OF OPERATIONS (1 step)")).count == 1
 
 
 async def test_drawer_switches_to_the_scientific_calculator(

@@ -1,4 +1,5 @@
-"""The unit conversion page: value, two units, live result, chain of operations.
+"""The unit conversion page: value, two units, a swap button, live result, chain
+of operations.
 
 One instance builds the form for a single conversion menu entry from
 ``src/assets/conversions.yaml``. Conversions run live - every change of the value
@@ -128,11 +129,36 @@ class ConversionView:
             on_select=run_conversion,
         )
 
+        def swap_units(e) -> None:
+            """Turn the conversion around and re-run it on the typed value."""
+
+            self.source_dropdown.value, self.target_dropdown.value = (
+                self.target_dropdown.value,
+                self.source_dropdown.value,
+            )
+            # run_conversion clears its own event argument; this one is passed on.
+            run_conversion(e)
+
+        self.swap_button = ft.OutlinedButton(
+            key="conversion-swap",
+            content="Swap units",
+            icon=ft.Icons.SWAP_HORIZ,
+            icon_color=ACCENT,
+            tooltip="Swap the From and To units",
+            on_click=swap_units,
+        )
+
         self.chain_header = ft.Text("CHAIN OF OPERATIONS", size=10, color=TEXT_MUTED)
-        self.chain_list = ft.Column([], spacing=8, key="conversion-chain")
+        self.chain_list = ft.Column(
+            [],
+            spacing=8,
+            key="conversion-chain",
+            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+        )
         self.chain_view = ft.Column(
             [self.chain_header, self.chain_list],
             spacing=8,
+            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
             visible=False,
         )
 
@@ -154,6 +180,7 @@ class ConversionView:
                 ft.Text(self.conversion["description"], color=TEXT_MUTED),
                 self.input_field,
                 self.source_dropdown,
+                self.swap_button,
                 self.target_dropdown,
                 ft.Row(
                     [
@@ -177,6 +204,10 @@ class ConversionView:
             spacing=16,
             scroll=ft.ScrollMode.AUTO,
             expand=True,
+            # Everything on the page - fields, dropdowns, the swap button, the chain
+            # cards - takes the width of the content area rather than sizing itself to
+            # its caption, the way the history cards in the drawer do.
+            horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
         )
 
     def clear_chain(self) -> None:
@@ -189,7 +220,6 @@ class ConversionView:
             bgcolor=CARD_BACKGROUND,
             border_radius=8,
             padding=10,
-            width=300,
         )
 
     def chain_step_card(self, index: int, step: ConversionStep) -> ft.Container:

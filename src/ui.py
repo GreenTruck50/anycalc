@@ -100,6 +100,21 @@ class AnycalcApp:
         page.bgcolor = APP_BACKGROUND
         page.padding = 16
 
+        # Mobile renders edge-to-edge, so the system bars are given the page colour
+        # and light icons instead of floating over the app in their own colours. The
+        # bars stay visible; the content that used to sit under them is pushed clear
+        # by the SafeArea the page is built inside (see the bottom of this method).
+        page.theme = ft.Theme(
+            system_overlay_style=ft.SystemOverlayStyle(
+                status_bar_color=APP_BACKGROUND,
+                status_bar_brightness=ft.Brightness.DARK,
+                status_bar_icon_brightness=ft.Brightness.LIGHT,
+                system_navigation_bar_color=APP_BACKGROUND,
+                system_navigation_bar_divider_color=APP_BACKGROUND,
+                system_navigation_bar_icon_brightness=ft.Brightness.LIGHT,
+            )
+        )
+
         page.window.width = 400
         page.window.height = 780
         page.window.min_width = 320
@@ -146,9 +161,19 @@ class AnycalcApp:
             expand=True,
         )
 
+        # The SafeArea insets the whole window by whatever the operating system
+        # occupies - the status bar at the top, the notch, the navigation bar at the
+        # bottom - which on desktop is nothing at all. spacing stays at 0 because the
+        # page laid its two children out without a gap before this wrapper existed.
         page.add(
-            self.header,
-            self.content_area,
+            ft.SafeArea(
+                content=ft.Column(
+                    [self.header, self.content_area],
+                    spacing=0,
+                    expand=True,
+                ),
+                expand=True,
+            )
         )
 
     def _build_display(self) -> None:
