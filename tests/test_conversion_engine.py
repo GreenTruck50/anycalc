@@ -5,7 +5,7 @@ and drive the conversion graph and the Decimal arithmetic straight in the host
 process. They are the cheap half of the suite; ``tests/test_app.py`` drives the
 same code through the real built app.
 
-The exactness sweep is the load-bearing test. Every unit in the Volume and
+The exactness sweep is the load-bearing test. Every unit in the Volume, Area and
 Weight groups is defined by law (NIST Handbook 44, the 1959 international
 yard-and-pound agreement), so each pair's factor is an exact rational number.
 Whenever that rational has a terminating decimal expansion, the value the app
@@ -41,6 +41,8 @@ F = Fraction
 
 # Exact legal anchors, as rationals, so no float ever touches the truth table.
 INCH3_ML = F(16387064, 10**6)          # 1 in³ in mL (= cm³), exact by definition
+IN_M = F(254, 10000)                  # 1 in = 25.4 mm exactly (1959 agreement)
+IN2_M2 = IN_M * IN_M                  # 1 in² = 0.00064516 m² exactly
 US_GALLON_ML = 231 * INCH3_ML          # US liquid gallon = 231 in³
 US_DRY_GALLON_ML = F(2688025, 10**4) * INCH3_ML   # US dry gallon = 2688025 in³ / 10^4
 IMP_GALLON_ML = F(454609, 100)         # imperial gallon = 4.54609 L exactly
@@ -118,6 +120,29 @@ WEIGHT_G = {
 }
 
 
+# Area factors keyed by unit id, in square metres. The customary ones are all
+# derived from the one square inch, and the land measures from the square yard,
+# so the whole table is exact rationals of the same anchor.
+AREA_M2 = {
+    "area_square_micrometer": F(1, 10**12),
+    "area_square_millimeter": F(1, 10**6),
+    "area_square_centimeter": F(1, 10**4),
+    "area_square_decimeter": F(1, 100),
+    "area_square_meter": F(1),
+    "area_square_kilometer": F(10**6),
+    "area_are": F(100),
+    "area_hectare": F(10**4),
+    "area_square_inch": IN2_M2,
+    "area_square_foot": 144 * IN2_M2,
+    "area_square_yard": 1296 * IN2_M2,
+    # 1 mi = 63360 in exactly, so a square mile is 63360 squared square inches
+    "area_square_mile": F(63360**2) * IN2_M2,
+    "area_acre": F(4840 * 1296) * IN2_M2,
+    "area_rood": F(4840 * 1296) * IN2_M2 / 4,
+    "area_square_rod": F(4840 * 1296) * IN2_M2 / 160,
+}
+
+
 def unit_ids(conversion_name: str) -> list[str]:
     """Unit ids of the unit group that backs a conversion menu entry."""
 
@@ -153,13 +178,14 @@ def app_value(conversion_name: str, amount: str, source: str, target: str) -> De
 
 # --- configuration -----------------------------------------------------------
 
-def test_conversion_groups_are_the_expected_six() -> None:
+def test_conversion_groups_are_the_expected_seven() -> None:
     assert set(CONVERSION_NAMES) == {
         "Length Conversion",
         "Time Conversion",
         "Temperature Conversion",
         "Data Conversion",
         "Volume Conversion",
+        "Area Conversion",
         "Weight Conversion",
     }
 
@@ -196,9 +222,10 @@ def test_every_pair_of_units_is_reachable(conversion_name: str) -> None:
     ("conversion_name", "legal_factors", "minimum_pairs"),
     [
         ("Volume Conversion", VOLUME_ML, 600),
+        ("Area Conversion", AREA_M2, 130),
         ("Weight Conversion", WEIGHT_G, 200),
     ],
-    ids=["volume", "weight"],
+    ids=["volume", "area", "weight"],
 )
 def test_every_terminating_factor_is_exact(
     conversion_name: str, legal_factors: dict[str, Fraction], minimum_pairs: int
@@ -285,6 +312,23 @@ REFERENCE_VALUES = [
     ("Volume", "volume_cubic_yard", "volume_cubic_foot", "1", "27"),
     ("Volume", "volume_cubic_foot", "volume_cubic_centimeter", "1", "28316.846592"),
     ("Volume", "volume_acre_foot", "volume_cubic_foot", "1", "43560"),
+    # Area - metric and metric land
+    ("Area", "area_square_meter", "area_square_centimeter", "1", "10000"),
+    ("Area", "area_square_kilometer", "area_square_meter", "1", "1000000"),
+    ("Area", "area_square_micrometer", "area_square_millimeter", "1", "0.000001"),
+    ("Area", "area_hectare", "area_are", "1", "100"),
+    ("Area", "area_hectare", "area_square_meter", "1", "10000"),
+    # Area - customary and customary land
+    ("Area", "area_square_foot", "area_square_inch", "1", "144"),
+    ("Area", "area_square_yard", "area_square_foot", "1", "9"),
+    ("Area", "area_square_mile", "area_acre", "1", "640"),
+    ("Area", "area_acre", "area_square_rod", "1", "160"),
+    ("Area", "area_square_rod", "area_square_yard", "1", "30.25"),
+    # Area - across the 1 in2 = 0.00064516 m2 bridge
+    ("Area", "area_square_inch", "area_square_centimeter", "1", "6.4516"),
+    ("Area", "area_acre", "area_square_foot", "1", "43560"),
+    ("Area", "area_acre", "area_square_meter", "1", "4046.8564224"),
+    ("Area", "area_acre", "area_hectare", "1", "0.40468564224"),
     # Weight - avoirdupois
     ("Weight", "weight_pound", "weight_gram", "1", "453.59237"),
     ("Weight", "weight_ounce", "weight_grain", "1", "437.5"),

@@ -122,6 +122,27 @@ async def test_weight_conversion_page_converts_as_you_type(
     ).count == 1
 
 
+async def test_area_conversion_page_converts_as_you_type(
+    flet_app: ftt.FletTestApp,
+) -> None:
+    tester = flet_app.tester
+    await tester.pump_and_settle()
+
+    await open_page(tester, "Area Conversion")
+    assert (await tester.find_by_key("conversion-value")).count == 1
+
+    # mm2 -> cm2 is that group's default pair: 100 mm2 must read as exactly 1 cm2.
+    await tester.enter_text(await tester.find_by_key("conversion-value"), "100")
+    await tester.pump_and_settle()
+
+    assert (await tester.find_by_text("100 → 1")).count == 1
+    assert (
+        await tester.find_by_text(
+            hop_line("area_square_millimeter", "area_square_centimeter")
+        )
+    ).count == 1
+
+
 async def test_editing_the_value_reconverts_and_clearing_it_stays_quiet(
     flet_app: ftt.FletTestApp,
 ) -> None:

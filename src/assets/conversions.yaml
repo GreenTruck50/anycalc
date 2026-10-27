@@ -386,6 +386,60 @@ units:
       - name: "Gallon (imperial)"
         symbol: "gal"
         id: "volume_imperial_gallon"
+  - name: "Area"
+    units:
+      # Metric square units
+      - name: "Square Millimeter"
+        symbol: "mm²"
+        id: "area_square_millimeter"
+      - name: "Square Centimeter"
+        symbol: "cm²"
+        id: "area_square_centimeter"
+      - name: "Square Decimeter"
+        symbol: "dm²"
+        id: "area_square_decimeter"
+      - name: "Square Meter"
+        symbol: "m²"
+        id: "area_square_meter"
+      - name: "Square Kilometer"
+        symbol: "km²"
+        id: "area_square_kilometer"
+      - name: "Square Micrometer"
+        symbol: "μm²"
+        id: "area_square_micrometer"
+
+      # Metric land units - the are is exactly 100 m2, the hectare exactly 100 a
+      - name: "Are"
+        symbol: "a"
+        id: "area_are"
+      - name: "Hectare"
+        symbol: "ha"
+        id: "area_hectare"
+
+      # Imperial / US customary square units
+      - name: "Square Inch"
+        symbol: "in²"
+        id: "area_square_inch"
+      - name: "Square Foot"
+        symbol: "ft²"
+        id: "area_square_foot"
+      - name: "Square Yard"
+        symbol: "yd²"
+        id: "area_square_yard"
+      - name: "Square Mile"
+        symbol: "mi²"
+        id: "area_square_mile"
+
+      # Land measures - 1 acre = 4840 yd2 = 4 rood = 160 sq rod, 1 rood = 40 sq rod
+      - name: "Acre"
+        symbol: "ac"
+        id: "area_acre"
+      - name: "Rood"
+        symbol: "ro"
+        id: "area_rood"
+      - name: "Square Rod"
+        symbol: "rd²"
+        id: "area_square_rod"
   - name: "Weight"
     units:
       # Metric units
@@ -1140,6 +1194,97 @@ conversions:
         input_unit_id: "volume_us_teaspoon"
         output_unit_id: "volume_milliliter"
         formula: "x * 4.92892159375"
+
+  - name: "Area Conversion"
+    icon: "ft.Icons.ASPECT_RATIO"
+    description: "Convert between square meters, square feet, acres, hectares, etc."
+    formulas:
+      # Metric square units - each hop is the square of the length hop, so the
+      # factor is a power of ten and exact by definition of the SI prefixes.
+      1:
+        type: "MD"
+        input_unit_id: "area_square_millimeter"
+        output_unit_id: "area_square_centimeter"
+        formula: "x / 100"
+      2:
+        type: "MD"
+        input_unit_id: "area_square_centimeter"
+        output_unit_id: "area_square_decimeter"
+        formula: "x / 100"
+      3:
+        type: "MD"
+        input_unit_id: "area_square_decimeter"
+        output_unit_id: "area_square_meter"
+        formula: "x / 100"
+      4:
+        type: "MD"
+        input_unit_id: "area_square_meter"
+        output_unit_id: "area_square_kilometer"
+        formula: "x / 1000000"
+      5:
+        type: "MD"
+        input_unit_id: "area_square_micrometer"
+        output_unit_id: "area_square_millimeter"
+        formula: "x / 1000000"
+
+      # Metric land units - the are is exactly 100 m2 and the hectare exactly
+      # 100 a, so both hops are powers of ten as well.
+      6:
+        type: "MD"
+        input_unit_id: "area_square_meter"
+        output_unit_id: "area_are"
+        formula: "x / 100"
+      7:
+        type: "MD"
+        input_unit_id: "area_are"
+        output_unit_id: "area_hectare"
+        formula: "x / 100"
+
+      # The bridge to the customary units - 1 in = 25.4 mm exactly, so
+      # 1 in2 = 0.00064516 m2 exactly. Dividing by that literal is exact, and so
+      # is the walk of this edge backwards, which multiplies by it.
+      8:
+        type: "MD"
+        input_unit_id: "area_square_meter"
+        output_unit_id: "area_square_inch"
+        formula: "x / 0.00064516"
+
+      # Imperial / US customary square units - every hop is an exact integer, and
+      # the group is a tree, so a route that has to divide by one of these is a
+      # route whose own factor is not a decimal either. Nothing here is rounded.
+      9:
+        type: "MD"
+        input_unit_id: "area_square_inch"
+        output_unit_id: "area_square_foot"
+        formula: "x / 144"
+      10:
+        type: "MD"
+        input_unit_id: "area_square_foot"
+        output_unit_id: "area_square_yard"
+        formula: "x / 9"
+      11:
+        type: "MD"
+        input_unit_id: "area_square_yard"
+        output_unit_id: "area_square_mile"
+        formula: "x / 3097600"
+      12:
+        type: "MD"
+        input_unit_id: "area_square_yard"
+        output_unit_id: "area_acre"
+        formula: "x / 4840"
+
+      # Land measures, chained away from the yard so no hop needs the repeating
+      # 30.25 sq rod per sq yard: 1 acre = 4 rood and 1 rood = 40 sq rod.
+      13:
+        type: "MD"
+        input_unit_id: "area_acre"
+        output_unit_id: "area_rood"
+        formula: "x * 4"
+      14:
+        type: "MD"
+        input_unit_id: "area_rood"
+        output_unit_id: "area_square_rod"
+        formula: "x * 40"
 
   - name: "Weight Conversion"
     icon: "ft.Icons.BALANCE"

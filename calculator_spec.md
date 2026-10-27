@@ -67,6 +67,37 @@ There should be a conversions.yaml file that says "There should be this tab with
   carries the most digits the engine can parse (3.2615637771674 light-years) and
   is excluded from the exactness sweep, which otherwise covers the whole group.
 
+## Area conversions
+
+- Offer an "Area Conversion" group whose drawer entry uses the `ASPECT_RATIO`
+  icon and whose description reads "Convert between square meters, square feet,
+  acres, hectares, etc.".
+- Cover metric square units (square micrometre, square millimetre, square
+  centimetre, square decimetre, square metre, square kilometre), the metric land
+  units are and hectare, the customary square units square inch, square foot,
+  square yard and square mile, and the land measures acre, rood and square rod.
+- Open the form on the group's first two units, square millimetre to square
+  centimetre, and convert 100 mm2 to exactly 1 cm2 there.
+- Use the legal definition of each unit as the formula factor and never a rounded
+  approximation of it: 1 in = 2.54 mm (so 1 in2 = 0.00064516 m2 exactly),
+  1 ft2 = 144 in2, 1 yd2 = 9 ft2, 1 mi2 = 3097600 yd2, 1 acre = 4840 yd2,
+  1 acre = 4 rood = 160 sq rod, 1 rood = 40 sq rod, 1 are = 100 m2 and
+  1 ha = 100 a.
+- Route the land measures acre -> rood -> square rod instead of wiring the square
+  rod to the square yard: 1 yd2 = 30.25 sq rod, and walking that edge backwards
+  would have to divide by 121, which is not a decimal - so square rod -> square
+  yard would come out repeating even though its exact factor, 30.25, terminates.
+  The chained form keeps every hop an integer multiply or an integer divide that
+  the route's own exact factor absorbs, the same rule the Volume group follows
+  with mi3 -> yd3 -> ft3 -> in3.
+- Hold the Area group to the same exactness sweep as Volume and Weight: of the
+  210 ordered pairs of its 15 units, the 139 whose true factor is a terminating
+  decimal must come out bit for bit right. The remaining 71 - every pair that
+  crosses the metric/customary boundary, plus ratios such as in2 -> ft2 whose
+  exact factor is 1/144 - repeat and are left to the engine's 50-digit rounding.
+- Keep Area units inside the Area group: an area unit and a length or volume unit
+  stay an error, the way Volume and Length do.
+
 ## Conversion chain of operations
 
 - Below the conversion result, show the chain of operations that produced it: a
@@ -194,8 +225,8 @@ There should be a conversions.yaml file that says "There should be this tab with
 
 - Verify a change with the Flet tooling on the host and stop there: `flet run`
   starts the app to look at it, `flet test` runs the whole suite, and
-  `flet test -k engine` the two engine files (the fast check - 178 tests in about
-  three seconds). Give the full suite about six minutes (185 tests; each UI test
+  `flet test -k engine` the two engine files (the fast check - 195 tests in about
+  three seconds). Give the full suite about six minutes (204 tests; each UI test
   boots its own app host), so a `flet test` that runs for minutes is working, not
   hung. No emulator, device or APK is involved in this path, and it is
   what a change is judged by unless Android testing is asked for; the device route
