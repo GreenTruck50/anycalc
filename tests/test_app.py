@@ -41,6 +41,9 @@ knowing before adding a test here:
   the parse-failure branch (a value that is neither empty nor a number) is not
   reachable from a desktop test and is deliberately left untested here.
 * Screenshot goldens are Android/iOS only, so there are none here.
+* ``find_by_text_containing`` matches inside a *rendered span*, so a string that
+  spans a line wrap in a long ``Text`` is never found. Assertions on the unit
+  guidance notes therefore use short fragments, never a whole sentence.
 """
 
 import flet.testing as ftt
@@ -102,6 +105,13 @@ async def test_volume_conversion_page_converts_as_you_type(
     ).count == 1
     assert (await tester.find_by_text("1000 → 1")).count == 1
 
+    # Both units this page opens on carry a guidance note, so the note block is
+    # visible without touching a dropdown. Assert on short fragments: a long
+    # guidance line wraps, and the finder only matches inside one rendered span.
+    assert (await tester.find_by_text("UNIT GUIDANCE")).count == 1
+    assert (await tester.find_by_text_containing("Exactly 1 µL")).count == 1
+    assert (await tester.find_by_text_containing("Exactly 1 mL")).count == 1
+
 
 async def test_weight_conversion_page_converts_as_you_type(
     flet_app: ftt.FletTestApp,
@@ -120,6 +130,9 @@ async def test_weight_conversion_page_converts_as_you_type(
     assert (
         await tester.find_by_text(hop_line("weight_microgram", "weight_milligram"))
     ).count == 1
+
+    # No Weight unit carries a guidance line, so no note block is shown there.
+    assert (await tester.find_by_text("UNIT GUIDANCE")).count == 0
 
 
 async def test_area_conversion_page_converts_as_you_type(

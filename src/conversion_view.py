@@ -60,6 +60,9 @@ class ConversionView:
             self.result_field.error = None
             self.result_field.value = ""
             self.clear_chain()
+            # The notes follow the units, not the number, so they are refreshed
+            # before the empty-value and half-typed-value early returns below.
+            self.refresh_guidance()
 
             input_text = (self.input_field.value or "").strip()
             if not input_text:
@@ -114,12 +117,23 @@ class ConversionView:
         # Both dropdowns re-convert live: they point at the handler defined
         # above, because an on_select handler is looked up when the control is
         # built.
+        #
+        # A Flutter DropdownMenu sizes its own box to its widest option and
+        # ignores the width its parent offers it, unless `expandedInsets` is set
+        # - which Flet only sends when the control has `expand` (dropdown.dart:
+        # expandedInsets = expand > 0 ? getPadding("expanded_insets", zero) :
+        # null). `expand` inside a Column would stretch it vertically, so each
+        # dropdown goes into a Row of its own, where `expand` is the horizontal
+        # axis and the Row already spans the page. With that the box matches the
+        # value and result fields at any window width instead of stopping short
+        # at the length of its longest unit name.
         self.source_dropdown = ft.Dropdown(
             key="conversion-from",
             label="From",
             value=self.units[0]["id"],
             options=unit_options,
             on_select=run_conversion,
+            expand=True,
         )
         self.target_dropdown = ft.Dropdown(
             key="conversion-to",
@@ -127,6 +141,23 @@ class ConversionView:
             value=self.units[1]["id"] if len(self.units) > 1 else self.units[0]["id"],
             options=unit_options,
             on_select=run_conversion,
+            expand=True,
+        )
+
+        def stretched(dropdown: ft.Dropdown) -> ft.Row:
+            """Wrap a dropdown so the page's stretch reaches its painted box."""
+
+            return ft.Row([dropdown])
+
+        # The two selected units' notes about where that unit is actually used -
+        # a US cup is not an Australian cup, a US tablespoon is not an Australian
+        # one. Shown only for units that carry a guidance line in the YAML.
+        self.units_by_id = {unit["id"]: unit for unit in self.units}
+        self.guidance_lines = ft.Column(
+            [],
+            key="conversion-guidance",
+            spacing=4,
+            visible=False,
         )
 
         def swap_units(e) -> None:
@@ -164,6 +195,8 @@ class ConversionView:
 
         icon_name = self.conversion["icon"].rsplit(".", 1)[-1]
         icon = getattr(ft.Icons, icon_name)
+        # The page opens already showing the notes for the units it opens on.
+        self.refresh_guidance()
         return ft.Column(
             [
                 ft.Row(
@@ -179,9 +212,10 @@ class ConversionView:
                 ),
                 ft.Text(self.conversion["description"], color=TEXT_MUTED),
                 self.input_field,
-                self.source_dropdown,
+                stretched(self.source_dropdown),
                 self.swap_button,
-                self.target_dropdown,
+                stretched(self.target_dropdown),
+                self.guidance_lines,
                 ft.Row(
                     [
                         ft.Icon(
@@ -213,6 +247,29 @@ class ConversionView:
     def clear_chain(self) -> None:
         self.chain_list.controls = []
         self.chain_view.visible = False
+
+    def refresh_guidance(self) -> None:
+        """Note, for each selected unit, where that unit is the one to reach for.
+
+        A recipe's "cup" or "tablespoon" is a different volume depending on the
+        country it was written for, so the YAML carries a note per unit and the
+        page shows the notes of the two units currently selected. Units without a
+        note - the metric cubic units, most of the weight group - add nothing.
+        """
+
+        notes: list[ft.Control] = []
+        seen: set[str] = set()
+        for unit_id in (self.source_dropdown.value, self.target_dropdown.value):
+            guidance = self.units_by_id.get(unit_id, {}).get("guidance")
+            if not guidance or guidance in seen:
+                continue
+            seen.add(guidance)
+            label = self.unit_labels.get(unit_id, unit_id)
+            notes.append(ft.Text(f"{label}: {guidance}", size=11, color=TEXT_SOFT))
+        if notes:
+            notes.insert(0, ft.Text("UNIT GUIDANCE", size=10, color=TEXT_MUTED))
+        self.guidance_lines.controls = notes
+        self.guidance_lines.visible = bool(notes)
 
     def chain_card(self, lines: list[ft.Control]) -> ft.Container:
         return ft.Container(

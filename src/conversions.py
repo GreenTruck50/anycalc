@@ -53,6 +53,13 @@ def load_conversion_config() -> tuple[list[dict[str, Any]], list[dict[str, Any]]
                 raise ValueError("Each conversion unit must define a name, symbol, and id")
             if unit["id"] in unit_ids:
                 raise ValueError(f"Duplicate conversion unit id: {unit['id']}")
+            guidance = unit.get("guidance")
+            if guidance is not None and (
+                not isinstance(guidance, str) or not guidance.strip()
+            ):
+                raise ValueError(
+                    f"Guidance for conversion unit {unit['id']} must be text"
+                )
             unit_ids.add(unit["id"])
 
     for conversion in conversions:

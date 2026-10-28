@@ -27,6 +27,10 @@ There should be a conversions.yaml file that says "There should be this tab with
   value field, the two unit dropdowns, the swap button, the result field and the
   chain cards all stretch to the available width - the way the history cards in
   the drawer do - rather than carrying fixed widths of their own.
+- Reach that width on the dropdowns by wrapping each one in a row: a bare Flet
+  `Dropdown` sizes its painted box to its own content and ignores the parent
+  column's cross-axis stretch, which is why the value field grows on a full
+  screen while a bare dropdown stays put.
 
 - Show the selected conversion form in the main content area used by the
   calculators, rather than in a popup.
@@ -38,6 +42,11 @@ There should be a conversions.yaml file that says "There should be this tab with
   liquid units, US dry units, and the petroleum barrel.
 - Offer a "Weight Conversion" group covering metric units, avoirdupois units,
   troy units and apothecaries' units.
+- Cover the Australian and older British culinary measures in the Volume group:
+  the Australian and New Zealand tablespoon of 20 mL - twice the metric
+  tablespoon every other metric country uses, so using 15 mL flattens an
+  Australian recipe - and the 10 mL dessertspoon of older British and
+  Australian cookbooks. Define both directly in milliliters, by exact integers.
 - Use the legal definition of a unit as the formula factor and never a rounded
   approximation of it: 1 in = 2.54 cm (so 1 in3 = 16.387064 cm3 exactly),
   1 US liquid gal = 231 in3, 1 US dry gal = 268.8025 in3, 1 imperial gal =
@@ -97,6 +106,22 @@ There should be a conversions.yaml file that says "There should be this tab with
   exact factor is 1/144 - repeat and are left to the engine's 50-digit rounding.
 - Keep Area units inside the Area group: an area unit and a length or volume unit
   stay an error, the way Volume and Length do.
+
+## Unit guidance notes
+
+- A unit may carry a `guidance` line in `src/assets/conversions.yaml`: one short
+  sentence saying which country or which kind of source actually uses that unit,
+  so a reader can tell from where a recipe comes which of the same-named units to
+  pick. A US cup is 236.6 mL, an Australian one 250 mL, and a US tablespoon 14.8
+  mL against the Australian 20 mL.
+- The conversion form shows the guidance of the two selected units under the unit
+  dropdowns, behind a "Unit guidance" caption, each line naming the unit it
+  belongs to. Units without a guidance line add nothing, so groups such as Weight
+  show no block at all.
+- Refresh the notes whenever either unit changes, including on the swap button,
+  and show them for the pair the page opens on - independently of the value: an
+  empty or half-typed value clears the result and the chain but never the notes.
+- A `guidance` value must be non-empty text or loading the configuration fails.
 
 ## Conversion chain of operations
 

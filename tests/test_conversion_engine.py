@@ -65,6 +65,8 @@ VOLUME_ML = {
     "volume_kiloliter": F(10**6),
     "volume_metric_teaspoon": F(5),
     "volume_metric_tablespoon": F(15),
+    "volume_australian_tablespoon": F(20),
+    "volume_dessert_spoon": F(10),
     "volume_metric_cup": F(250),
     "volume_us_legal_cup": F(240),
     "volume_cubic_inch": INCH3_ML,
