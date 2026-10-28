@@ -7,6 +7,7 @@ Never change the UI based on the specs file
 Use tools as much as possible and not use commands where possible.
 Use ripgrep instead of grep when possible (rg command)
 Fix any errors or pylance warnings if possible before finishing.
+If I give a link, fetch the content from it and use it as reference.
 If you need clarification from me, or my reasoning doesn't make sense, ask me!
 Keep pyproject.toml updated (runtime dependencies, the `[tool.flet]` build config and the `[tool.flet.app]` entry point `path = "src"` / `module = "main"`, plus the `[tool.pytest.ini_options]` config - requirements.txt is gone). There is deliberately **no `anycalc` console script**: the app is not installed as a Python package, so do not re-add `[project.scripts]`.
 
