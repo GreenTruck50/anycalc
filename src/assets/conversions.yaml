@@ -66,7 +66,7 @@ units:
         symbol: "ns"
         id: "time_nanosecond"
       - name: "Microsecond"
-        symbol: "µs"
+        symbol: "μs"
         id: "time_microsecond"
       - name: "Millisecond"
         symbol: "ms"
@@ -242,18 +242,6 @@ units:
       - name: "Yobibyte"
         symbol: "YiB"
         id: "data_yobibyte"
-      - name: "Robibit"
-        symbol: "Ribit"
-        id: "data_robibit"
-      - name: "Robibyte"
-        symbol: "RiB"
-        id: "data_robibyte"
-      - name: "Quebibit"
-        symbol: "Qibit"
-        id: "data_quebibit"
-      - name: "Quebibyte"
-        symbol: "QiB"
-        id: "data_quebibyte"
   - name: "Volume"
     units:
       # Metric cubic units
@@ -543,7 +531,7 @@ units:
 
       # Apothecaries' units
       - name: "Scruple (apothecary)"
-        symbol: "㉈"
+        symbol: "℈"
         id: "weight_scruple"
       - name: "Dram (apothecary)"
         symbol: "ℨ"
@@ -796,30 +784,32 @@ conversions:
         input_unit_id: "length_light_year"
         output_unit_id: "length_meter"
         formula: "x * 9460730472580800"
-      # A parsec is 648000/pi astronomical units, so its factor is not a rational
-      # number at all. This is the one Length hop that cannot be written exactly,
-      # and it carries the most digits the engine can parse.
       14:
-        type: "MD"
-        input_unit_id: "length_light_year"
+        type: "UD"
+        input_unit_id: "length_astronomical_unit"
         output_unit_id: "length_parsec"
-        formula: "x / 3.2615637771674"
+        formula: "x / (648000 / pi)"
       15:
+        type: "UD"
+        input_unit_id: "length_astronomical_unit"
+        output_unit_id: "length_parsec"
+        formula: "x * (648000 / pi)"
+      16:
         type: "MD"
         input_unit_id: "length_parsec"
         output_unit_id: "length_kiloparsec"
         formula: "x / 1000"
-      16:
+      17:
         type: "MD"
         input_unit_id: "length_kiloparsec"
         output_unit_id: "length_megaparsec"
         formula: "x / 1000"
-      17:
+      18:
         type: "MD"
         input_unit_id: "length_megaparsec"
         output_unit_id: "length_gigaparsec"
         formula: "x / 1000"
-      18:
+      19:
         type: "MD"
         input_unit_id: "length_terameter"
         output_unit_id: "length_meter"
@@ -863,7 +853,7 @@ conversions:
         type: "MD"
         input_unit_id: "time_day"
         output_unit_id: "time_monthavg"
-        formula: "x / 30.44"
+        formula: "x / 30.436875"
       8:
         type: "MD"
         input_unit_id: "time_day"
@@ -1033,16 +1023,6 @@ conversions:
         input_unit_id: "data_zebibyte"
         output_unit_id: "data_yobibyte"
         formula: "x / 1024"
-      21:
-        type: "MD"
-        input_unit_id: "data_yobibyte"
-        output_unit_id: "data_robibyte"
-        formula: "x / 1024"
-      22:
-        type: "MD"
-        input_unit_id: "data_robibyte"
-        output_unit_id: "data_quebibyte"
-        formula: "x / 1024"
 
       # Decimal Bit Units
       23:
@@ -1136,16 +1116,6 @@ conversions:
         type: "MD"
         input_unit_id: "data_zebibit"
         output_unit_id: "data_yobibit"
-        formula: "x / 1024"
-      41:
-        type: "MD"
-        input_unit_id: "data_yobibit"
-        output_unit_id: "data_robibit"
-        formula: "x / 1024"
-      42:
-        type: "MD"
-        input_unit_id: "data_robibit"
-        output_unit_id: "data_quebibit"
         formula: "x / 1024"
 
   - name: "Volume Conversion"
