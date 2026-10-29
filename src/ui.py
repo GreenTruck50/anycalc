@@ -319,18 +319,32 @@ class AnycalcApp:
         )
 
     def _build_navigation_drawer(self) -> None:
-        """The start drawer: the two calculators, then every conversion entry."""
+        """The start drawer: the title with its tagline, the two calculators, then
+        every conversion entry."""
 
         self.drawer = ft.NavigationDrawer(
             selected_index=0,
             controls=[
                 ft.Container(
-                    content=ft.Text(
-                        "AnythingCalculator",
-                        size=22,
-                        weight=ft.FontWeight.BOLD,
+                    content=ft.Column(
+                        [
+                            ft.Text(
+                                "AnythingCalculator",
+                                size=22,
+                                weight=ft.FontWeight.BOLD,
+                            ),
+                            ft.Text(
+                                "Calculate anything.",
+                                size=12,
+                                color=TEXT_MUTED,
+                            ),
+                        ],
+                        spacing=2,
                     ),
-                    padding=20,
+                    # Tighter vertical padding than the old title-only block: the
+                    # tagline costs the scrolling list a line of height, and every
+                    # pixel here decides whether the last drawer entries render.
+                    padding=ft.Padding.symmetric(horizontal=20, vertical=10),
                 ),
                 ft.Divider(),
                 ft.Container(
@@ -372,14 +386,6 @@ class AnycalcApp:
                     )
                     for conversion in self.conversion_options
                 ],
-                ft.Divider(),
-                ft.Container(
-                    content=ft.Text(
-                        "Calculate anything.",
-                        color=TEXT_MUTED,
-                    ),
-                    padding=16,
-                ),
             ],
             on_change=self.handle_drawer_change,
         )
