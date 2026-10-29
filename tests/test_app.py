@@ -44,9 +44,15 @@ knowing before adding a test here:
 * ``find_by_text_containing`` matches inside a *rendered span*, so a string that
   spans a line wrap in a long ``Text`` is never found. Assertions on the unit
   guidance notes therefore use short fragments, never a whole sentence.
+* The drawer's entries live in a list that scrolls, and only the ones inside the
+  window height get rendered, so a conversion group low enough in that list cannot
+  be opened from a UI test at all - the tester has neither scroll nor drag. Such a
+  page test is skipped with a reason instead of failing (as the Force one is), and
+  the group stays covered by the engine tests.
 """
 
 import flet.testing as ftt
+import pytest
 
 from conversions import load_conversion_config
 
@@ -65,7 +71,12 @@ def hop_line(source_id: str, target_id: str, index: int = 1) -> str:
 
 
 async def open_page(tester: ftt.Tester, label: str) -> None:
-    """Open the drawer and select the entry with this label."""
+    """Open the drawer and select the entry with this label.
+
+    Only entries the window height actually renders can be found - the drawer's
+    list scrolls, but the remote tester has no scroll or drag, so an entry past
+    the fold is out of reach for a UI test. See the skip on the Force page test.
+    """
 
     await tester.tap(await tester.find_by_key("menu-button"))
     await tester.pump_and_settle()
@@ -154,6 +165,60 @@ async def test_area_conversion_page_converts_as_you_type(
             hop_line("area_square_millimeter", "area_square_centimeter")
         )
     ).count == 1
+
+
+async def test_energy_conversion_page_converts_as_you_type(
+    flet_app: ftt.FletTestApp,
+) -> None:
+    tester = flet_app.tester
+    await tester.pump_and_settle()
+
+    await open_page(tester, "Energy Conversion")
+    assert (await tester.find_by_key("conversion-value")).count == 1
+
+    # joule -> kilojoule is that group's default pair: 1000 J must read as 1 kJ.
+    await tester.enter_text(await tester.find_by_key("conversion-value"), "1000")
+    await tester.pump_and_settle()
+
+    assert (await tester.find_by_text("1000 → 1")).count == 1
+    assert (
+        await tester.find_by_text(hop_line("energy_joule", "energy_kilojoule"))
+    ).count == 1
+
+    # Both default units carry a guidance note, so the block shows unasked.
+    assert (await tester.find_by_text("UNIT GUIDANCE")).count == 1
+    assert (await tester.find_by_text_containing("one newton acting")).count == 1
+    assert (await tester.find_by_text_containing("food label")).count == 1
+
+
+@pytest.mark.skip(
+    reason="'Force Conversion' is the ninth drawer entry and the drawer list is "
+    "taller than the host window, so that entry never renders - the test host has "
+    "neither scroll nor drag, so the page cannot be opened from a UI test. Its "
+    "arithmetic is covered by the Force sweep and reference values in "
+    "tests/test_conversion_engine.py."
+)
+async def test_force_conversion_page_converts_as_you_type(
+    flet_app: ftt.FletTestApp,
+) -> None:
+    tester = flet_app.tester
+    await tester.pump_and_settle()
+
+    await open_page(tester, "Force Conversion")
+    assert (await tester.find_by_key("conversion-value")).count == 1
+
+    # newton -> kilonewton is that group's default pair: 1000 N must read as 1 kN.
+    await tester.enter_text(await tester.find_by_key("conversion-value"), "1000")
+    await tester.pump_and_settle()
+
+    assert (await tester.find_by_text("1000 → 1")).count == 1
+    assert (
+        await tester.find_by_text(hop_line("force_newton", "force_kilonewton"))
+    ).count == 1
+
+    assert (await tester.find_by_text("UNIT GUIDANCE")).count == 1
+    assert (await tester.find_by_text_containing("accelerates 1 kg")).count == 1
+    assert (await tester.find_by_text_containing("bolt, rope")).count == 1
 
 
 async def test_editing_the_value_reconverts_and_clearing_it_stays_quiet(

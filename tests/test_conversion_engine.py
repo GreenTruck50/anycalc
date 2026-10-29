@@ -5,15 +5,18 @@ and drive the conversion graph and the Decimal arithmetic straight in the host
 process. They are the cheap half of the suite; ``tests/test_app.py`` drives the
 same code through the real built app.
 
-The exactness sweep is the load-bearing test. Every unit in the Volume, Area and
-Weight groups is defined by law (NIST Handbook 44, the 1959 international
-yard-and-pound agreement), so each pair's factor is an exact rational number.
-Whenever that rational has a terminating decimal expansion, the value the app
-produces must be *bit for bit* that decimal - which is what catches a factor
-that somebody typed in rounded, or a hop that divides where it should multiply.
-The Length group gets its own, narrower sweep: a parsec is 648000/pi
+The exactness sweep is the load-bearing test. Every unit in the Volume, Area,
+Weight, Energy and Force groups is defined by law (NIST Handbook 44, the 1959
+international yard-and-pound agreement, the International Table calorie and
+Btu, standard gravity, the 2019 SI), so each pair's factor is an exact rational
+number. Whenever that rational has a terminating decimal expansion, the value
+the app produces must be *bit for bit* that decimal - which is what catches a
+factor that somebody typed in rounded, or a hop that divides where it should
+multiply. The Length group gets its own, narrower sweep: a parsec is 648000/pi
 astronomical units, so the parsec family has no rational metre to be measured
-against and is left out.
+against and is left out. The same single exception exists in Energy - the
+thermochemical Btu carries a 5/9, so it never ends as a decimal and gets its
+own test instead.
 """
 
 import itertools
@@ -48,6 +51,17 @@ US_DRY_GALLON_ML = F(2688025, 10**4) * INCH3_ML   # US dry gallon = 2688025 in³
 IMP_GALLON_ML = F(454609, 100)         # imperial gallon = 4.54609 L exactly
 POUND_G = F(45359237, 10**5)         # 1 lb = 453.59237 g exactly
 GRAIN_G = F(6479891, 10**8)          # 1 gr = 64.79891 mg exactly
+POUND_KG = F(45359237, 10**8)        # 1 lb = 0.45359237 kg exactly (1959 agreement)
+FOOT_M = F(3048, 10**4)              # 1 ft = 304.8 mm exactly (1959 agreement)
+GRAVITY = F(980665, 10**5)           # standard gravity: 9.80665 m/s2 by definition
+LBF_N = POUND_KG * GRAVITY           # 1 lbf = 4.4482216152605 N exactly
+POUNDAL_N = POUND_KG * FOOT_M        # 1 pdl = 0.138254954376 N exactly
+FOOT_POUND_FORCE_J = LBF_N * FOOT_M  # 1 ft-lbf = 1.3558179483314004 J exactly
+CALORIE_IT_J = F(41868, 10**4)       # 1 cal (IT) = 4.1868 J exactly
+CALORIE_TH_J = F(4184, 1000)         # 1 cal (th) = 4.184 J exactly
+CALORIE_15_J = F(41855, 10**4)       # 1 cal (15 C) = 4.1855 J exactly
+BTU_IT_J = F(105505585262, 10**8)    # 1 Btu (IT) = 1055.05585262 J exactly
+BTU_TH_J = POUND_G * F(5, 9) * CALORIE_TH_J   # 1054.350264488... J - repeating
 
 # Volume factors keyed by unit id, in millilitres (= cubic centimetres).
 VOLUME_ML = {
@@ -71,6 +85,7 @@ VOLUME_ML = {
     "volume_us_legal_cup": F(240),
     "volume_cubic_inch": INCH3_ML,
     "volume_cubic_foot": 1728 * INCH3_ML,
+    "volume_ccf": 100 * 1728 * INCH3_ML,          # 1 ccf = 100 ft³ exactly
     "volume_cubic_yard": 27 * 1728 * INCH3_ML,
     "volume_cubic_mile": F(1760**3) * 27 * 1728 * INCH3_ML,
     "volume_acre_foot": F(43560 * 1728) * INCH3_ML,   # 1 acre-foot = 43560 ft³
@@ -144,6 +159,53 @@ AREA_M2 = {
     "area_square_rod": F(4840 * 1296) * IN2_M2 / 160,
 }
 
+# Energy factors keyed by unit id, in joules. Every one of them is a defined
+# constant - the SI prefixes, the three legal calories, the International Table
+# Btu, the exact 2019 electronvolt - so the whole table is exact rationals. The
+# single exception is the thermochemical Btu: its 5/9 leaves a repeating decimal,
+# so the YAML can only carry a rounded literal and this entry is the truth the
+# rounded factor is measured against (see the test named after it).
+ENERGY_J = {
+    "energy_joule": F(1),
+    "energy_kilojoule": F(1000),
+    "energy_megajoule": F(10**6),
+    "energy_gigajoule": F(10**9),
+    "energy_erg": F(1, 10**7),
+    "energy_calorie_it": CALORIE_IT_J,
+    "energy_kilocalorie_it": 1000 * CALORIE_IT_J,
+    "energy_calorie_th": CALORIE_TH_J,
+    "energy_calorie_15": CALORIE_15_J,
+    "energy_watt_hour": F(3600),
+    "energy_kilowatt_hour": F(36 * 10**5),
+    "energy_megawatt_hour": F(36 * 10**8),
+    "energy_btu_it": BTU_IT_J,
+    "energy_btu_th": BTU_TH_J,
+    "energy_therm": F(100000) * BTU_IT_J,
+    "energy_quad": F(10**15) * BTU_IT_J,
+    "energy_horsepower_hour": F(1980000) * FOOT_POUND_FORCE_J,
+    "energy_foot_pound_force": FOOT_POUND_FORCE_J,
+    "energy_electronvolt": F(1602176634, 10**28),
+}
+
+# Force factors keyed by unit id, in newton. The gravitational metric units hang
+# off standard gravity (exactly 9.80665 m/s2) and the imperial ones off the 1959
+# pound, so both bridges are exact decimals rather than rounded ones.
+FORCE_N = {
+    "force_newton": F(1),
+    "force_kilonewton": F(1000),
+    "force_meganewton": F(10**6),
+    "force_dyne": F(1, 10**5),
+    "force_kilogram_force": GRAVITY,
+    "force_gram_force": GRAVITY / 1000,
+    "force_tonne_force": GRAVITY * 1000,
+    "force_pound_force": LBF_N,
+    "force_ounce_force": LBF_N / 16,
+    "force_poundal": POUNDAL_N,
+    "force_short_ton_force": F(2000) * LBF_N,
+    "force_long_ton_force": F(2240) * LBF_N,
+    "force_kip": F(1000) * LBF_N,
+}
+
 
 def unit_ids(conversion_name: str) -> list[str]:
     """Unit ids of the unit group that backs a conversion menu entry."""
@@ -180,7 +242,7 @@ def app_value(conversion_name: str, amount: str, source: str, target: str) -> De
 
 # --- configuration -----------------------------------------------------------
 
-def test_conversion_groups_are_the_expected_seven() -> None:
+def test_conversion_groups_are_the_expected_nine() -> None:
     assert set(CONVERSION_NAMES) == {
         "Length Conversion",
         "Time Conversion",
@@ -189,6 +251,8 @@ def test_conversion_groups_are_the_expected_seven() -> None:
         "Volume Conversion",
         "Area Conversion",
         "Weight Conversion",
+        "Energy Conversion",
+        "Force Conversion",
     }
 
 
@@ -223,11 +287,13 @@ def test_every_pair_of_units_is_reachable(conversion_name: str) -> None:
 @pytest.mark.parametrize(
     ("conversion_name", "legal_factors", "minimum_pairs"),
     [
-        ("Volume Conversion", VOLUME_ML, 600),
+        ("Volume Conversion", VOLUME_ML, 700),
         ("Area Conversion", AREA_M2, 130),
         ("Weight Conversion", WEIGHT_G, 200),
+        ("Energy Conversion", ENERGY_J, 100),
+        ("Force Conversion", FORCE_N, 80),
     ],
-    ids=["volume", "area", "weight"],
+    ids=["volume", "area", "weight", "energy", "force"],
 )
 def test_every_terminating_factor_is_exact(
     conversion_name: str, legal_factors: dict[str, Fraction], minimum_pairs: int
@@ -314,6 +380,11 @@ REFERENCE_VALUES = [
     ("Volume", "volume_cubic_yard", "volume_cubic_foot", "1", "27"),
     ("Volume", "volume_cubic_foot", "volume_cubic_centimeter", "1", "28316.846592"),
     ("Volume", "volume_acre_foot", "volume_cubic_foot", "1", "43560"),
+    # Volume - the gas trade measure (1 ccf = 100 ft3)
+    ("Volume", "volume_ccf", "volume_cubic_foot", "1", "100"),
+    ("Volume", "volume_ccf", "volume_cubic_inch", "1", "172800"),
+    ("Volume", "volume_ccf", "volume_cubic_centimeter", "1", "2831684.6592"),
+    ("Volume", "volume_ccf", "volume_liter", "1", "2831.6846592"),
     # Area - metric and metric land
     ("Area", "area_square_meter", "area_square_centimeter", "1", "10000"),
     ("Area", "area_square_kilometer", "area_square_meter", "1", "1000000"),
@@ -350,6 +421,42 @@ REFERENCE_VALUES = [
     ("Weight", "weight_pennyweight", "weight_grain", "1", "24"),
     ("Weight", "weight_apothecaries_pound", "weight_scruple", "1", "288"),
     ("Weight", "weight_apothecaries_dram", "weight_grain", "1", "60"),
+    # Energy - metric, electrical and the exact calories
+    ("Energy", "energy_kilowatt_hour", "energy_joule", "1", "3600000"),
+    ("Energy", "energy_megajoule", "energy_kilojoule", "1", "1000"),
+    ("Energy", "energy_erg", "energy_joule", "1", "0.0000001"),
+    ("Energy", "energy_calorie_it", "energy_joule", "1", "4.1868"),
+    ("Energy", "energy_kilocalorie_it", "energy_kilojoule", "1", "4.1868"),
+    ("Energy", "energy_calorie_th", "energy_joule", "1", "4.184"),
+    ("Energy", "energy_calorie_15", "energy_joule", "1", "4.1855"),
+    ("Energy", "energy_watt_hour", "energy_kilowatt_hour", "1", "0.001"),
+    # Energy - the BTU family and the mechanical units
+    ("Energy", "energy_btu_it", "energy_joule", "1", "1055.05585262"),
+    ("Energy", "energy_therm", "energy_btu_it", "1", "100000"),
+    ("Energy", "energy_therm", "energy_joule", "1", "105505585.262"),
+    ("Energy", "energy_quad", "energy_btu_it", "1", "1000000000000000"),
+    ("Energy", "energy_foot_pound_force", "energy_joule", "1", "1.3558179483314004"),
+    ("Energy", "energy_horsepower_hour", "energy_foot_pound_force", "1", "1980000"),
+    (
+        "Energy",
+        "energy_electronvolt",
+        "energy_joule",
+        "1",
+        "0.0000000000000000001602176634",
+    ),
+    # Force - metric and gravitational metric
+    ("Force", "force_kilonewton", "force_newton", "1", "1000"),
+    ("Force", "force_dyne", "force_newton", "1", "0.00001"),
+    ("Force", "force_kilogram_force", "force_newton", "1", "9.80665"),
+    ("Force", "force_gram_force", "force_newton", "1", "0.00980665"),
+    ("Force", "force_tonne_force", "force_kilonewton", "1", "9.80665"),
+    # Force - imperial / US customary
+    ("Force", "force_pound_force", "force_newton", "1", "4.4482216152605"),
+    ("Force", "force_poundal", "force_newton", "1", "0.138254954376"),
+    ("Force", "force_ounce_force", "force_pound_force", "1", "0.0625"),
+    ("Force", "force_kip", "force_pound_force", "1", "1000"),
+    ("Force", "force_long_ton_force", "force_pound_force", "1", "2240"),
+    ("Force", "force_short_ton_force", "force_pound_force", "1", "2000"),
     # Groups that shipped before Volume / Weight - kept honest by the same tests
     ("Length", "length_mile", "length_yard", "1", "1760"),
     ("Length", "length_inch", "length_millimeter", "1", "25.4"),
@@ -544,6 +651,56 @@ def test_the_irrational_parsec_hop_keeps_its_significant_digits() -> None:
     got = app_value("Length Conversion", "1", "length_parsec", "length_light_year")
     relative_error = abs(Fraction(got) - parsec_ly) / parsec_ly
     assert relative_error < F(1, 10**13), f"{got} is off by {float(relative_error):.2e}"
+
+# --- the one Energy factor that cannot be written exactly ---------------------
+
+
+def test_the_rounded_thermochemical_btu_keeps_its_significant_digits() -> None:
+    """The Btu (th) has no exact decimal, but it must not lose digits either.
+
+    The International Table Btu is defined as exactly 1055.05585262 J, so it is
+    exact like every other Energy unit. The thermochemical Btu is instead the
+    heat for a pound of water per degree Fahrenheit - 453.59237 g x 5/9 x
+    4.184 J - and that 5/9 leaves a repeating decimal. The YAML carries a 15
+    significant digit literal, the most the engine can parse, so the answer is
+    only as good as that literal; this pins how good it has to be.
+    """
+
+    got = app_value("Energy Conversion", "1", "energy_btu_th", "energy_joule")
+    relative_error = abs(Fraction(got) - BTU_TH_J) / BTU_TH_J
+    assert relative_error < F(1, 10**12), f"{got} is off by {float(relative_error):.2e}"
+
+
+def test_the_multi_literal_foot_pound_hop_stays_exact_both_ways() -> None:
+    """A hop written as a product of two exact literals must survive reversal.
+
+    One foot-pound-force is a pound-force (exactly 4.4482216152605 N) through a
+    foot (exactly 0.3048 m). Neither factor alone is the answer, and the single
+    equivalent decimal - 1.3558179483314004 - has 17 significant digits, more
+    than the engine can parse as a literal. The product form is exact in
+    ``Decimal`` either way, forwards and reversed.
+    """
+
+    outcome = convert_units(
+        CONVERSION_BY_NAME["Energy Conversion"],
+        Decimal("1"),
+        "energy_foot_pound_force",
+        "energy_joule",
+    )
+    step, = outcome.steps
+    assert step.applied_formula == "x * 4.4482216152605 * 0.3048"
+    assert format_conversion_value(outcome.value) == "1.3558179483314004"
+
+    back = convert_units(
+        CONVERSION_BY_NAME["Energy Conversion"],
+        Decimal("1.3558179483314004"),
+        "energy_joule",
+        "energy_foot_pound_force",
+    )
+    (reverse_step,) = back.steps
+    assert reverse_step.used_backwards is True
+    assert reverse_step.applied_formula == "x / 0.3048 / 4.4482216152605"
+    assert format_conversion_value(back.value) == "1"
 
 
 
