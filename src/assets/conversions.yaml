@@ -275,6 +275,27 @@ units:
         symbol: "km³"
         id: "volume_cubic_kilometer"
 
+      # Imperial / US customary cubic units
+      - name: "Cubic Inch"
+        symbol: "in³"
+        id: "volume_cubic_inch"
+      - name: "Cubic Foot"
+        symbol: "ft³"
+        id: "volume_cubic_foot"
+      - name: "Hundred Cubic Feet"
+        symbol: "ccf"
+        id: "volume_ccf"
+        guidance: "100 ft³ - the unit a natural-gas bill is written in; roughly the heat of one therm."
+      - name: "Cubic Yard"
+        symbol: "yd³"
+        id: "volume_cubic_yard"
+      - name: "Cubic Mile"
+        symbol: "mi³"
+        id: "volume_cubic_mile"
+      - name: "Acre-Foot"
+        symbol: "acre-ft"
+        id: "volume_acre_foot"
+
       # Metric liquid units
       - name: "Microliter"
         symbol: "μL"
@@ -319,27 +340,6 @@ units:
         symbol: "cup"
         id: "volume_metric_cup"
         guidance: "250 mL - the cup of Australia, New Zealand, the UK and Canada."
-      - name: "Cup (US legal, 240 mL)"
-        symbol: "cup"
-        id: "volume_us_legal_cup"
-        guidance: "240 mL - the US nutrition-labelling cup, not the cup a US cookbook means."
-
-      # Imperial / US customary cubic units
-      - name: "Cubic Inch"
-        symbol: "in³"
-        id: "volume_cubic_inch"
-      - name: "Cubic Foot"
-        symbol: "ft³"
-        id: "volume_cubic_foot"
-      - name: "Cubic Yard"
-        symbol: "yd³"
-        id: "volume_cubic_yard"
-      - name: "Cubic Mile"
-        symbol: "mi³"
-        id: "volume_cubic_mile"
-      - name: "Acre-Foot"
-        symbol: "acre-ft"
-        id: "volume_acre_foot"
 
       # US customary liquid units
       - name: "Teaspoon (US)"
@@ -362,6 +362,10 @@ units:
         symbol: "cup"
         id: "volume_us_cup"
         guidance: "236.6 mL - the cup of US recipes, half a US pint. Metric countries use 250 mL."
+      - name: "Cup (US legal, 240 mL)"
+        symbol: "cup"
+        id: "volume_us_legal_cup"
+        guidance: "240 mL - the US nutrition-labelling cup, not the cup a US cookbook means."
       - name: "Pint (US liquid)"
         symbol: "pt"
         id: "volume_us_pint"
@@ -550,6 +554,155 @@ units:
       - name: "Pound (apothecary)"
         symbol: "℔"
         id: "weight_apothecaries_pound"
+
+  - name: "Energy"
+    units:
+      # Metric energy units - exact by definition of the SI prefixes, and the erg
+      # is exactly 1e-7 J by the CGS definitions of the gram and the centimetre.
+      - name: "Joule"
+        symbol: "J"
+        id: "energy_joule"
+        guidance: "The SI unit - one newton acting through one metre."
+      - name: "Kilojoule"
+        symbol: "kJ"
+        id: "energy_kilojoule"
+        guidance: "What a European or Australian food label prints beside the kilocalorie."
+      - name: "Megajoule"
+        symbol: "MJ"
+        id: "energy_megajoule"
+      - name: "Gigajoule"
+        symbol: "GJ"
+        id: "energy_gigajoule"
+        guidance: "The gas-industry figure - a cubic metre of natural gas is around 39 MJ."
+      - name: "Erg"
+        symbol: "erg"
+        id: "energy_erg"
+        guidance: "0.0000001 J - the CGS unit, still met in older physics texts."
+
+      # The three legal calories - all close to 4.18 J, all defined as an exact
+      # number of joules, so none of them needs a rounded factor.
+      - name: "Calorie (IT)"
+        symbol: "cal"
+        id: "energy_calorie_it"
+        guidance: "4.1868 J - the International Table calorie, the one steam and conversion tables mean."
+      - name: "Kilocalorie (IT)"
+        symbol: "kcal"
+        id: "energy_kilocalorie_it"
+        guidance: "4186.8 J - the capital-C Calorie of a food label is a kilocalorie of this kind."
+      - name: "Calorie (thermochemical)"
+        symbol: "cal"
+        id: "energy_calorie_th"
+        guidance: "4.184 J - the thermochemical calorie of chemistry tables."
+      - name: "Calorie (15 °C)"
+        symbol: "cal"
+        id: "energy_calorie_15"
+        guidance: "4.1855 J - the heat to warm 1 g of water from 14.5 to 15.5 °C; US food labelling defines its Calorie this way."
+
+      # Electrical units - a watt is a joule per second and an hour is 3600 s, so a
+      # watt-hour is exactly 3600 J and the meter reading is exact arithmetic.
+      - name: "Watt-hour"
+        symbol: "Wh"
+        id: "energy_watt_hour"
+        guidance: "3600 J exactly - one watt for one hour."
+      - name: "Kilowatt-hour"
+        symbol: "kWh"
+        id: "energy_kilowatt_hour"
+        guidance: "3.6 MJ - the unit the electricity meter counts."
+      - name: "Megawatt-hour"
+        symbol: "MWh"
+        id: "energy_megawatt_hour"
+
+      # Customary and industry units - the International Table Btu is defined as
+      # exactly 1055.05585262 J, so the therm and the quad hang off it by exact
+      # integers instead of long decimals.
+      - name: "British thermal unit (IT)"
+        symbol: "BTU"
+        id: "energy_btu_it"
+        guidance: "1055.06 J - the International Table Btu, the one behind the therm and the quad."
+      - name: "British thermal unit (thermochemical)"
+        symbol: "BTU"
+        id: "energy_btu_th"
+        guidance: "1054.35 J - the Btu of thermochemistry, about 0.07% under the IT Btu."
+      - name: "Therm"
+        symbol: "thm"
+        id: "energy_therm"
+        guidance: "100000 BTU (IT) - what a gas bill charges, and roughly the heat in one ccf of natural gas."
+      - name: "Quad"
+        symbol: "quad"
+        id: "energy_quad"
+        guidance: "1e15 BTU - national energy statistics; US demand runs near 100 quads a year."
+      - name: "Horsepower-hour"
+        symbol: "hp-h"
+        id: "energy_horsepower_hour"
+        guidance: "One mechanical horsepower for one hour - exactly 1980000 ft-lbf."
+      - name: "Foot-pound-force"
+        symbol: "ft-lbf"
+        id: "energy_foot_pound_force"
+        guidance: "1.356 J - one pound-force through one foot, the work unit of US engineering."
+      - name: "Electronvolt"
+        symbol: "eV"
+        id: "energy_electronvolt"
+        guidance: "1.602e-19 J - what an electron gains across one volt; exact since the 2019 SI."
+
+  - name: "Force"
+    units:
+      # Metric force units - the newton is kg x m/s2, so the SI prefixes are exact
+      # and the dyne is exactly 1e-5 N by the CGS definitions.
+      - name: "Newton"
+        symbol: "N"
+        id: "force_newton"
+        guidance: "The SI unit - the force that accelerates 1 kg at 1 m/s²."
+      - name: "Kilonewton"
+        symbol: "kN"
+        id: "force_kilonewton"
+        guidance: "The unit of bolt, rope and structural ratings."
+      - name: "Meganewton"
+        symbol: "MN"
+        id: "force_meganewton"
+      - name: "Dyne"
+        symbol: "dyn"
+        id: "force_dyne"
+        guidance: "0.00001 N - the CGS unit, still in surface-tension and viscosity tables."
+      - name: "Kilogram-force"
+        symbol: "kgf"
+        id: "force_kilogram_force"
+        guidance: "9.807 N - the weight of a kilogram under standard gravity; also called the kilopond."
+      - name: "Gram-force"
+        symbol: "gf"
+        id: "force_gram_force"
+        guidance: "0.00981 N - spring and watchmaking specifications."
+      - name: "Tonne-force"
+        symbol: "tf"
+        id: "force_tonne_force"
+        guidance: "1000 kgf - jack, press and anchor ratings."
+
+      # Imperial / US customary force units - pound-force is the 1959 pound under
+      # standard gravity and the poundal is that pound accelerated at 1 ft/s2, so
+      # both are exact decimals of the newton.
+      - name: "Pound-force"
+        symbol: "lbf"
+        id: "force_pound_force"
+        guidance: "4.448 N - the weight of a 1 lb mass under standard gravity."
+      - name: "Ounce-force"
+        symbol: "ozf"
+        id: "force_ounce_force"
+        guidance: "0.278 N - a sixteenth of a pound-force; spring and connector retention ratings."
+      - name: "Poundal"
+        symbol: "pdl"
+        id: "force_poundal"
+        guidance: "0.138 N - 1 lb accelerated at 1 ft/s², the absolute British unit."
+      - name: "Short ton-force"
+        symbol: "short tonf"
+        id: "force_short_ton_force"
+        guidance: "2000 lbf - US press and crane ratings; the long ton-force is 2240 lbf."
+      - name: "Long ton-force"
+        symbol: "long tonf"
+        id: "force_long_ton_force"
+        guidance: "2240 lbf - the older British engineering figure; a US short ton-force is 2000 lbf."
+      - name: "Kip"
+        symbol: "kip"
+        id: "force_kip"
+        guidance: "1000 lbf - US structural engineering, as in a 20 kip beam load."
 # Conversion Formulas
 # Each conversion item has its own menu item in the "Unit Conversions" section.
 # X is the input value.
@@ -1243,6 +1396,15 @@ conversions:
         output_unit_id: "volume_milliliter"
         formula: "x * 10"
 
+      # The gas-industry trade measure: 1 ccf is exactly 100 ft3, so it hangs off
+      # the cubic foot by an exact integer and every route through it (1 ccf =
+      # 2831684.6592 cm3) stays exact.
+      43:
+        type: "MD"
+        input_unit_id: "volume_ccf"
+        output_unit_id: "volume_cubic_foot"
+        formula: "x * 100"
+
   - name: "Area Conversion"
     icon: "ft.Icons.ASPECT_RATIO"
     description: "Convert between square meters, square feet, acres, hectares, etc."
@@ -1462,3 +1624,210 @@ conversions:
         input_unit_id: "weight_apothecaries_ounce"
         output_unit_id: "weight_apothecaries_pound"
         formula: "x / 12"
+
+  - name: "Energy Conversion"
+    icon: "ft.Icons.BOLT"
+    description: "Convert between joules, calories, kilowatt-hours, BTU, therms, etc."
+    formulas:
+      # Metric units - exact by definition of the SI prefixes, and one erg is
+      # exactly 1e-7 J.
+      1:
+        type: "MD"
+        input_unit_id: "energy_joule"
+        output_unit_id: "energy_kilojoule"
+        formula: "x / 1000"
+      2:
+        type: "MD"
+        input_unit_id: "energy_kilojoule"
+        output_unit_id: "energy_megajoule"
+        formula: "x / 1000"
+      3:
+        type: "MD"
+        input_unit_id: "energy_megajoule"
+        output_unit_id: "energy_gigajoule"
+        formula: "x / 1000"
+      4:
+        type: "MD"
+        input_unit_id: "energy_erg"
+        output_unit_id: "energy_joule"
+        formula: "x / 10000000"
+
+      # The three legal calories, each an exact number of joules: the International
+      # Table calorie (4.1868 J), the thermochemical calorie (4.184 J) and the
+      # 15 C calorie (4.1855 J). The kilocalorie is a thousand IT calories, so its
+      # hop is an exact integer.
+      5:
+        type: "MD"
+        input_unit_id: "energy_calorie_it"
+        output_unit_id: "energy_joule"
+        formula: "x * 4.1868"
+      6:
+        type: "MD"
+        input_unit_id: "energy_kilocalorie_it"
+        output_unit_id: "energy_calorie_it"
+        formula: "x * 1000"
+      7:
+        type: "MD"
+        input_unit_id: "energy_calorie_th"
+        output_unit_id: "energy_joule"
+        formula: "x * 4.184"
+      8:
+        type: "MD"
+        input_unit_id: "energy_calorie_15"
+        output_unit_id: "energy_joule"
+        formula: "x * 4.1855"
+
+      # Electrical units - a watt is a joule per second and an hour is 3600 s, so
+      # one watt-hour is exactly 3600 J and the SI prefixes above it are integers.
+      9:
+        type: "MD"
+        input_unit_id: "energy_watt_hour"
+        output_unit_id: "energy_joule"
+        formula: "x * 3600"
+      10:
+        type: "MD"
+        input_unit_id: "energy_kilowatt_hour"
+        output_unit_id: "energy_watt_hour"
+        formula: "x * 1000"
+      11:
+        type: "MD"
+        input_unit_id: "energy_megawatt_hour"
+        output_unit_id: "energy_kilowatt_hour"
+        formula: "x * 1000"
+
+      # The International Table Btu is legally exactly 1055.05585262 J, so the therm
+      # (100 000 Btu) and the quad (1e15 Btu) are reached by exact integers instead
+      # of one long decimal - the quad alone would be a 19-digit factor.
+      12:
+        type: "MD"
+        input_unit_id: "energy_btu_it"
+        output_unit_id: "energy_joule"
+        formula: "x * 1055.05585262"
+      13:
+        type: "MD"
+        input_unit_id: "energy_therm"
+        output_unit_id: "energy_btu_it"
+        formula: "x * 100000"
+      14:
+        type: "MD"
+        input_unit_id: "energy_quad"
+        output_unit_id: "energy_btu_it"
+        formula: "x * 1000000000000000"
+
+      # Mechanical units - the foot-pound-force is one pound-force (exactly
+      # 4.4482216152605 N, from the 1959 pound and standard gravity) acting through
+      # one foot (exactly 0.3048 m). Writing it as that product keeps every literal
+      # inside the 15 significant digits the engine parses; the single equivalent
+      # decimal, 1.3558179483314004, would not fit. A mechanical horsepower is
+      # 550 ft-lbf per second, so one hour of it is exactly 1980000 ft-lbf.
+      15:
+        type: "MD"
+        input_unit_id: "energy_foot_pound_force"
+        output_unit_id: "energy_joule"
+        formula: "x * 4.4482216152605 * 0.3048"
+      16:
+        type: "MD"
+        input_unit_id: "energy_horsepower_hour"
+        output_unit_id: "energy_foot_pound_force"
+        formula: "x * 1980000"
+
+      # The thermochemical Btu is the heat for 1 lb of water per 1 F, i.e.
+      # 453.59237 g x 5/9 x 4.184 J. The 5/9 leaves a repeating decimal
+      # (1054.3502644888...), so this is the one Energy factor that cannot be
+      # written exactly; the literal carries the 15 significant digits the engine
+      # can parse, which puts it within 2e-11 J of the defined value.
+      17:
+        type: "MD"
+        input_unit_id: "energy_btu_th"
+        output_unit_id: "energy_joule"
+        formula: "x * 1054.35026448889"
+
+      # The electronvolt has been exact since the 2019 SI: the elementary charge is
+      # defined as 1.602176634e-19 C, so 1 eV is exactly 1.602176634e-19 J.
+      18:
+        type: "MD"
+        input_unit_id: "energy_electronvolt"
+        output_unit_id: "energy_joule"
+        formula: "x * 1.602176634e-19"
+
+  - name: "Force Conversion"
+    icon: "ft.Icons.FITNESS_CENTER"
+    description: "Convert between newtons, pound-force, kilogram-force, dynes, kips, etc."
+    formulas:
+      # Metric units - the newton is kg x m/s2, so the SI prefixes are exact and one
+      # dyne is exactly 1e-5 N.
+      1:
+        type: "MD"
+        input_unit_id: "force_newton"
+        output_unit_id: "force_kilonewton"
+        formula: "x / 1000"
+      2:
+        type: "MD"
+        input_unit_id: "force_kilonewton"
+        output_unit_id: "force_meganewton"
+        formula: "x / 1000"
+      3:
+        type: "MD"
+        input_unit_id: "force_dyne"
+        output_unit_id: "force_newton"
+        formula: "x / 100000"
+
+      # Gravitational metric units - kilogram-force is the weight of a kilogram in
+      # standard gravity, which is defined as exactly 9.80665 m/s2. The gram-force
+      # and the tonne-force are a thousandth and a thousand of it, so only one hop
+      # carries a decimal at all.
+      4:
+        type: "MD"
+        input_unit_id: "force_kilogram_force"
+        output_unit_id: "force_newton"
+        formula: "x * 9.80665"
+      5:
+        type: "MD"
+        input_unit_id: "force_gram_force"
+        output_unit_id: "force_kilogram_force"
+        formula: "x / 1000"
+      6:
+        type: "MD"
+        input_unit_id: "force_tonne_force"
+        output_unit_id: "force_kilogram_force"
+        formula: "x * 1000"
+
+      # Imperial / US customary units - since the 1959 yard-and-pound agreement the
+      # pound is exactly 0.45359237 kg, so one pound-force is exactly
+      # 0.45359237 x 9.80665 = 4.4482216152605 N and one poundal is exactly
+      # 0.45359237 x 0.3048 = 0.138254954376 N. Both bridges are exact decimals, so
+      # no hop through them needs rounding.
+      7:
+        type: "MD"
+        input_unit_id: "force_pound_force"
+        output_unit_id: "force_newton"
+        formula: "x * 4.4482216152605"
+      8:
+        # 1 lbf = 16 ozf exactly.
+        type: "MD"
+        input_unit_id: "force_ounce_force"
+        output_unit_id: "force_pound_force"
+        formula: "x / 16"
+      9:
+        # 1 kip = 1000 lbf, the US structural engineering shorthand.
+        type: "MD"
+        input_unit_id: "force_kip"
+        output_unit_id: "force_pound_force"
+        formula: "x * 1000"
+      10:
+        # 1 short ton-force = 2000 lbf exactly.
+        type: "MD"
+        input_unit_id: "force_pound_force"
+        output_unit_id: "force_short_ton_force"
+        formula: "x / 2000"
+      11:
+        # 1 long ton-force = 2240 lbf exactly.
+        type: "MD"
+        input_unit_id: "force_pound_force"
+        output_unit_id: "force_long_ton_force"
+        formula: "x / 2240"
+      12:
+        type: "MD"
+        input_unit_id: "force_poundal"
+        output_unit_id: "force_newton"
+        formula: "x * 0.138254954376"
