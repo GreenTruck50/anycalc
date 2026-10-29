@@ -791,8 +791,8 @@ conversions:
         formula: "x / (648000 / pi)"
       15:
         type: "UD"
-        input_unit_id: "length_astronomical_unit"
-        output_unit_id: "length_parsec"
+        input_unit_id: "length_parsec"
+        output_unit_id: "length_astronomical_unit"
         formula: "x * (648000 / pi)"
       16:
         type: "MD"
