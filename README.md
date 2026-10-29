@@ -30,13 +30,16 @@ tests/                    the test suite — host-side; src/ is what gets packag
 ## Unit conversions
 
 `src/assets/conversions.yaml` defines the groups (Length, Time, Temperature,
-Data, Volume, Weight), their units and the formula between each pair of units.
-The factors are the legal definitions themselves - 1 lb = 0.45359237 kg,
-1 grain = 0.00006479891 kg, 1 US gal = 231 in³, 1 imperial gal = 4.54609 L,
-1 in³ = 16.387064 cm³, 1 in = 25.4 mm, 1 nautical mile = 1852 m - so results
-stay exact as far as `Decimal` allows. The only hop that cannot be written
-exactly is the parsec (648000/π astronomical units). The rules a new unit has to
-follow are in the "Volume and weight conversions" section of
+Data, Volume, Area, Weight, Energy, Force), their units and the formula between
+each pair of units. The factors are the legal definitions themselves -
+1 lb = 0.45359237 kg, 1 grain = 0.00006479891 kg, 1 US gal = 231 in³,
+1 imperial gal = 4.54609 L, 1 in³ = 16.387064 cm³, 1 in = 25.4 mm,
+1 nautical mile = 1852 m, 1 cal (IT) = 4.1868 J, 1 Btu (IT) = 1055.05585262 J,
+1 kWh = 3.6 MJ, 1 kgf = 9.80665 N, 1 lbf = 4.4482216152605 N - so results stay
+exact as far as `Decimal` allows. The only hops that cannot be written exactly
+are the parsec (648000/π astronomical units) and the thermochemical Btu (its 5/9
+never ends as a decimal). The rules a new unit has to follow are in the
+"Volume and weight conversions" and "Energy and force conversions" sections of
 `calculator_spec.md`.
 
 ## Setup

@@ -39,7 +39,19 @@ There should be a conversions.yaml file that says "There should be this tab with
 
 - Offer a "Volume Conversion" group covering metric cubic units, metric liquid
   units, metric and US culinary measures, US customary and imperial cubic and
-  liquid units, US dry units, and the petroleum barrel.
+  liquid units, US dry units, the petroleum barrel and the gas-industry trade
+  measure ccf (hundred cubic feet).
+- Keep that group's unit list ordered so measures of a kind sit next to each
+  other, because the list order is the order both unit dropdowns show: cubic
+  units first (metric, then imperial / US customary), then the metric liquid
+  units, then the culinary measures (metric spoons and cups, then the US
+  customary liquid ones with the US legal cup beside the US cup), then the US
+  dry units, then the imperial liquid units. The group still opens on its first
+  two units, cubic millimetre to cubic centimetre.
+- Define the hundred cubic feet (ccf), the unit a natural-gas bill is written in,
+  by exactly 100 ft3 - an integer hop off the cubic foot - and list it directly
+  after the cubic foot, so a ccf reaches every other volume unit exactly (1 ccf
+  is 2831684.6592 cm3).
 - Offer a "Weight Conversion" group covering metric units, avoirdupois units,
   troy units and apothecaries' units.
 - Cover the Australian and older British culinary measures in the Volume group:
@@ -106,6 +118,64 @@ There should be a conversions.yaml file that says "There should be this tab with
   exact factor is 1/144 - repeat and are left to the engine's 50-digit rounding.
 - Keep Area units inside the Area group: an area unit and a length or volume unit
   stay an error, the way Volume and Length do.
+
+## Energy and force conversions
+
+- Offer an "Energy Conversion" group whose drawer entry uses the `BOLT` icon and
+  whose description reads "Convert between joules, calories, kilowatt-hours, BTU,
+  therms, etc.".
+- Cover metric energy units (joule, kilojoule, megajoule, gigajoule and the CGS
+  erg), the three legal calories and the kilocalorie, the electrical watt-hour
+  with its kilo- and megawatt-hour, the International Table and thermochemical
+  British thermal units, the therm, the quad, the horsepower-hour, the
+  foot-pound-force and the electronvolt.
+- Offer a "Force Conversion" group whose drawer entry uses the `FITNESS_CENTER`
+  icon and whose description reads "Convert between newtons, pound-force,
+  kilogram-force, dynes, kips, etc.".
+- Cover metric force units (newton, kilonewton, meganewton and the CGS dyne), the
+  gravitational metric units kilogram-force, gram-force and tonne-force, and the
+  imperial / US customary pound-force, ounce-force, poundal, short ton-force,
+  long ton-force and kip.
+- Order each new group's unit list so measures of a kind sit next to each other -
+  SI prefixes together, then the CGS and gravitational metric units, then the
+  customary ones - because that list is the order both unit dropdowns show, and
+  open each form on its first two units: joule to kilojoule, newton to kilonewton.
+- Use the defined constant as the formula factor and never a rounded approximation
+  of it: 1 cal (IT) = 4.1868 J, 1 cal (thermochemical) = 4.184 J, 1 cal (15 C) =
+  4.1855 J, 1 Btu (IT) = 1055.05585262 J, 1 therm = 100000 Btu (IT), 1 quad =
+  1e15 Btu (IT), 1 Wh = 3600 J, 1 hp-h = 1980000 ft-lbf, 1 eV = 1.602176634e-19 J,
+  1 kgf = 9.80665 N (standard gravity being exactly 9.80665 m/s2), 1 lbf =
+  4.4482216152605 N, 1 pdl = 0.138254954376 N, 1 dyn = 0.00001 N, 1 kip =
+  1000 lbf, 1 short ton-force = 2000 lbf and 1 long ton-force = 2240 lbf.
+- Reach the large industry units by chained integers off their base unit rather
+  than by one long decimal: the therm and the quad hang off the Btu (IT) by 100000
+  and 1e15, and the horsepower-hour off the foot-pound-force by 1980000. The quad
+  alone would need a 19-digit factor, past what the engine can parse.
+- Write a factor that is a product of two exact short literals as that product
+  when the single equivalent decimal is too long for a literal: the
+  foot-pound-force is `x * 4.4482216152605 * 0.3048`, because its exact value
+  1.3558179483314004 J has 17 significant digits. `Decimal` multiplies both forms
+  exactly, and reversing the hop divides by each factor in turn.
+- The only Energy unit whose stored factor cannot be written exactly is the
+  thermochemical Btu: it is the heat for a pound of water per degree Fahrenheit,
+  so the 5/9 of the Fahrenheit step leaves a repeating decimal
+  (1054.3502644888... J). Its literal carries the most digits the engine can parse
+  (1054.35026448889, 15 significant digits) and a test measures that against the
+  exact rational. Every other Energy and Force factor is an exact decimal.
+- Hold both groups to the same exactness sweep as Volume, Area and Weight: of the
+  342 ordered pairs of Energy's 19 units, the 112 whose true factor is a
+  terminating decimal, and of the 156 ordered pairs of Force's 13 units, the 85
+  whose true factor is one, must come out bit for bit right.
+- Keep Energy and Force apart: there is no bridge between a joule and a newton,
+  and none between a cubic foot of gas and a therm, even though ccf and the therm
+  are both gas-bill units - the guidance lines say how they relate instead.
+- With the two new groups the drawer lists nine conversions, so its entry list is
+  taller than the window and the last entries are reached by scrolling - they live
+  in a list the drawer scrolls, not in one that truncates. The order the entries
+  appear in is the order `conversions.yaml` lists the groups. To keep as many
+  entries above that fold as possible, the drawer carries no footer line: the
+  "Calculate anything." tagline sits under the "AnythingCalculator" title at the
+  head of the drawer instead.
 
 ## Unit guidance notes
 
@@ -174,6 +244,9 @@ There should be a conversions.yaml file that says "There should be this tab with
 
 - Group the Regular Calculator and Scientific Calculator destinations under a
   Calculators heading in the navigation drawer, separate from Unit Conversions.
+- Head that drawer with the app title and, directly under it in the smaller muted
+  caption style the app bar's mode line uses, the "Calculate anything." tagline -
+  the tagline is part of that heading, not a line at the foot of the list.
 - Selecting either calculator returns the main content area to that calculator.
 
 ## Calculator keypad
@@ -284,6 +357,11 @@ There should be a conversions.yaml file that says "There should be this tab with
   `visible = False` is still findable, so removal - not hiding - is what a test
   may assert; the host window cannot be resized from a test; and a numeric text
   field filters what a test can type, so half-typed numbers never reach it.
+- The drawer's entry list scrolls, and the test host has neither scroll nor drag,
+  so a conversion group whose drawer entry falls below the host window height
+  cannot be opened from a UI test at all. Skip such a page test with a reason
+  rather than dropping it or reshuffling the groups, and leave the group covered by
+  the conversion engine tests.
 - Keep the conversion engine covered independently of the UI: every pair of units
   within a group must be reachable, every factor that is a terminating decimal
   must survive a conversion exact, and every chain hop the engine reports must
