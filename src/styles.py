@@ -22,3 +22,4 @@ TEXT_PRIMARY = "#FFFFFF"
 TEXT_MUTED = "#9CA3AF"          # captions, secondary lines, hints
 TEXT_SOFT = "#D1D5DB"           # the formula line inside a chain card
 TEXT_FAINT = "#6B7280"          # the quiet hint under the conversion form
+TEXT_ERROR = "#F28B82"          # a form that cannot be run as it stands

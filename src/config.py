@@ -10,16 +10,16 @@ from decimal import getcontext
 from pathlib import Path
 
 # Display precision for Decimal calculations
-DECIMAL_PRECISION = 50
+DECIMAL_PRECISION = 500
 
 # Maximum absolute exponent value for power operations
-MAX_EXPONENT = 1000
+MAX_EXPONENT = 5000
 
 # Maximum expression length
-MAX_EXPRESSION_LENGTH = 200
+MAX_EXPRESSION_LENGTH = 500
 
 # Maximum history items to keep
-MAX_HISTORY_ITEMS = 20
+MAX_HISTORY_ITEMS = 50
 
 # The main display line, and the small live answer shown under it while an
 # expression is being typed. The live answer is promoted to display size when

@@ -36,11 +36,26 @@ dependencies = [
     # Flet publishes Android wheels for PyYAML and its flet-libyaml helper on
     # https://pypi.flet.dev, which the build adds as an extra index.
     "PyYAML>=6.0.3",
+    # pi.py computes pi with plain Python integers, so the app needs NOTHING else
+    # in an artifact to run the Pi page. gmpy2 (mpz / isqrt / const_pi) only makes
+    # it faster, is a C extension built against GMP/MPFR, and has no wheel on
+    # https://pypi.flet.dev - listing it here would kill `flet build apk|aab` with
+    # "No matching distribution found for gmpy2", the same trap as watchdog above.
+    # It therefore lives in the [pi] extra below, and pi.py falls back to stdlib
+    # when it is absent.
 ]
 # Everything else the app imports is stdlib: ast, asyncio, math, operator, re,
-# collections, dataclasses, decimal, pathlib, typing.
+# collections, dataclasses, decimal, pathlib, threading, time, typing.
 
 [project.optional-dependencies]
+# Desktop-only accelerator for src/pi.py. Deliberately NOT a project dependency:
+# see the note in the list above - it has no Android wheel, so in the bundle it
+# would break the mobile build, while pi.py runs without it anyway. The host test
+# suite imports gmpy2 directly (it is the second opinion the digits are checked
+# against), so the dev extra below pulls it in as well.
+pi = [
+    "gmpy2>=2.3.2",
+]
 # Host / development tooling only - never shipped in an artifact. This is where
 # the `flet` command and the desktop run client live now, precisely because
 # `flet build apk|aab|ipa` pip-installs project.dependencies into the bundle and
@@ -56,6 +71,10 @@ dev = [
     # Pinned explicitly because the tests import them directly.
     "pytest>=8.3",
     "pytest-asyncio>=1.1",
+    # tests/test_pi_engine.py holds the computed digits against MPFR's own pi
+    # (gmpy2.const_pi) as a second opinion, and this keeps the gmpy2 path of
+    # src/pi.py - the one a desktop run takes - the path under test.
+    "gmpy2>=2.3.2",
 ]
 
 [build-system]

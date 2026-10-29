@@ -176,6 +176,11 @@ There should be a conversions.yaml file that says "There should be this tab with
   entries above that fold as possible, the drawer carries no footer line: the
   "Calculate anything." tagline sits under the "AnythingCalculator" title at the
   head of the drawer instead.
+- Below the conversions, a second heading "Other" introduces destinations that
+  are not unit conversions - currently the one Pi Calculation entry. A heading is
+  a caption, not a selectable row: it must not shift what the drawer's index
+  means, so selecting an entry resolves to calculators, then conversions, then
+  the "Other" pages in the order they are listed.
 
 ## Unit guidance notes
 
@@ -317,21 +322,77 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Do not offer error text for copying: the display's copy button is disabled
   while the display shows an error message.
 
+## Pi calculation
+
+- Offer a "Pi Calculation" page, reachable as its own drawer destination under an
+  "Other" heading at the bottom of the drawer - below the Unit Conversions
+  entries, since it is not a unit conversion. Give it the `SUPPORT` icon.
+- Compute pi with the Chudnovsky algorithm and binary splitting
+  (`src/pi.py`), not with `math.pi`: the app calculates its own digits. The
+  series buys ~14.18 decimals a term, so a run has a known term count up front.
+- Take the final square root ten decimals past the requested count and truncate
+  back (`GUARD_DECIMALS`): an integer root is up to a unit short, which would
+  otherwise make the last displayed decimal one too low for about one digit count
+  in sixty (600 decimals is one of them). The series is already good for some
+  twenty-eight decimals past the count, so the guard is free accuracy.
+- Offer any digit count from 3 to 100 000 000: a menu of presets (3, 12, 100,
+  1 000, 10 000, 100 000, 1 000 000, 10 000 000, 100 000 000) plus an exact
+  field for a count between them (500 000, say). A count outside the range, or
+  one that is not a whole number, disables the button and says why instead of
+  starting a run.
+- On start-up the app computes pi to 12 decimals and installs that as the
+  program's pi. Every calculation in the app - both pads, the live preview,
+  anything that reaches for `pi` - reads that one value (`pi.program_pi`) rather
+  than `math.pi`; a test can hand the engine its own value through the
+  `pi_provider` seam.
+- The computed value is held two ways and both must agree: a `Decimal` for the
+  engine to multiply by, and the decimals as a string for display. A run is only
+  adopted when the digits spell exactly the value handed over, so a half-finished
+  or corrupt run can never become what every calculation multiplies by.
+- While a run is going show a progress bar with, under it, the percentage done,
+  the term count, the speed in digits per second and a time estimate (what is
+  left and what the whole run is expected to take). Those numbers come from the
+  term count and the elapsed time, never from a guess.
+- Run the computation on a worker thread - the pads must stay responsive - using
+  Flet's own `page.run_thread` rather than a bare thread, and repaint at most a
+  few times a second no matter how many terms the series reports. Offer a Stop
+  button: a cancelled run comes back with no digits, leaves the program's pi
+  untouched and says where it stopped.
+- Offer a "Use this value for the program" button that makes a finished run the
+  pi every calculation uses; until it is pressed the run is only shown on the
+  page. Show the pi currently in force at the top of the page so the effect is
+  visible.
+- Viewing the digits opens a dialog that starts with a handful of lines and
+  appends more as the user scrolls - a hundred million digits are never put on
+  the screen at once, which is what would make the app lag or die. Lay the list
+  out on a fixed line extent (60 decimals to a line) so the renderer only ever
+  builds the lines inside the viewport, cap each scroll to one batch of lines,
+  and never build a line past the end of the number.
+- Keep the whole feature importable without Flet: the algorithm in `pi.py`, the
+  run wrapper and the program's pi in `pi_value.py`, only the page in
+  `pi_view.py`.
+- Hold the digits to an outside opinion rather than to themselves: the engine
+  tests check a run of 500 000 decimals - and one of 100 000 - against MPFR's own
+  pi (`gmpy2.const_pi`), which reaches the digits by a different algorithm.
+- A pi has no bridge to any unit group: no joule-to-newton or ccf-to-therm hop,
+  and the conversion groups stay closed to it.
+
 ## Testing
 
 ### The host path: the default for every change
 
 - Verify a change with the Flet tooling on the host and stop there: `flet run`
   starts the app to look at it, `flet test` runs the whole suite, and
-  `flet test -k engine` the two engine files (the fast check - 195 tests in about
-  three seconds). Give the full suite about six minutes (204 tests; each UI test
-  boots its own app host), so a `flet test` that runs for minutes is working, not
-  hung. No emulator, device or APK is involved in this path, and it is
+  `flet test -k engine` the pure engine files (the fast check - 269 tests in
+  about seven seconds). Give the full suite about seventeen minutes (314 tests;
+  each UI test boots its own app host), so a `flet test` that runs for minutes is
+  working, not hung. No emulator, device or APK is involved in this path, and it is
   what a change is judged by unless Android testing is asked for; the device route
   is the separate, opt-in path under "The Android emulator path: only when it is
   asked for".
 - Run the suite with `flet test` (pytest flags only, no file paths - select with
-  `-k`); the pure conversion-engine tests additionally run under plain `pytest`
+  `-k`); the pure engine tests and the pi page tests (`test_pi_view.py`, which
+  drives the page against a stub page) additionally run under plain `pytest`
   because they need no app host.
 - Keep tests in a `tests/` folder at the workspace root, a sibling of `src/`:
   `src/` is what gets packaged into the app, test code stays on the host and
@@ -486,11 +547,17 @@ There should be a conversions.yaml file that says "There should be this tab with
     meanings of `%` and the `±` sign change;
   - `conversions.py` - the conversion configuration, route finding, formula
     application and the reported chain of hops;
+  - `pi.py` - the pi computation itself (Chudnovsky + binary splitting), the
+    digit counts the app offers and the one pi the program calculates with;
+  - `pi_value.py` - a pi run packaged for the page: timing, progress numbers and
+    adopting a finished run;
   - `ui.py` - the app object: page setup, the display state (expression, result
     mode, DEG/RAD, named variables, history) and the navigation wiring;
   - `keypad.py` - which keys each pad shows and how a key looks;
   - `conversion_view.py` - the conversion form, its live re-conversion and its
     chain cards;
+  - `pi_view.py` - the pi page: the digit choice, the progress card, adopting a
+    run and the lazy digits dialog;
   - `history_view.py` - the history cards and the history drawer;
   - `variable_dialogs.py` - the Set Variable / Insert Variable dialogs;
   - `clipboard.py` - the single clipboard service behind every copy button;

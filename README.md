@@ -1,7 +1,8 @@
 # anycalc
 
 Calculate anything — a Flet calculator for desktop and mobile: expressions,
-scientific mode, named variables, history and live unit conversions.
+scientific mode, named variables, history, live unit conversions and a π it
+computes for itself.
 
 ## Layout
 
@@ -15,12 +16,18 @@ src/                      the app (entry point: src/main.py)
                           the two meanings of %, the ± sign change)
   conversions.py          the unit conversion engine (YAML config, route finding,
                           formula application, the chain of hops)
+  pi.py                   the pi computation (Chudnovsky + binary splitting) and
+                          the one pi the program calculates with
+  pi_value.py             a pi run packaged for the page — timing, progress
+                          numbers, adopting a finished run
   config.py               numeric limits, display sizes, variable names/options,
                           error messages, the path to the unit data
   styles.py               the colour palette
   clipboard.py            the one clipboard service behind every copy button
   keypad.py               which keys each pad shows and how a key looks
   conversion_view.py      the live conversion form and its chain cards
+  pi_view.py              the pi page — digit choice, progress card, "use this
+                          value", the lazy digits dialog
   history_view.py         history cards and the history drawer
   variable_dialogs.py     the Set / Insert Variable dialogs
   assets/conversions.yaml unit groups and the formulas between them
@@ -41,6 +48,22 @@ are the parsec (648000/π astronomical units) and the thermochemical Btu (its 5/
 never ends as a decimal). The rules a new unit has to follow are in the
 "Volume and weight conversions" and "Energy and force conversions" sections of
 `calculator_spec.md`.
+
+## Pi calculation
+
+The app computes its own π — an expression's `pi` is never `math.pi`. On
+start-up it computes 12 decimals and every calculation, both pads included,
+multiplies by that value; the Pi Calculation page (under "Other" in the drawer)
+computes any count from 3 to 100 000 000 decimals with Chudnovsky + binary
+splitting, shows a progress bar with a speed and time estimate, and offers "Use
+this value for the program" to make a finished run the π everything uses. Viewing
+the digits opens a dialog that fills in more lines as you scroll, so a hundred
+million decimals are never put on screen at once.
+
+π is computed on plain Python integers by default. `gmpy2` — in the optional
+`[pi]` extra, and already in `[dev]` — makes big runs far faster; it is a C
+extension with no Android wheel, so it is deliberately *not* a runtime
+dependency and `src/pi.py` falls back to the stdlib when it is missing.
 
 ## Setup
 
@@ -63,14 +86,16 @@ sees them.
 ## Tests
 
 ```bash
-flet test            # everything; provisions a test host, then runs pytest
-flet test -k engine  # the two engine test files only, no Flutter host
-flet test -k app     # the Flet UI tests only
+flet test                # everything; provisions a test host, then runs pytest
+flet test -k engine      # the *_engine.py files only, no Flutter host
+flet test -k app         # the Flet UI tests only
 ```
 
 `flet test` takes pytest flags, not file paths (select with `-k`); flags after
 `--` are passed to pytest verbatim. The pure-logic tests can also be run without
-Flet at all: `python -m pytest -k engine`.
+Flet at all: `python -m pytest -k engine`, plus `python -m pytest
+tests/test_pi_view.py` (that one drives the pi page against a stub page, so it
+needs no window either).
 
 Two layers live in `tests/` (a sibling of `src/`, which is what gets packaged
 into the app):
@@ -84,6 +109,13 @@ into the app):
   is `220`, `50%` is `0.5`, `200*10%` is `20`), the scientific pad's `%` as
   modulo (`9%2` is `1`), and the `±` sign change, including the whole
   sign-change table and the fact that pressing `±` twice is a no-op.
+- `test_pi_engine.py` — unit tests for the π computation: the digit count of a
+  run, 100 000 and 500 000 decimals held against MPFR's own π (`gmpy2.const_pi`),
+  the progress numbers, stopping a run, the offered range and the one π the
+  program calculates with.
+- `test_pi_view.py` — the pi page without a window: the digit-count rules,
+  adopting a finished run, and the lazy digits dialog (how many lines exist
+  before any scrolling and how scrolling grows them).
 - `test_app.py` — Flet integration tests. `flet test` packages `src/` into a
   monolithic app with an embedded Python and the test drives *that* (drawer
   navigation, the conversion page re-converting as you type, the keypad) through

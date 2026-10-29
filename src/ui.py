@@ -39,6 +39,8 @@ from keypad import (
     key_color,
     make_key,
 )
+import pi_value
+from pi_view import PiView
 from styles import (
     APP_BACKGROUND,
     KEY_OPERATOR,
@@ -76,6 +78,15 @@ class AnycalcApp:
 
         # The conversion form currently in the content area, if any.
         self.conversion_view: ConversionView | None = None
+
+        # The pi page, built the first time it is opened.
+        self.pi_view: PiView | None = None
+
+        # The pi every calculation in the app multiplies by is computed here, once,
+        # before anything is on screen: the app starts on its own 12-decimal pi
+        # rather than on the 15-decimal float math.pi, and the Pi page can replace
+        # it with a longer one at any time.
+        self.program_pi_run = pi_value.install_default_pi()
 
         # The live answer grows into the display when "=" is pressed. The token
         # tells the finishing task whether it is still the promotion in flight.
@@ -386,6 +397,21 @@ class AnycalcApp:
                     )
                     for conversion in self.conversion_options
                 ],
+                ft.Divider(),
+                ft.Container(
+                    content=ft.Text(
+                        "Other",
+                        size=12,
+                        color=TEXT_MUTED,
+                        weight=ft.FontWeight.BOLD,
+                    ),
+                    padding=ft.Padding.symmetric(horizontal=16, vertical=8),
+                ),
+                ft.NavigationDrawerDestination(
+                    key="drawer-pi-calculation",
+                    icon=ft.Icons.SUPPORT,
+                    label="Pi Calculation",
+                ),
             ],
             on_change=self.handle_drawer_change,
         )
@@ -398,8 +424,10 @@ class AnycalcApp:
             return
         if index < 2:
             self.set_mode(index)
-        else:
+        elif index - 2 < len(self.conversion_options):
             self.open_conversion(self.conversion_options[index - 2])
+        else:
+            self.open_pi()
 
     async def open_menu(self, e) -> None:
         del e
@@ -742,4 +770,16 @@ class AnycalcApp:
         )
         self.content_area.controls = [self.conversion_view.build()]
         self.status.value = "UNIT CONVERSION"
+        self.page.update()
+
+    def open_pi(self) -> None:
+        """Swap the calculator for the pi calculation page."""
+
+        # The view is kept on the app for the same reason the conversion view is:
+        # the handlers its controls hold are methods of it.
+        if self.pi_view is None:
+            self.pi_view = PiView(self.page, self.clipboard.make_button)
+        self.conversion_view = None
+        self.content_area.controls = [self.pi_view.build()]
+        self.status.value = "PI CALCULATION"
         self.page.update()

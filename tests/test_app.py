@@ -221,6 +221,45 @@ async def test_force_conversion_page_converts_as_you_type(
     assert (await tester.find_by_text_containing("bolt, rope")).count == 1
 
 
+@pytest.mark.skip(
+    reason="'Pi Calculation' is the entry under 'Other' at the bottom of the "
+    "drawer, i.e. below the last conversion, and the drawer list is taller than "
+    "the host window - that entry never renders, and the test host has neither "
+    "scroll nor drag, so the page cannot be opened from a UI test. The whole "
+    "feature is covered engine-side in tests/test_pi_engine.py instead."
+)
+async def test_pi_page_computes_and_adopts_a_value(
+    flet_app: ftt.FletTestApp,
+) -> None:
+    tester = flet_app.tester
+    await tester.pump_and_settle()
+
+    await open_page(tester, "Pi Calculation")
+    assert (await tester.find_by_key("pi-digits")).count == 1
+    assert (await tester.find_by_key("pi-compute")).count == 1
+
+    # The startup pi is already on the page: 12 decimals this app computed itself.
+    assert (
+        await tester.find_by_text_containing("3.141592653589")
+    ).count >= 1
+
+    await tester.tap(await tester.find_by_key("pi-compute").first)
+    await tester.pump_and_settle()
+
+    assert (await tester.find_by_text("100%")).count == 1
+    assert (
+        await tester.find_by_text_containing(
+            "3.1415926535897932384626433832795028841971693993751"
+        )
+    ).count == 1
+
+    await tester.tap(await tester.find_by_key("pi-adopt").first)
+    await tester.pump_and_settle()
+    assert (
+        await tester.find_by_text_containing("calculates with pi to 12 decimals")
+    ).count == 1
+
+
 async def test_editing_the_value_reconverts_and_clearing_it_stays_quiet(
     flet_app: ftt.FletTestApp,
 ) -> None:

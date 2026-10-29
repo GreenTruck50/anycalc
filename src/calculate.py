@@ -38,6 +38,7 @@ from config import (
     MAX_EXPRESSION_LENGTH,
     MAX_EXPONENT,
 )
+from pi import program_pi
 
 
 def is_number(value) -> bool:
@@ -212,7 +213,24 @@ def toggle_sign(expression: str, percent_is_modulo: bool = False) -> str:
     return f"{expression[:pos]}-{expression[pos:]}"
 
 
-def calculate(expression, scientific, degrees=False, variables=None):
+def _program_pi_value(pi_provider=None) -> Decimal:
+    """The pi an expression multiplies by: the program's own, or a caller's.
+
+    :func:`pi.program_pi` holds the value the app computed for itself, so ``pi``
+    on either pad means the same digits the Pi page shows rather than the
+    15-decimal float ``math.pi``. ``pi_provider`` is the seam a test uses to hand
+    over a known pi.
+    """
+
+    value = program_pi() if pi_provider is None else pi_provider()
+    if value is None:
+        # A provider that hands over nothing - no run finished yet - leaves the
+        # program on its own pi rather than on nothing at all.
+        value = program_pi()
+    return value if isinstance(value, Decimal) else Decimal(str(value))
+
+
+def calculate(expression, scientific, degrees=False, variables=None, pi_provider=None):
     binary_ops = {
         ast.Add: operator.add,
         ast.Sub: operator.sub,
@@ -245,7 +263,11 @@ def calculate(expression, scientific, degrees=False, variables=None):
     }
 
     constants = {
-        "pi": math.pi,
+        # "pi" is not ``math.pi``. The app computes its own pi at startup and the
+        # Pi page can replace it, so every calculation in the program reads the
+        # same value from ``pi.program_pi`` - see that module. A caller (a test)
+        # can hand over its own pi instead.
+        "pi": _program_pi_value(pi_provider),
         "e": math.e,
     }
     variables = variables or {}
@@ -333,7 +355,11 @@ def calculate(expression, scientific, degrees=False, variables=None):
             if node.id in variables:
                 return variables[node.id]
             if node.id in constants:
-                return Decimal(str(constants[node.id]))
+                # A constant is already a Decimal - pass it through rather than
+                # round-tripping it through str, which for a pi computed to
+                # millions of digits would cost more than the calculation itself.
+                value = constants[node.id]
+                return value if isinstance(value, Decimal) else Decimal(str(value))
             raise ValueError(ERROR_UNKNOWN_CONSTANT)
 
         if isinstance(node, ast.Call) and scientific:
