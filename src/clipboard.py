@@ -45,7 +45,7 @@ class ClipboardService:
     def make_button(
         self,
         get_value: Callable[[], Any],
-        tooltip: str = "Copy result",
+        tooltip: str = "Copy",
     ) -> ft.IconButton:
         """Small icon-only copy button reading its value when clicked."""
 
