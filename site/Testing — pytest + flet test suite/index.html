@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Testing — pytest + flet test suite - My Docs</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">My Docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Welcome to MkDocs</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../Change%20log%20%26%20decisions/" class="nav-link">Change log & decisions</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../Source%20layout%20%E2%80%94%20modules%20and%20the%20Flet%20import%20root/" class="nav-link">Source layout — modules and the Flet import root</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="./" class="nav-link active" aria-current="page">Testing — pytest + flet test suite</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../anycalc%20%28Flet%20calculator%20app%29/" class="nav-link">anycalc (Flet calculator app)</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href="../Source%20layout%20%E2%80%94%20modules%20and%20the%20Flet%20import%20root/" class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../anycalc%20%28Flet%20calculator%20app%29/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-24-is-a-real-percent-key-on-the-regular-pad-the-length-xfail-is-gone" class="nav-link">2026-10-24 — % is a real percent key on the regular pad; the Length xfail is gone</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-24-pytest-flet-test-suite-added-conversion-engine-ui" class="nav-link">2026-10-24 — pytest + flet test suite added (conversion engine + UI)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-24-keypad-keys-regular-pad-and-both-pads" class="nav-link">2026-10-24 — keypad keys % (regular pad) and ± (both pads)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#how-to-run" class="nav-link">How to run</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#flet-105-tester-limits-learned-the-hard-way-read-before-writing-a-ui-test" class="nav-link">Flet 1.0.5 tester limits — learned the hard way, read before writing a UI test</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#follow-ups" class="nav-link">Follow-ups</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-26-two-testing-paths-host-by-default-android-emulator-only-on-request" class="nav-link">2026-10-26 — two testing paths: host by default, Android emulator only on request</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<p>Running log entry and reference for the test suite added 2026-10-24.</p>
+<h2 id="2026-10-24-is-a-real-percent-key-on-the-regular-pad-the-length-xfail-is-gone">2026-10-24 — <code>%</code> is a real percent key on the regular pad; the Length xfail is gone</h2>
+<ul>
+<li><code>tests/test_calculator_engine.py</code> grew from 56 to <strong>96</strong> tests and the <code>%</code> block is split by pad. Regular pad (percent): <code>50%</code> → 0.5, <code>200+10%</code> → 220, <code>200-10%</code> → 180, <code>200*10%</code> → 20, <code>200/10%</code> → 2000, chaining on the running total (<code>200+10%+5%</code> → 231), and a <code>%</code> with nothing in front of it being dropped by the rewrite, so a lone <code>%</code> still evaluates to 0 rather than erroring (<code>5+%</code> is what errors: the rewrite leaves <code>5+</code>, so <code>=</code> reports "Invalid expression"). Scientific pad (modulo): unchanged — <code>9%2</code> → 1, <code>7%2.5</code> → 2, <code>-7%2</code> → -1, <code>5%0</code> → "Invalid result". The rewrite that makes a postfix <code>%</code> parseable (<code>apply_percent_operators</code>: <code>200+10%</code> → <code>200+_percent(10)</code>, also wrapping a closing bracket like <code>sqrt(4)%</code> or a name like <code>pi%</code>) is tested directly, as is <code>is_percent_call</code>.</li>
+<li><code>tests/test_conversion_engine.py</code> (75 → <strong>82</strong> tests): the <code>LENGTH_DRIFT</code> data and its <code>xfail(strict=True)</code> marker are <strong>deleted</strong>. The exactness sweep no longer exempts the Length group — every terminating-decimal pair in it must come out bit-for-bit. The parsec is excluded by name, with the reason in a comment: a parsec is 648000/π astronomical units, so its factor is not a rational number and no literal can be exact.</li>
+<li><code>tests/test_app.py</code> (6 → <strong>7</strong> UI tests): <code>test_regular_calculator_percent_key_and_sign_change</code> types <code>200+10%</code> on the regular pad and asserts the live answer preview reads <code>220</code> (percent, not modulo), then checks <code>5%</code> → 0.05 and the <code>±</code> behaviour; <code>test_scientific_calculator_percent_key_is_modulo</code> pins <code>9%2</code> → <code>1</code>, so both meanings of the same key are covered through the real UI.</li>
+<li><strong>Full suite verified 2026-10-24:</strong> <code>**flet test**</code> <strong>→ 185 passed in 339 s</strong> (7 UI + 96 calculator engine + 82 conversion engine), no xfail, no skips. Engine only: <code>.venv/bin/python -m pytest -k engine</code> → 178 passed in ~3 s.</li>
+</ul>
+<h2 id="2026-10-24-pytest-flet-test-suite-added-conversion-engine-ui">2026-10-24 — pytest + <code>flet test</code> suite added (conversion engine + UI)</h2>
+<ul>
+<li><code>pyproject.toml</code>: the <code>dev</code> extra now installs <code>flet[test]&gt;=1.0.4</code> (pulls in <code>pytest</code>, <code>pytest-asyncio</code> and the screenshot libraries) plus explicit <code>pytest</code> / <code>pytest-asyncio</code> pins; added <code>[tool.pytest.ini_options]</code> with <code>asyncio_mode = "auto"</code> and <code>testpaths = ["tests"]</code>. Runtime dependencies unchanged.</li>
+<li>New <code>tests/conftest.py</code> — puts the repo root on <code>sys.path</code> so both kinds of tests can <code>import src.main</code> (safe since the app only runs under <code>__main__</code>).</li>
+<li>New <code>tests/test_conversion_engine.py</code> — pure-python tests, no app host: every unit pair inside a group is reachable, every terminating-decimal pair stays bit-exact, chain hops re-evaluate to the values printed (<code>_evaluate_conversion_formula</code> is re-run per hop), formula-flip, same-unit pass-through and cross-group errors are pinned, plus ~40 published reference values (NIST/legal) and a 37-digit cubic-mile precision check.</li>
+<li>New <code>tests/test_app.py</code> — Flet integration tests through <code>flet.testing</code>: drawer navigation to Scientific Calculator and to conversion pages, the conversion page converting live as the value changes, clearing the value clearing result + chain quietly, keypad arithmetic and <code>=</code> flipping EXPRESSION → RESULT.</li>
+<li>At the time the Length group still used rounded literals (<code>meter -&gt; inch</code> was <code>x * 39.37007874</code>, <code>mile -&gt; nautical mile</code> <code>x / 1.150779448</code>), which was encoded as <code>xfail(strict=True)</code> naming the offending formulas. <em>Superseded the same day: the exact anchors (inch = 25.4 mm, mile = 1609.344 m, nautical mile = 1852 m, light-year = 9460730472580800 m) are now in the YAML and the marker is removed — see the entry above.</em></li>
+<li>Docs: <code>README.md</code> gained a "Tests" section, <code>calculator_spec.md</code> gained a "Testing" section (what belongs in engine tests vs UI tests, key conventions, the tester limits below), and the <code>pyproject.toml</code> header comment documents the test command.</li>
+</ul>
+<h2 id="2026-10-24-keypad-keys-regular-pad-and-both-pads">2026-10-24 — keypad keys <code>%</code> (regular pad) and <code>±</code> (both pads)</h2>
+<ul>
+<li>New <code>tests/test_calculator_engine.py</code> — pure-python tests for the expression engine rather than the conversion graph: what the <code>%</code> key evaluates to and the 21-case <code>±</code> sign-change table, each case also asserted to be its own inverse. Named <code>…_engine.py</code> on purpose so <code>-k engine</code> picks it up together with <code>test_conversion_engine.py</code>. <em>The</em> <code>_%_</code> <em>half of that file was rewritten the same day when</em> <code>_%_</code> <em>stopped being modulo on the regular pad.</em></li>
+<li><code>tests/test_app.py</code> gained <code>test_regular_calculator_percent_key_and_sign_change</code> (taps <code>key-%</code> and <code>key-±</code> on the regular pad and reads the live answer preview), and the drawer test now also asserts <code>key-±</code> exists after switching to Scientific.</li>
+<li>Tester gotcha worth remembering: <strong>a keypad key that exists in both the scientific rows and the regular rows is found twice</strong>, because scientific mode renders the regular rows underneath its own — <code>find_by_key("key-±")</code> returned count 2 (the pad already had this problem with <code>(</code> and <code>)</code>). The app now keeps every key on the pad exactly once, so <code>key-&lt;label&gt;</code> stays unique and a UI test can assert <code>count == 1</code> again.</li>
+</ul>
+<h2 id="how-to-run">How to run</h2>
+<pre><code>.venv/bin/flet test                 # everything (185 tests, ~5½ min)
+.venv/bin/flet test -k engine       # both engine test files, ~3 s, no Flutter host
+.venv/bin/flet test -k app          # the 7 UI tests, ~4-6 min (~35-60 s per test)
+</code></pre>
+<p><code>flet test</code> must run from the workspace root (it reads <code>pyproject.toml</code>, and <code>[tool.flet.app]</code> points it at <code>src/main.py</code>). It accepts pytest flags only — positional test paths are rejected with a usage error, so select with <code>-k</code> (<code>-k percent_key</code> runs the two percent UI tests plus the matching engine ones); anything after <code>--</code> goes to pytest verbatim (<code>-- -s</code> for print output). The pure tests also run under plain <code>.venv/bin/python -m pytest -k engine</code>. <code>flet test</code> needs a display for the app hosts it boots (<code>WAYLAND_DISPLAY=wayland-0 XDG_RUNTIME_DIR=/run/user/1000</code>). The first UI run provisions/builds the Flutter test harness; later runs reuse it, but every UI test still boots a fresh app host — that host boot, not the assertions, is what makes the suite slow. <code>flet test</code> leaves a <code>build/</code> tree behind (<code>flutter</code>, <code>python-app</code>, <code>site-packages</code>).</p>
+<h2 id="flet-105-tester-limits-learned-the-hard-way-read-before-writing-a-ui-test">Flet 1.0.5 tester limits — learned the hard way, read before writing a UI test</h2>
+<ul>
+<li><code>key</code> only reaches ordinary controls. Keypad buttons (<code>key-7</code>, <code>key-sin</code>) and the conversion form (<code>conversion-value</code>, <code>conversion-result</code>) are found by key, but <code>NavigationDrawerDestination</code> and <code>Dropdown</code> options never are. Drawer entries must be tapped by <strong>label text</strong> (<code>find_by_text("Volume Conversion")</code>), and switching the From/To unit cannot be driven from a UI test at all — unit pairs are covered by the exhaustive engine tests instead.</li>
+<li><strong>A</strong> <code>**Finder**</code> <strong>has no</strong> <code>**.value**</code> (and there is no <code>tester.get</code>): <code>(await tester.find_by_key("display")).first.value</code> raises <code>AttributeError: 'Finder' object has no attribute 'value'</code>, which is how the percent keypad test failed on its first run. Assertions can only be about which texts/keys are findable, so a keypad test asserts the <strong>live answer preview</strong> (a plain <code>Text</code> under the display box) and proves <code>=</code> committed by the caption flipping <code>EXPRESSION</code> → <code>RESULT</code>. The same is why the conversion tests read the chain cards rather than the read-only Result field.</li>
+<li>A key must be unique on screen: duplicated keypad keys come back as <code>count=2</code> and make <code>count == 1</code> assertions fail.</li>
+<li>A control hidden with <code>visible=False</code> stays in the finder tree. "The chain disappeared" has to be asserted on the hop texts the app actually removes, never on the "Chain of operations" header, which is only hidden. (A <code>find_by_key("conversion-chain")</code> on the empty chain <code>Column</code> also returns 0, so keys are not an alternative here.)</li>
+<li><code>flet_app.resize_page()</code> raises <code>RuntimeError('page is not initialized')</code> — a test cannot choose its window size; the default desktop window fits these pages.</li>
+<li>The Value field is a <code>KeyboardType.NUMBER</code> field, and the tester's <code>enter_text</code> respects that filter: typing <code>"3."</code> arrives as <code>"3"</code>. So a half-typed number never reaches the app from a test; clearing the field (empty string) is the UI path into the app's "quietly clear result and chain" branch, while the parse-failure branch (<code>"abc"</code>) is unreachable from a desktop test and deliberately untested.</li>
+<li><code>flet_app.tester.enter_text(finder, text)</code> <strong>replaces</strong> the field content (it does not append), and awaiting a finder twice reuses a dead coroutine — hold the finder in a variable if it is needed more than once.</li>
+<li>Screenshot goldens are Android/iOS only, so this desktop app has none.</li>
+</ul>
+<h2 id="follow-ups">Follow-ups</h2>
+<ul>
+<li>~~Fix the Length group's rounded literals in~~ <code>~~src/assets/conversions.yaml~~</code> — done 2026-10-24; <code>LENGTH_DRIFT</code> and its marker are deleted.</li>
+<li>~~Decide whether~~ <code>~~%~~</code> ~~is percent-of or modulo~~ — settled 2026-10-24 per pad: percent on the Regular Calculator (desk-calculator semantics), modulo on the Scientific Calculator. Any change to that split has to move <code>test_calculator_engine.py</code>'s two <code>%</code> blocks and the two UI assertions together.</li>
+<li>Consider whether the drawer/dropdowns should be sorted (see the hub note's ordering item) — sorting would also make UI tests that address drawer entries by index safe.</li>
+<li>The UI suite's cost is 7 app-host boots (~5 min). If it gets extended, keep new coverage in the engine files and only add UI tests for wiring the engine cannot see.</li>
+</ul>
+<h2 id="2026-10-26-two-testing-paths-host-by-default-android-emulator-only-on-request">2026-10-26 — two testing paths: host by default, Android emulator only on request</h2>
+<p><code>AGENTS.md</code> and <code>calculator_spec.md</code> (Testing) now say this explicitly, because the spec used to read as if on-device testing were the normal route.</p>
+<p><strong>Host path — the default for every change</strong></p>
+<ul>
+<li><code>flet run</code> to look at the app, <code>flet test</code> for the whole suite, <code>flet test -k engine</code> for the two engine files (178 tests ≈ 3 s, cheap enough to run constantly).</li>
+<li>Budget the full suite ≈ 6 min (185 tests, 339 s measured 2026-10-24). A <code>flet test</code> that runs for minutes is working, not hung — a 150/300 s timeout is simply too short, which is what made the full suite look stuck on 2026-10-26.</li>
+<li>No emulator, device or APK is involved, and this path alone judges a change.</li>
+</ul>
+<p><strong>Android emulator path — only when testing on Android is asked for</strong></p>
+<ul>
+<li>Order of work: prove KVM (<code>~/Android/Sdk/emulator/emulator-check accel</code> → <code>KVM (version 12) is installed and usable</code>; never grep the launch line, emulator 37 puts only <code>-avd &lt;name&gt;</code> in argv) → boot (<code>-no-snapshot-load -no-audio -no-boot-anim</code>, cold boot &lt; 1 min) → <code>flet build apk</code> → <code>adb install -r build/apk/anycalc.apk</code> → <code>adb shell am start -n com.github.greentruck50.anycalc/.MainActivity</code> → drive/read with <code>adb</code>.</li>
+<li>Cost: <code>flet build apk</code> ≈ 8 min cold, dominated by Gradle. The Gradle + Kotlin compile daemons and <code>~/.gradle</code> (4.2 GB) stay alive between runs — leave them up, a rebuild is then minutes.</li>
+<li>Transient effects (ripple, animation, in-between frame): hold instead of tap — <code>adb shell input motionevent DOWN x y</code>, <code>adb exec-out screencap -p &gt; /tmp/press.png</code>, <code>adb shell input motionevent UP x y</code>. One capture proves both the visual effect and that the press committed. <code>screencap</code> pixels map 1:1 to <code>adb shell input</code> coordinates (<code>adb shell wm size</code> = 1080x2400 here).</li>
+<li>This is the only route for a visual check of the <em>running</em> app: nothing injects synthetic input into the real desktop window from Wayland (xdotool is both absent and unable), and a host screenshot only catches whatever frame is up plus the host's own windows. Ask before taking a device run for that.</li>
+<li>Used on 2026-10-26 to verify the keypad ripple (see the change-log note): held-press captures showed the white ripple spreading through <code>8</code>, <code>9</code>, <code>=</code> while the press still committed.</li>
+</ul></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>

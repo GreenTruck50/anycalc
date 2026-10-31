@@ -307,6 +307,9 @@ There should be a conversions.yaml file that says "There should be this tab with
 
 - Every result the app produces carries a small copy button (an icon-only
   `CONTENT_COPY` button, not a full-width button).
+- Where a value is far too long for anyone to select by hand - the decimals of a
+  computed pi - let that button say out loud what it copies and hand over the whole
+  of it, however little of it happens to be on screen.
 - The button copies the value as it is displayed at the moment of the click, so
   it never copies a stale value.
 - Surfaces that must be copyable:
@@ -350,24 +353,91 @@ There should be a conversions.yaml file that says "There should be this tab with
   adopted when the digits spell exactly the value handed over, so a half-finished
   or corrupt run can never become what every calculation multiplies by.
 - While a run is going show a progress bar with, under it, the percentage done,
-  the term count, the speed in digits per second and a time estimate (what is
-  left and what the whole run is expected to take). Those numbers come from the
-  term count and the elapsed time, never from a guess.
+  the term count, which part of the run is under way, the speed in digits per
+  second and a time estimate (what is left and what the whole run is expected to
+  take). Weigh the bar by work and not by terms: the products that combine the
+  terms, and the final square root and division, outweigh the terms themselves and
+  come after them, so a bar that counted terms alone reports the last term at well
+  under two thirds of the wait and looks finished long before the run is. Name the
+  phase - the split, the terms and their products, the last square root and
+  division - so a bar that appears to stall says what the wait is busy with.
+  Derive speed and estimate from the work done and the elapsed time, never from a
+  guess, and cap how often a long run may report so checkpoints cannot cost more
+  than the arithmetic between them.
+- Repaint that card every half second while a run is going, whether or not the reader
+  presses anything. One huge multiplication can hold a report back for a long stretch,
+  and a bar that waits for reports stands still for exactly the longest part of the run.
+  The painter is a task on the page's own event loop - not a second `run_thread`, whose
+  executor is shared with every other handler in the app and can leave the painter queued
+  behind them, which is what makes a bar look frozen until something else repaints the
+  page. Pace it against a schedule rather than a chain of sleeps, because a loop sharing
+  the interpreter with a computation over huge integers wakes late and chained sleeps add
+  that lateness up.
+- That painter must outlive a frame that fails to reach the client: one bad frame costs
+  one frame, the clock keeps asking on schedule, and the card says what failed instead of
+  going silent. A painter task that dies quietly is exactly the bar that looks frozen
+  until the reader presses something and a handler repaints the page.
+- The engine's checkpoints may ask for a paint as well - a checkpoint reached inside one
+  huge multiplication is often the only progress the clock could show until the
+  interpreter yields again - but the interval is held in the painter rather than in
+  either caller, so clock ticks and reports spend one shared budget of two frames a
+  second. A million reports must never become a million page updates: it is the same
+  thread that has to stay free for the arithmetic.
+- Once a run has ended the card belongs to the outcome: a late tick must never write a
+  mid-run number over what a finished or cancelled run reports.
+- Keep the unfilled part of the bar a different colour than the card it sits on; a
+  track in the card's own colour leaves no whole to measure against and the bar
+  reads as a growing blob.
 - Run the computation on a worker thread - the pads must stay responsive - using
-  Flet's own `page.run_thread` rather than a bare thread, and repaint at most a
-  few times a second no matter how many terms the series reports. Offer a Stop
-  button: a cancelled run comes back with no digits, leaves the program's pi
-  untouched and says where it stopped.
+  Flet's own `page.run_thread` rather than a bare thread, and keep every repaint of
+  the progress card inside the shared half-second budget above no matter how many
+  terms the series reports. Offer a Stop
+  button that is honoured wherever a run can be interrupted - at every node of the
+  binary split and at each of the final square root, multiply and divide, and not
+  only between terms, since a stop pressed during that tail otherwise goes
+  unanswered until the run finishes. A cancelled run comes back with no digits,
+  leaves the program's pi untouched and says how far the run got as a share of the
+  whole and which phase it stopped in.
 - Offer a "Use this value for the program" button that makes a finished run the
   pi every calculation uses; until it is pressed the run is only shown on the
   page. Show the pi currently in force at the top of the page so the effect is
   visible.
-- Viewing the digits opens a dialog that starts with a handful of lines and
-  appends more as the user scrolls - a hundred million digits are never put on
-  the screen at once, which is what would make the app lag or die. Lay the list
-  out on a fixed line extent (60 decimals to a line) so the renderer only ever
-  builds the lines inside the viewport, cap each scroll to one batch of lines,
-  and never build a line past the end of the number.
+- Say out loud what the app's Decimal precision means for a pi the whole program
+  uses: every calculation runs at `config.DECIMAL_PRECISION` significant digits,
+  one of which is spent on the `3`, so a computed pi longer than that is stored and
+  shown in full but only its first `DECIMAL_PRECISION - 1` decimals ever reach an
+  answer. State it on the page and again where an adoption reports itself, or a
+  hundred thousand adopted decimals looks like it changed nothing at all.
+- Give every input on the page a row of its own that it can stretch across: two
+  inputs sharing one row each take their own intrinsic width and together overflow
+  the page, which on a phone leaves the second one off screen and unreachable.
+- Viewing the digits opens a dialog that shows the number as plain text in an
+  ordinary scroll area - digits and nothing else on a line, no line numbers, no
+  monospace, no code-viewer styling. It holds one page of the number at a time -
+  10 000 decimals - and turns pages when asked; a hundred million digits are never
+  put on the screen at once, which is what would make the app lag or die. Lay the
+  list out on a fixed line extent so the renderer only ever builds the lines inside
+  the viewport, and never build a line past the end of the number.
+- Never grow that list while the reader is scrolling it. A list that extends under
+  their fingers keeps changing the very distance its scrollbar is measuring, so the
+  thumb resizes mid-drag, the end keeps running away from them and the thumb ends up
+  a meaningless sliver: a scrollbar can only be honest about a length that does not
+  move. Nothing is added or removed while a page is being read.
+- Give the dialog First / Previous / Next / Last buttons, disabled when there is
+  nowhere left to go, and a footline saying which part of the number is on screen -
+  "decimals 10 001 to 20 000 of 60 000 - page 2 of 6". A page turn replaces the lines
+  rather than appending to them, starts again at the top of the page, keeps the last
+  page short instead of padded, and cannot move past either end of the number. A
+  number that fits one page has all four buttons disabled.
+- Keep the scrollbar off the digits: hold a gutter at the right of the list and
+  measure a line against what is left of it, so the thumb never sits on top of the
+  digits it is supposed to be about.
+- Measure how many decimals one line holds from the window the dialog opens on, so
+  a narrow window gets a shorter line instead of a line whose tail is cut off, and
+  never let a line run wider than the dialog.
+- Give the dialog a button that says what it copies and copies every decimal of the
+  run in one press, whatever part of the number happens to be on screen - selecting
+  a hundred thousand digits by hand is not something a person can do.
 - Keep the whole feature importable without Flet: the algorithm in `pi.py`, the
   run wrapper and the program's pi in `pi_value.py`, only the page in
   `pi_view.py`.
@@ -557,7 +627,7 @@ There should be a conversions.yaml file that says "There should be this tab with
   - `conversion_view.py` - the conversion form, its live re-conversion and its
     chain cards;
   - `pi_view.py` - the pi page: the digit choice, the progress card, adopting a
-    run and the lazy digits dialog;
+    run and the paged digits dialog;
   - `history_view.py` - the history cards and the history drawer;
   - `variable_dialogs.py` - the Set Variable / Insert Variable dialogs;
   - `clipboard.py` - the single clipboard service behind every copy button;

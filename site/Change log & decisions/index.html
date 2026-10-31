@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        
+        
+        <link rel="shortcut icon" href="../img/favicon.ico">
+        <title>Change log & decisions - My Docs</title>
+        <link href="../css/bootstrap.min.css" rel="stylesheet">
+        <link href="../css/fontawesome.min.css" rel="stylesheet">
+        <link href="../css/brands.min.css" rel="stylesheet">
+        <link href="../css/solid.min.css" rel="stylesheet">
+        <link href="../css/v4-font-face.min.css" rel="stylesheet">
+        <link href="../css/base.css" rel="stylesheet">
+        <link id="hljs-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css" >
+        <link id="hljs-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css" disabled>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+        <script>hljs.highlightAll();</script> 
+    </head>
+
+    <body>
+        <div class="navbar fixed-top navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <a class="navbar-brand" href="..">My Docs</a>
+                <!-- Expander button -->
+                <button type="button" class="navbar-toggler" data-bs-toggle="collapse" data-bs-target="#navbar-collapse" aria-controls="navbar-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Expanded navigation -->
+                <div id="navbar-collapse" class="navbar-collapse collapse">
+                        <!-- Main navigation -->
+                        <ul class="nav navbar-nav">
+                            <li class="nav-item">
+                                <a href=".." class="nav-link">Welcome to MkDocs</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="./" class="nav-link active" aria-current="page">Change log & decisions</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../Source%20layout%20%E2%80%94%20modules%20and%20the%20Flet%20import%20root/" class="nav-link">Source layout — modules and the Flet import root</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../Testing%20%E2%80%94%20pytest%20%2B%20flet%20test%20suite/" class="nav-link">Testing — pytest + flet test suite</a>
+                            </li>
+                            <li class="nav-item">
+                                <a href="../anycalc%20%28Flet%20calculator%20app%29/" class="nav-link">anycalc (Flet calculator app)</a>
+                            </li>
+                        </ul>
+
+                    <ul class="nav navbar-nav ms-md-auto">
+                        <li class="nav-item">
+                            <a href="#" class="nav-link" data-bs-toggle="modal" data-bs-target="#mkdocs_search_modal">
+                                <i class="fa fa-search"></i> Search
+                            </a>
+                        </li>
+                            <li class="nav-item">
+                                <a rel="prev" href=".." class="nav-link">
+                                    <i class="fa fa-arrow-left"></i> Previous
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a rel="next" href="../Source%20layout%20%E2%80%94%20modules%20and%20the%20Flet%20import%20root/" class="nav-link">
+                                    Next <i class="fa fa-arrow-right"></i>
+                                </a>
+                            </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="container">
+            <div class="row">
+                    <div class="col-md-3"><div class="navbar-expand-md bs-sidebar hidden-print affix" role="complementary">
+    <div class="navbar-header">
+        <button type="button" class="navbar-toggler collapsed" data-bs-toggle="collapse" data-bs-target="#toc-collapse" title="Table of Contents">
+            <span class="fa fa-angle-down"></span>
+        </button>
+    </div>
+
+    
+    <div id="toc-collapse" class="navbar-collapse collapse card bg-body-tertiary">
+        <ul class="nav flex-column">
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-23-requirementstxt-pyprojecttoml-linux-build-verified-from-the-workspace-root" class="nav-link">2026-10-23 — requirements.txt → pyproject.toml; Linux build verified from the workspace root</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-23-requirementstxt-made-complete-runtime-deps-only" class="nav-link">2026-10-23 — requirements.txt made complete (runtime deps only)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-23-live-calculation-convert-button-removed-live-answer-under-the-display" class="nav-link">2026-10-23 — Live calculation: Convert button removed, live answer under the display</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-23-chain-formula-moved-behind-a-view-formula-button" class="nav-link">2026-10-23 — Chain: formula moved behind a "View formula" button</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-23-conversion-chain-of-operations" class="nav-link">2026-10-23 — Conversion chain of operations</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-23-copy-to-clipboard-on-every-result" class="nav-link">2026-10-23 — Copy-to-clipboard on every result</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-23-documentation-hub-created" class="nav-link">2026-10-23 — Documentation hub created</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#open-items" class="nav-link">Open items</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-24-on-the-regular-pad-on-both-pads" class="nav-link">2026-10-24 — % on the regular pad, ± on both pads</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-24-on-the-regular-calculator-is-now-a-desk-calculator-percent-key-length-factors-made-exact" class="nav-link">2026-10-24 — % on the Regular Calculator is now a desk-calculator percent key; Length factors made exact</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-24-single-file-app-split-into-11-modules-src-re-registered-inside-packaged-builds" class="nav-link">2026-10-24 — single-file app split into 11 modules; src re-registered inside packaged builds</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-24-switched-to-the-stock-flet-import-convention-shim-and-console-script-removed" class="nav-link">2026-10-24 — switched to the stock Flet import convention (shim and console script removed)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-24-agentsmd-amended-to-match-the-stock-import-convention" class="nav-link">2026-10-24 — AGENTS.md amended to match the stock import convention</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-24-workspace-is-now-a-git-repo-pushed-to-github" class="nav-link">2026-10-24 — workspace is now a git repo, pushed to GitHub</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-24-later-repo-hygiene-vscode-untracked-no-venv-wording-desktop-mobile-targeting" class="nav-link">2026-10-24 (later) — repo hygiene: .vscode/ untracked, no venv wording, desktop + mobile targeting</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-24-latest-pii-sweep-app-id-no-longer-derived-from-a-personal-name" class="nav-link">2026-10-24 (latest) — PII sweep: app id no longer derived from a personal name</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-25-android-sdk-exposed-to-the-shell-so-flet-build-apk-can-find-it" class="nav-link">2026-10-25 — Android SDK exposed to the shell so flet build apk can find it</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-25-first-android-apk-built-flet-extras-moved-out-of-runtime-deps" class="nav-link">2026-10-25 — first Android APK built; Flet extras moved out of runtime deps</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-25-android-emulator-avd-anycalc-set-up-the-apk-verified-actually-running-on-android" class="nav-link">2026-10-25 — Android emulator (AVD anycalc) set up; the APK verified actually running on Android</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-26-emulator-is-not-responding-was-the-host-not-the-app" class="nav-link">2026-10-26 — "Emulator is not responding" was the host, not the app</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-26-keypad-keys-got-a-material-ink-ripple-press-feedback-was-missing" class="nav-link">2026-10-26 — keypad keys got a Material ink ripple (press feedback was missing)</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-31-pi-page-a-bar-weighted-by-work-a-progress-card-on-a-clock-and-a-paged-digits-dialog" class="nav-link">2026-10-31 — pi page: a bar weighted by work, a progress card on a clock, and a paged digits dialog</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+            
+            <li class="nav-item" data-bs-level="2"><a href="#2026-10-31-docs-migrated-into-docs-mkdocs-the-first-commit-of-them-un-pushed-for-pii" class="nav-link">2026-10-31 — docs migrated into docs/ (MkDocs); the first commit of them un-pushed for PII</a>
+              <ul class="nav flex-column">
+              </ul>
+            </li>
+        </ul>
+    </div>
+</div></div>
+                    <div class="col-md-9" role="main">
+
+<p>Running log of what changed in anycalc and why. Newest entries at the bottom (append to note maks it at the bottom). Format: date — change — reason.</p>
+<h2 id="2026-10-23-requirementstxt-pyprojecttoml-linux-build-verified-from-the-workspace-root">2026-10-23 — requirements.txt → pyproject.toml; Linux build verified from the workspace root</h2>
+<ul>
+<li><code>requirements.txt</code> is <strong>gone</strong>; there is now a <code>pyproject.toml</code> at the workspace root. <code>[project].dependencies</code> = <code>flet[cli,desktop]&gt;=1.0.4</code> + <code>PyYAML&gt;=6.0.3</code> (identical pins/extras to the final requirements.txt, comments carried over), dev tooling moved to <code>[project.optional-dependencies].dev</code> (<code>pytest</code>, <code>pytest-asyncio</code>) so it stays out of a runtime install, <code>requires-python = "&gt;=3.11"</code>, <code>[build-system]</code> = setuptools.</li>
+<li>The entry point is declared <strong>inside</strong> <code>**src/**</code> in two places on purpose: <code>[tool.flet.app] path = "src"</code> + <code>module = "main"</code> (used by <code>flet run</code> / <code>flet build</code>) and <code>[project.scripts] anycalc = "src.main:run_app"</code> (installed by <code>pip install -e .</code>). Supporting pieces: new <code>src/__init__.py</code>, <code>[tool.setuptools] packages = ["src"]</code>, <code>[tool.setuptools.package-data] src = ["assets/*.yaml"]</code> so <code>conversions.yaml</code> travels with an installed distribution.</li>
+<li><code>src/main.py</code> no longer ends in a bare module-level <code>ft.run(main)</code>; it now defines <code>def run_app(): ft.run(main)</code> behind <code>if __name__ == "__main__": run_app()</code>. That closes the old "importing main.py launches the app" obstacle for tests, and it is safe in packaged builds because a Flet bundle executes the configured app module <em>as</em> <code>___main___</code> (<code>_sp_run_module_as_main()</code> in the generated <code>build/flutter/lib/python.dart</code>: "Execute the configured app module as the real <code>__main__</code> module") rather than importing it.</li>
+<li>Flet packaging metadata moved in too: <code>[tool.flet] org = "com.&lt;personal&gt;"</code> — an id derived from a personal name, since scrubbed out of every commit by the 2026-10-24 PII sweep below — <code>product = "anycalc"</code>, <code>[tool.flet.linux] categories = ["Utility"]</code> → the bundle's app id / launcher name was <code>&lt;org&gt;.anycalc</code> / <code>anycalc</code>.</li>
+<li><strong>Build test run from the workspace root, not from</strong> <code>**src/**</code>: <code>.venv/bin/flet build linux --no-rich-output --yes</code> → "Successfully built your app for Linux!" in ~2.5 min. That works only because <code>[tool.flet.app]</code> points the CLI at <code>src/main.py</code>; run from <code>src/</code> it would look for a <code>pyproject.toml</code> there and find none. <code>validate_entry_point()</code> (<code>flet_cli/commands/build_base.py:992</code>) is what errors with "main.py not found in the root of Flet app directory" when <code>app.path</code> / <code>app.module</code> are wrong.</li>
+<li>Artifact: <code>build/linux/</code> (132 MB) = native GTK runner <code>anycalc</code> (embeds CPython 3.14 via <code>libpython3.14.so</code>), <code>app/</code> with <code>main.pyc</code> + <code>__init__.pyc</code> (the app is <strong>compiled by default</strong>; <code>--no-compile-app</code> keeps sources) and <code>app/assets/conversions.yaml</code> — sha256 identical to the source file, <code>site-packages/</code> installed <strong>from pyproject</strong> (resolved flet 1.0.5 + flet-cli + flet-desktop + PyYAML), <code>data/flutter_assets</code>, <code>share/applications/&lt;org&gt;.anycalc.desktop</code>. <code>build/flutter</code> (439 MB) is the intermediate Flutter project; total <code>build/</code> ≈ 625 MB.</li>
+<li>Smoke test of the artifact: <code>WAYLAND_DISPLAY=wayland-0 XDG_RUNTIME_DIR=/run/user/1000 ./build/linux/anycalc</code> stayed alive for the full 15 s until <code>timeout</code> killed it (exit 124) with only the harmless <code>Gdk-Message: Unable to load from the cursor theme</code> — no traceback, so the packaged entry point booted. Confirmed independently by unmarshalling <code>app/main.pyc</code> with the bundled-stdlib version: it contains both <code>main</code> and <code>run_app</code> and the <code>__main__</code> guard.</li>
+<li>Packaging check without touching <code>.venv</code>: <code>pip wheel . --no-deps</code> produced <code>anycalc-0.1.0-py3-none-any.whl</code> containing <code>src/main.py</code>, <code>src/__init__.py</code>, <code>src/assets/conversions.yaml</code> and <code>entry_points.txt</code> (<code>anycalc = src.main:run_app</code>). Gotcha: <code>.venv</code> has <strong>no setuptools</strong>, so <code>--no-build-isolation</code> fails there — pip's build isolation (i.e. network) is required to build this project.</li>
+<li>Flutter for the build: Flet 1.0.4 pins Flutter <strong>3.44.8</strong> (<code>flet/version.py</code>); <code>find_flutter_batch()</code> prefers the managed SDK at <code>~/flutter/3.44.8</code> before falling back to <code>PATH</code>, and that copy already exists on this machine, so no download/prompt was needed (<code>--yes</code> was passed anyway). cmake / ninja / pkg-config / gcc are present.</li>
+<li>Docs touched: <code>README.md</code> filled in (setup, run, build — it was empty), <code>AGENTS.md</code> rule now says keep <strong>pyproject.toml</strong> updated.</li>
+</ul>
+<h2 id="2026-10-23-requirementstxt-made-complete-runtime-deps-only">2026-10-23 — requirements.txt made complete (runtime deps only)</h2>
+<ul>
+<li>Was <code>flet&gt;=1.0.4</code> + <code>PyYAML&gt;=6.0.3</code>; now <code>flet[cli,desktop]&gt;=1.0.4</code> + <code>PyYAML&gt;=6.0.3</code>, each with a comment saying what it is for.</li>
+<li>Reason: in Flet 1.x the desktop runtime is an <strong>extra</strong>, not a dependency. Plain <code>flet</code> pulls only <code>httpx</code>, <code>msgpack</code>, <code>oauthlib</code>, <code>repath</code>; <code>ft.run()</code> then calls <code>ensure_flet_desktop_package_installed()</code> (<code>flet/app.py:305</code> → <code>flet/utils/pip.py:88</code>), which pip-installs <code>flet-desktop</code> behind your back on first launch. Declaring the extra keeps a fresh install deterministic and offline-safe, and Flet pins its extras to its own exact version, so the bracket group can never drift from the SDK.</li>
+<li><code>[cli]</code> is included because the app is launched with <code>flet run</code>. <code>[web]</code> is deliberately not included (it would drag in fastapi / uvicorn / websockets for a target this desktop app does not ship). <code>[test]</code> (pytest, pytest-asyncio, numpy, pillow, scikit-image) is dev tooling and stays out.</li>
+<li>Audited every import in <code>src/</code> (re-checked during the pyproject migration): everything else is stdlib (<code>ast</code>, <code>asyncio</code>, <code>math</code>, <code>operator</code>, <code>collections</code>, <code>dataclasses</code>, <code>decimal</code>, <code>pathlib</code>, <code>typing</code>), so nothing was missing besides the Flet extras. Transitive deps are left to pip.</li>
+<li>Verified from scratch: a clean venv built only from <code>requirements.txt</code> resolved <code>flet 1.0.5</code> + <code>flet-cli</code>/<code>flet-desktop</code>/<code>flet-platform-assets 1.0.5</code> + <code>PyYAML 6.0.3</code>, <code>pip check</code> clean, and the full headless UI probe passed in that venv — so the app is good on 1.0.5 too, not just the 1.0.4 in <code>.venv</code>.</li>
+</ul>
+<h2 id="2026-10-23-live-calculation-convert-button-removed-live-answer-under-the-display">2026-10-23 — Live calculation: Convert button removed, live answer under the display</h2>
+<ul>
+<li>Unit conversions no longer have a "Convert" button. <code>run_conversion()</code> is wired to the value field's <code>on_change</code> and to both unit dropdowns' <code>on_select</code>, so the result and the chain of operations refresh the moment the value or a unit changes. A small hint line ("Converts as you type or change units" with a swap icon) took the button's place.</li>
+<li>Typing noise is silent: an empty value or something that is not a number yet (<code>-</code>, <code>3.</code>, <code>abc</code>) clears the result and the chain without setting a field error; only genuine failures such as having no valid route still surface as <code>result_field.error</code>. The old "Enter a value to convert" error, the "Select both a source and target unit" check and <code>clear_conversion_output()</code> were removed.</li>
+<li>Both calculators now show a live answer: a small grey (<code>#9CA3AF</code>, 15 px) number under the expression box that re-evaluates the expression on every change. <code>preview_answer()</code> returns <code>""</code> for an empty expression, one that cannot be evaluated yet (half-typed), one that is already a single number, or an error message — <code>refresh_preview()</code> hides the slot in those cases.</li>
+<li>Hooked into every path that can change the expression or what it means: <code>update_display()</code> (keypad, history insert, variable insert), <code>handle_display_change()</code> (typing), <code>toggle_angle()</code> (DEG/RAD), <code>assign_variable()</code> (a new variable value), and <code>set_mode()</code>, which resets the slot.</li>
+<li>Pressing <code>=</code> does not make that number vanish. <code>promote_preview()</code> grows it to the display size (34), turns it white, slides it up <code>PREVIEW_MORPH_LIFT = 34</code> px and fades it out over <code>PREVIEW_MORPH_MS = 260</code> ms using Flet implicit animations (<code>animate_size</code> / <code>animate_offset</code> / <code>animate_opacity</code> with <code>ft.AnimationStyle(duration=…, curve=ft.AnimationCurve.EASE_OUT_CUBIC)</code>). The display already holds the answer during the morph, so the two converge instead of anything disappearing.</li>
+<li>Morph cleanup: <code>page.run_task(finish_preview_morph, token)</code> resets the slot after the animation; the token makes a stale timer a no-op, and the <code>preview_morphing</code> flag keeps <code>refresh_preview()</code> from fighting an animation in flight. All tunables are module constants at the top of <code>main.py</code>.</li>
+<li>The display panel grew 140 → 168 px for the preview line; <code>asyncio</code> was added to the imports (stdlib, so no dependency change).</li>
+<li>Verified with a headless Flet drive-through (<code>/tmp/live_probe.py</code>): no Convert button in the tree; typing 2500 cm → km gives 0.025 with a 2-hop chain; "-" and "abc" clear silently with no errors; changing From to metre re-converts 5 → 0.005 without touching the value; the same-unit zero-step card still appears. Calculator: preview shows 4 for "2+2" and 25 for "2+23"; after <code>=</code> the display reads 25 while the preview is at 34 px / white / opacity 0 / offset −34 and still visible; ~0.5 s later the slot is hidden again at 15 px, offset 0, opacity 1. Also checked: "sqrt(9" hidden → "sqrt(9)" previews 3, scientific "sin(30)" previews 0.49999999999999994, AC hides it, switching destinations hides it, and 2÷0 previews nothing while the display still reads "Can't divide by 0".</li>
+<li>Regression: <code>/tmp/chain_probe4.py</code> was updated to the live wiring (it drives <code>value_field.on_change</code> instead of clicking Convert, and now expects a unit change to re-convert rather than clear) and still passes, as does the formula-flip property check <code>/tmp/flip_test.py</code>.</li>
+<li>Spotted, deliberately not changed: <code>sin(30)</code> in DEG mode evaluates to 0.49999999999999994 rather than 0.5 — a pre-existing precision artifact of the degree conversion that the live preview now makes visible.</li>
+<li><code>calculator_spec.md</code>: the conversions section states the live conversion and the silent-while-typing behaviour; "changing a dropdown clears result and chain" became "re-converts the value already in the field"; new "Live result preview" section for the calculators.</li>
+</ul>
+<h2 id="2026-10-23-chain-formula-moved-behind-a-view-formula-button">2026-10-23 — Chain: formula moved behind a "View formula" button</h2>
+<ul>
+<li>Chain cards now show only the hop ("Centimeter (cm) → Meter (m)") and that hop's values ("2500 → 25"). The inline formula text, the "MD formula applied backwards" note and the chain copy button were all removed.</li>
+<li>Each card carries a "View formula" button that reveals that hop's formula and collapses it on a second click. For a hop that reused an <code>MD</code> formula backwards the formula is shown already flipped, so what is on screen is always the formula that was actually applied: configured <code>x + 273.15</code> is shown as <code>x - 273.15</code>.</li>
+<li>Reason (user request): the cards were busy — the formula was always visible even when it was not wanted, and announcing "applied backwards" is redundant once the formula itself is presented in the direction it was used.</li>
+<li>Implementation: <code>_flip_conversion_formula()</code> builds the reversed formula as an AST and unparses it, mirroring the algebra of <code>_invert_conversion_formula()</code> (+ ↔ −, × ↔ ÷). Dividing by a fraction is rewritten as multiplying by its reciprocal, so <code>(x * 9/5) + 32</code> flips to <code>(x - 32) * 5 / 9</code> and <code>(x - 32) * 5/9</code> flips to <code>x * 9 / 5 + 32</code>. <code>ConversionStep</code> gained <code>applied_formula</code> (the configured text is still kept in <code>formula</code>); <code>describe_conversion_step()</code> was deleted.</li>
+<li>Verified two ways: a property check over all 76 <code>MD</code> formulas in <code>conversions.yaml</code> (every flip round-trips numerically through the app's own evaluator and agrees with the numeric solver), and a headless Flet session driving the real UI — formulas hidden until clicked, one button per hop, reveal/hide toggle, flipped formula on a reversed hop, a mixed 3-hop chain (Rankine → Kelvin), zero-step chain with no buttons, chain cleared on unit change, error path intact. Scripts: <code>/tmp/flip_test.py</code>, <code>/tmp/chain_probe4.py</code>.</li>
+<li>Probe gotcha: a card's title and its value line both contain "→", so matching "→" alone conflates "1. Centimeter (cm) → Meter (m)" with "2500 → 25".</li>
+<li>Batched shell calls race: launching a probe and reading its output file in the same parallel batch reads the file before the probe writes it. Chain dependent commands with <code>;</code> in one command string instead.</li>
+</ul>
+<h2 id="2026-10-23-conversion-chain-of-operations">2026-10-23 — Conversion chain of operations</h2>
+<p><em>Superseded the same day by the entry above (formula now hidden behind a button, no chain copy).</em></p>
+<ul>
+<li>Added a "Chain of operations (N steps)" section under the unit conversion result: one card per formula hop, in the order applied. Each card named the hop by unit name and symbol ("Centimeter (cm) → Meter (m)") and showed the configured formula with that step's input and output ("x / 100 where x = 2500 gives 25").</li>
+<li>Reason: the app picks a route through the YAML formula graph automatically, so users could not see <em>how</em> a result was reached, which hop each value passed through, or that a formula had been reused backwards.</li>
+<li>Hops that reused an <code>MD</code> formula inverted were labelled "MD formula applied backwards"; converting a unit to itself showed a zero-step chain ("the value is passed through unchanged").</li>
+<li><code>convert_units()</code> now returns a <code>ConversionOutcome</code> (value + list of <code>ConversionStep</code>) instead of a bare <code>Decimal</code>. A step records the hop direction, the formula type, and the value in/out — the hop units are swapped when the formula was inverted.</li>
+<li>The chain carried its own copy button, reusing the shared clipboard service from the copy-to-clipboard work below.</li>
+<li>Changing either unit dropdown now clears the previous result and chain, so a result and a chain that do not belong together are never displayed side by side.</li>
+<li>Verified by driving the real app in a headless Flet session: the drawer handler opened the Length and Temperature forms, Convert was clicked, and the rendered texts were read back out of the control tree. Also asserted the chain text reached the system clipboard.</li>
+<li>Two real bugs that only the drive-through exposed (a launch check passes both): <code>clear_conversion_output</code> was bound by the dropdowns before its <code>def</code> ran (<code>UnboundLocalError</code>), and Flet 1.0.4's <code>Dropdown</code> has no <code>on_change</code> — the event is <code>on_select</code>.</li>
+</ul>
+<h2 id="2026-10-23-copy-to-clipboard-on-every-result">2026-10-23 — Copy-to-clipboard on every result</h2>
+<ul>
+<li>Added a small icon-only copy button (<code>ft.Icons.CONTENT_COPY</code>, 16px icon in a 30x30 hit area) to all three result surfaces: the calculator display (top row of the display panel, left of the DEG/RAD toggle), the answer of each calculation history entry, and the unit conversion result field (as the TextField <code>suffix</code>).</li>
+<li>Implementation: one shared <code>ft.Clipboard()</code> service created in <code>main()</code>, plus a <code>copy_to_clipboard()</code> helper and a <code>make_copy_button(get_value)</code> factory in <code>src/main.py</code>.</li>
+<li>The button reads its value <strong>at click time</strong> through a getter instead of baking the string into the control, so it cannot copy a stale value. Chosen over the <code>ft.CopyToClipboard</code> client action for that reason; the tradeoff is reliance on <code>Clipboard.set()</code>, which is silent on iOS Safari web builds — irrelevant for this desktop app, but relevant if it is ever published to the web.</li>
+<li>Feedback: <code>ft.SnackBar</code> via <code>page.show_dialog</code>, e.g. "Copied 3.14159…", truncating values past 40 chars. Empty surfaces report "Nothing to copy yet" rather than writing an empty string.</li>
+<li>The display's copy button is disabled while an error message is showing.</li>
+<li>Not covered, by request: the <em>expression</em> half of each history entry still only inserts into the display.</li>
+<li>Service registration confirmed later (2026-10-23, chain work): <code>ft.Clipboard</code> self-registers through <code>Service.__post_init__</code> into the page's internal registry, readable as <code>page._services._services</code> — note <code>page.services</code> is a different list, so probes must look at the internal registry.</li>
+<li><code>calculator_spec.md</code> gained a "Copy to clipboard" section.</li>
+</ul>
+<h2 id="2026-10-23-documentation-hub-created">2026-10-23 — Documentation hub created</h2>
+<ul>
+<li>Moved anycalc project documentation into Trilium under the AI note, per <code>DOCUMENTATION_REMINDER.txt</code>.</li>
+<li><code>calculator_spec.md</code> remains in the repo as the feature spec; this note tree is the explanation/design layer, not a replacement.</li>
+<li>Recorded the verified state of the app: stack, file layout, <code>main.py</code> architecture, limits, named variables, drawer navigation.</li>
+</ul>
+<h2 id="open-items">Open items</h2>
+<ul>
+<li><code>pyproject.toml</code> floats (<code>&gt;=1.0.4</code>): a fresh install — and the Linux bundle built today — resolve Flet 1.0.5 while <code>.venv</code> is on 1.0.4. Both verified working; pin with <code>==</code> in <code>[project].dependencies</code> if exact reproducibility matters more than getting patches.</li>
+<li>Audit <code>calculator_spec.md</code> against <code>src/main.py</code> line-by-line and reconcile any drift (spec features not implemented, or implemented features missing from the spec).</li>
+<li><code>README.md</code> now carries setup / run / build commands (it used to be empty). Decide whether it should also link this note tree, and whether <code>build/</code> (≈625 MB of generated Flutter/app output) should be ignored once the project becomes a git repo — there is no top-level <code>.gitignore</code> yet.</li>
+<li>All app logic sits in one ~1,700-line <code>main.py</code>; splitting the expression engine, conversion engine, and UI into modules is worth considering before the app grows further.</li>
+<li>There is no test suite in the repo. The formula-flip property check and the app drive-through probes currently live in <code>/tmp</code> and are throwaway; promoting them to <code>pytest</code> (the drive-through needs a Flet session, the pure logic does not) would make the conversion engine safe to refactor. Importing <code>src/main.py</code> no longer launches the app — the module now ends in <code>def run_app()</code> behind an <code>if __name__ == "__main__":</code> guard, so the engines are importable; the <code>dev</code> extra in <code>pyproject.toml</code> already lists pytest.</li>
+<li>The <code>=</code> morph animation was verified only as control state (sizes, colours, offsets, opacity, timings), not visually — the lift distance (<code>PREVIEW_MORPH_LIFT</code>) and duration are the knobs to tune once it is watched in a running window.</li>
+<li>Drawer / dropdown / history ordering is never sorted — it is pure YAML file order (see the anycalc hub note's ordering table). Nothing decided yet about sorting alphabetically, adding an <code>order:</code> field, or making the unit dropdowns searchable.</li>
+<li>Trig in DEG mode is not exact (<code>sin(30)</code> → 0.49999999999999994). Worth deciding whether the degree conversion should round cleanly, now that raw results are shown live.</li>
+</ul>
+<p><strong>2026-10-23 — Volume, liquid and weight conversion groups added (high accuracy).</strong></p>
+<ul>
+<li><code>src/assets/conversions.yaml</code>: new <code>Volume</code> unit group (39 units) + <code>Volume Conversion</code> (40 formulas), new <code>Weight</code> unit group (23 units) + <code>Weight Conversion</code> (22 formulas). No <code>.py</code> change needed — groups are data-driven; <code>conversion_options</code> is derived from the YAML, so the new entries land in the drawer's Conversion block in file order (positions 5-6) and the calculator <code>DrawerItemIndex</code> mapping is unaffected.</li>
+<li>Coverage: metric cubic/liquid/culinary, US customary liquid + dry, imperial liquid, cubic in/ft/yd/mi, acre-foot, petroleum barrel; metric/avoirdupois/troy/apothecaries' mass, stone, hundredweights, short &amp; long tons, carat, quintal.</li>
+<li>Every factor is the legal definition kept exact (NIST SP 811 / 1959 yard-and-pound): in³ = 16.387064 cm³, US gal = 231 in³, US dry gal = 268.8025 in³, imp gal = 4.54609 L, lb = 0.45359237 kg, gr = 0.00006479891 kg, oz t = 480 gr. Long exact values are chained through integers because the engine parses literals via <code>Decimal(str(float))</code> (15-digit cap); US tbsp/tsp got direct mL definitions so no route has to divide by 3 first.</li>
+<li>Verified: config loads, 1988 unit pairs all reachable, 672/672 + 247/247 terminating-decimal pairs reproduced bit-exactly, 41/41 published-value spot checks, app launches clean (<code>timeout 30 .venv/bin/flet run</code>, no traceback; <code>build/</code> is absent so the dev client is used).</li>
+<li>Docs: <code>calculator_spec.md</code> gained a "Volume and weight conversions" section (exactness rules), <code>README.md</code> gained a "Unit conversions" section. Probe scripts live in <code>/tmp</code> (<code>probe_volwt.py</code>, <code>probe_sweep.py</code>, <code>probe_exact.py</code>) — still candidates for promotion to pytest once the <code>dev</code> extra can be installed.</li>
+</ul>
+<h2 id="2026-10-24-on-the-regular-pad-on-both-pads">2026-10-24 — <code>%</code> on the regular pad, <code>±</code> on both pads</h2>
+<p><strong>Requested:</strong> a <code>%</code> button on the regular calculator, and a <code>±</code> button on both calculators (<code>±</code> confirmed as the right glyph — it is the standard sign-change key; iOS writes the same key as "+/-").</p>
+<p><strong>What the app does now</strong></p>
+<ul>
+<li>Regular keypad: <code>AC ⌫ ( ) ± %</code> on the utility row, then the unchanged digit/operator rows. Putting the two new keys in the existing top row instead of adding a row keeps the pad exactly as tall as before, which matters because the pad already fills the window in scientific mode.</li>
+<li>Scientific keypad: no duplicate keys. The scientific block is now <code>sin cos tan √</code> / <code>log ln π e ^</code> / <code>Set Variable, Insert Variable</code> above the regular rows — <code>(</code>, <code>)</code>, <code>%</code> and <code>±</code> come from the shared utility row, so nothing is printed twice and every <code>key-&lt;label&gt;</code> stays unique (previously <code>(</code> and <code>)</code> were duplicated in scientific mode).</li>
+<li><code>%</code> inserts Python's modulo, the same as the scientific key always did: <code>9%2</code> → 1, <code>7%2.5</code> → 2. <code>Decimal</code>'s remainder truncates the quotient, so the result keeps the dividend's sign (<code>-7%2</code> → -1, <code>7%-2</code> → 1) rather than Python's floor remainder (<code>-7 % 2 == 1</code>); <code>5%0</code> reports "Invalid result". <strong>Not</strong> percent-of (<code>x/100</code>) — flagging that as the open product question.</li>
+<li><code>±</code> is new logic in <code>toggle_sign()</code> (module-level, so it is unit-testable without an app): it edits rather than appends. It flips the sign of the last number typed, or of the result right after <code>=</code>; <code>5*3</code> → <code>5*-3</code>; a second press removes the sign instead of stacking one (<code>5--3</code> → <code>5-3</code>); if the expression ends on an operator the sign goes at the end for the number about to be typed (<code>5-</code> → <code>5--</code>, so typing 3 gives 5 − (−3)); a numberless expression is untouched. Pressing <code>±</code> never leaves result mode, so <code>-5</code> straight after <code>=</code> is still a result.</li>
+<li>Keypad key handling: <code>±</code> is handled before the "any other key starts a new entry" block in <code>press()</code>, and the <code>⌫</code>/<code>AC</code>/error paths are unchanged.</li>
+</ul>
+<p><strong>Docs:</strong> <code>calculator_spec.md</code> gained a "Calculator keypad" section (keys per pad, one-key-once rule, no height growth, <code>%</code> semantics incl. the dividend sign, all <code>±</code> rules) plus a Testing bullet about the expression-engine file; <code>README.md</code> lists the new test file. No data/YAML changes.</p>
+<h2 id="2026-10-24-on-the-regular-calculator-is-now-a-desk-calculator-percent-key-length-factors-made-exact">2026-10-24 — <code>%</code> on the Regular Calculator is now a desk-calculator percent key; Length factors made exact</h2>
+<p><strong>Requested:</strong> the regular calculator's <code>%</code> should behave like the percent key on a physical desk calculator (the earlier entry above flagged "percent-of vs modulo" as the open product question — this settles it), and the Length group's rounded conversion factors should be replaced by their exact legal anchors.</p>
+<p><strong>Decision:</strong> <code>%</code> means two different things, one per pad. The Regular Calculator gets desk-calculator percent; the Scientific Calculator keeps the modulo operator, because there <code>%</code> is used as a programming operator and percent would be useless.</p>
+<p><strong>What the app does now (Regular pad)</strong></p>
+<ul>
+<li><code>50%</code> → 0.5; <code>200+10%</code> → 220 and <code>200-10%</code> → 180 (the share of the number on its left); <code>200*10%</code> → 20 and <code>200/10%</code> → 2000 (plain fraction); chaining re-applies the rule to the running total, so <code>200+10%+5%</code> → 231. Pressing <code>%</code> with nothing in front of it does nothing, and a lone <code>%</code> shows an error instead of a traceback.</li>
+<li>Implementation: a postfix <code>%</code> is not Python syntax, so <code>apply_percent_operators()</code> rewrites it into a marker call before parsing — <code>200+10%</code> becomes <code>200+_percent(10)</code> — walking back over the digits, or over a parenthesised call such as <code>sqrt(4)%</code>. <code>evaluate()</code> divides a bare marker call by 100, and <code>percent_share()</code> turns <code>+ _percent(n)</code> / <code>- _percent(n)</code> into that share of the already-evaluated left operand. Only the regular pad is rewritten (<code>calculate()</code> applies it when <code>scientific</code> is False), so the scientific pad's modulo is untouched.</li>
+<li><code>±</code> had to learn the same distinction, otherwise it would treat the regular pad's <code>%</code> as an unfinished operator: <code>toggle_sign()</code> takes a <code>percent_is_modulo</code> flag, so <code>200+10%</code> negates its last number while <code>9%</code> on the scientific pad is mid-entry and gets the sign at the end.</li>
+<li>Unparsable input now reports <code>ERROR_INVALID_EXPRESSION</code> ("Invalid expression") instead of the bare "Error".</li>
+</ul>
+<p><strong>Unit conversion data (</strong><code>**src/assets/conversions.yaml**</code><strong>, Length group)</strong></p>
+<ul>
+<li>Rounded literals replaced by the legal anchors: <code>inch → millimetre</code> is <code>x * 25.4</code> (was <code>meter → inch = x * 39.37007874</code>), <code>mile → metre</code> is <code>x * 1609.344</code> (was <code>x / 1.150779448</code> for mile → nautical mile), <code>nautical_mile → metre</code> is <code>x * 1852</code>, <code>light_year → metre</code> is the exact integer <code>x * 9460730472580800</code>, AU stays 149597870.7 km. So inch → millimetre is now exactly 25.4 instead of 25.4000000001…, and nautical mile → metre exactly 1852 instead of 1851.9999994….</li>
+<li>Integer literals are exact however long, because the engine parses an <code>int</code> constant through <code>Decimal(str(int))</code>; only decimal literals are capped at the 15 significant digits that survive float parsing. That is why the light-year is written as a 16-digit integer and the parsec keeps 13 digits (<code>x / 3.2615637771674</code>).</li>
+<li>The parsec is the one Length hop that cannot be exact at all: it is 648000/π astronomical units, hence not a rational number. It is excluded from the exactness sweep by name, with the reason in the YAML comment and in the test.</li>
+</ul>
+<p><strong>Tests</strong></p>
+<ul>
+<li><code>tests/test_calculator_engine.py</code>: 56 → <strong>96</strong> tests, <code>%</code> split into a percent block (regular) and a modulo block (scientific), plus direct coverage of <code>apply_percent_operators</code> and <code>is_percent_call</code>.</li>
+<li><code>tests/test_conversion_engine.py</code>: 75 → <strong>82</strong> tests; <code>LENGTH_DRIFT</code> and its <code>xfail(strict=True)</code> marker deleted, exactness sweep extended over the whole Length group (parsec excepted).</li>
+<li><code>tests/test_app.py</code>: 6 → <strong>7</strong> UI tests; the keypad test asserts <code>200+10%</code> previews <code>220</code> on the regular pad and the scientific assertions keep <code>9%2</code> at <code>1</code>.</li>
+<li>Verified: <code>.venv/bin/python -m pytest -k engine</code> → <strong>178 passed</strong> in ~3 s.</li>
+</ul>
+<p><strong>Docs:</strong> <code>calculator_spec.md</code> — the Length "known deviation" paragraph is replaced by the exact-anchor rule plus the parsec exception, the "Calculator keypad" section splits <code>%</code> per pad and extends the <code>±</code> mid-entry rule, and the Testing section records the removed marker. <code>README.md</code> — exact anchors + parsec caveat, <code>-k engine</code> now selects both engine files, percent/modulo described in the test bullet. Trilium: the "Testing — pytest + flet test suite" note is rewritten to match; this entry is appended here because the note editor only offers whole-note rewrite or append for rich-text notes (the newest-at-top convention is broken by this placement, not by the content).</p>
+<ul>
+<li>Correction to the entry above (checked against the code after writing it): a lone <code>%</code> does <strong>not</strong> report an error. <code>apply_percent_operators</code> drops a <code>%</code> that has no operand in front of it, <code>calculate()</code> then sees an empty program and returns <code>0</code>, so the display simply stays at zero. The "Invalid expression" error is what a <code>%</code> typed straight after another operator produces once <code>=</code> is pressed (<code>5+%</code> → rewritten to <code>5+</code> → syntax error).</li>
+</ul>
+<h2 id="2026-10-24-single-file-app-split-into-11-modules-src-re-registered-inside-packaged-builds">2026-10-24 — single-file app split into 11 modules; <code>src</code> re-registered inside packaged builds</h2>
+<p><strong>The split (spec §"Source layout", done for real this time)</strong></p>
+<ul>
+<li><code>src/main.py</code> was <strong>1607 lines</strong> holding everything; it is now <strong>52 lines</strong> (entry only: <code>main(page)</code>, <code>run_app()</code>, the <code>__main__</code> guard). New modules, matching the module names the spec already listed: <code>config.py</code> (constants + <code>Decimal</code> precision + <code>CONVERSION_CONFIG_PATH</code>), <code>calculate.py</code> (expression engine, 426 lines), <code>conversions.py</code> (conversion config + route finding, 350), <code>ui.py</code> (<code>CalculatorApp</code> state/display/preview/mode wiring, 668), <code>keypad.py</code> (both pads' rows + <code>make_key</code>), <code>conversion_view.py</code> (<code>ConversionView</code>), <code>history_view.py</code>, <code>variable_dialogs.py</code>, <code>clipboard.py</code> (<code>ClipboardService</code>), <code>styles.py</code>, <code>__init__.py</code>.</li>
+<li>Dependency direction is one-way: engines import only <code>config</code>; <code>ui</code> imports engines + views + keypad/clipboard/dialogs; views and dialogs receive what they need (page, controls, callbacks, or the app object) instead of reaching into an app closure. No engine imports Flet, so <code>tests/test_calculator_engine.py</code> / <code>test_conversion_engine.py</code> still run under plain <code>pytest</code>.</li>
+<li>Code was moved <strong>verbatim</strong> (only indentation and the closure-variable → <code>self.</code> translation), so behaviour could not drift: <code>flet test</code> → <strong>185 passed</strong> (7 <code>test_app.py</code> + 178 engine tests), and the test files needed <strong>no</strong> changes at all — their <code>from src.conversions import …</code> imports were already correct from the previous phase.</li>
+</ul>
+<p><strong>Packaging gotcha found on the way (this is the part worth remembering)</strong></p>
+<ul>
+<li><code>flet test</code> / <code>flet build</code> copy the <strong>app folder itself</strong> (<code>[tool.flet.app] path = "src"</code>) <strong>flat</strong> into <code>build/flet/tests/app/</code> and put <em>that folder</em>, not the project root, on <code>sys.path</code> (<code>_prepare_temp_dir</code>, <code>_copy_project_files_into</code> / <code>_copy_python_app_files_into</code> in <code>flet_cli/commands/build_base.py</code>, plus <code>_build_pth()</code>). So in a built app the modules are top-level (<code>main</code>, <code>ui</code>, <code>styles</code>, …) and <code>from src.ui import CalculatorApp</code> fails: <code>ModuleNotFoundError: No module named 'src.ui'</code> raised from <code>__main__</code> (it also silently degrades <code>python -m src.main</code> — run that from <code>src/</code> and you get a second, duplicate copy of every module, because <code>sys.path[0]</code> becomes <code>src/</code>).</li>
+<li>Fix lives only in <code>src/main.py</code>, before every other import: <code>_ensure_src_package()</code> registers <code>src</code> in <code>sys.modules</code> as a package whose <code>__path__</code> is the folder holding the entry module. One set of absolute <code>src.</code> imports then works both when the tree is imported as <code>src.*</code> from the workspace root and when the flattened artifact runs as <code>__main__</code>. Nothing else in the codebase knows how the app was packaged.</li>
+<li>Verified three ways: host import (<code>python -c "import src.main"</code>), a flattened-directory simulation of the bundle (<code>cd</code> into it, <code>python main.py</code>, assert <code>src.__path__</code> points at the bundle and that the sibling <code>assets/conversions.yaml</code> still resolves), and <code>flet test</code> (which builds first) → all green.</li>
+<li><code>src/assets/conversions.yaml</code> keeps resolving because <code>config.py</code> builds the path from <code>Path(__file__)</code>, and the copy step keeps <code>assets/</code> next to the modules.</li>
+</ul>
+<p><strong>Docs:</strong> <code>calculator_spec.md</code> §"Packaging &amp; entry point" gained the import-root rule and the "registration lives in the entry module only" rule. New subnote <strong>"Source layout — modules and the Flet import root"</strong> under the project note documents the module map and the gotcha. <code>README.md</code> already described the multi-module structure, so it needed no change (the code had drifted from it, not the other way round).</p>
+<ul>
+<li>Correction to the entry above (line counts re-checked with <code>wc -l</code> after writing it): <code>src/main.py</code> is <strong>70</strong> lines (not 52), <code>ui.py</code> <strong>714</strong>, <code>calculate.py</code> <strong>389</strong>, <code>conversions.py</code> <strong>341</strong>, <code>config.py</code> 107, <code>conversion_view.py</code> 268, <code>variable_dialogs.py</code> 206, <code>history_view.py</code> 104, <code>keypad.py</code> 90, <code>clipboard.py</code> 69, <code>styles.py</code> 23, <code>__init__.py</code> 6 — <strong>12 modules, 2387 lines</strong> in <code>src/</code>. The split also left the app's test totals confirmed at <strong>185 passed</strong> under <code>flet test</code> and <strong>178 passed</strong> for <code>-k engine</code> under plain <code>pytest</code>.</li>
+<li>One more clarification on the entry above: what "no test changes" means is that the tests were touched <strong>only for import paths</strong>, exactly as the spec's acceptance criterion allows. <code>tests/test_calculator_engine.py</code> imports <code>src.calculate</code> + <code>src.config</code>, <code>tests/test_conversion_engine.py</code> imports <code>src.conversions</code>, <code>tests/test_app.py</code> imports <code>src.conversions</code> — none of their assertions, fixtures or <code>key</code> selectors changed. That is the evidence the behaviour is unchanged: 7 UI tests + 178 engine tests green, both in the packaged app (<code>flet test</code>) and on the host (<code>pytest -k engine</code>).</li>
+</ul>
+<p><strong>Corrections to the packaging notes above</strong> (re-checked against the installed flet-cli 1.0.5 source, 2026-10-24)</p>
+<ul>
+<li>The CLI internals named above — <code>_prepare_temp_dir</code>, <code>_copy_project_files_into</code>, <code>_copy_python_app_files_into</code>, <code>_build_pth</code> — <strong>do not exist</strong> in flet-cli 1.0.5. Those names were wrong. The real chain is: <code>package_python_app()</code> (<code>flet_cli/commands/build_base.py:2514</code>) shells out to <code>dart run serious_python:main package &lt;Flet app dir&gt;</code> (args built ~2536-2543); the result is staged to <code>**build/python-app/**</code>, whose existence is verified at <code>build_base.py:2843</code>, and that path is handed to the runner via the <code>SERIOUS_PYTHON_APP</code> env var (<code>build_base.py:2629</code>, <code>:2999</code>). The copying itself happens in the Dart-side <code>serious_python</code> tool, which is not installed in <code>.venv</code>.</li>
+<li>Direct evidence for the flattening, no inference needed — <code>build/python-app/</code> on disk right now holds, all at one level: <code>main.pyc, calculate.pyc, keypad.pyc, conversions.pyc, styles.pyc, ui.pyc, config.pyc, conversion_view.pyc, clipboard.pyc, variable_dialogs.pyc, history_view.pyc, __init__.pyc</code> plus <code>assets/conversions.yaml</code>. <code>__init__.pyc</code> is present only because <code>src/__init__.py</code> exists, and it is what lets the entry module register <code>src</code> as a package rooted at that directory.</li>
+<li>Also stale: there is <strong>no</strong> <code>**build/linux/**</code> <strong>in the workspace any more</strong>, and today <code>build/</code> is <code>flutter</code> <strong>9.2 GB</strong>, <code>site-packages</code> 50 MB, <code>python-app</code> 188 KB, <code>.hash</code>, <code>.python-version</code>. The "132 MB artifact / 439 MB flutter" figures belonged to that one earlier run.</li>
+</ul>
+<p><strong>How anycalc compares with a stock Flet app</strong> (ran <code>flet create /tmp/tpl_probe</code> with this project's own flet-cli, 2026-10-24)</p>
+<ul>
+<li>Stock scaffold = <code>pyproject.toml</code>, <code>README.md</code>, <code>.gitignore</code>, <code>src/main.py</code>, <code>src/assets/icon.png</code>, <code>tests/test_main.py</code>. So anycalc's <strong>folder shape is exactly the stock shape</strong>: entry is <code>src/main.py</code>, <code>assets/</code> lives <em>inside</em> <code>src/</code>, <code>tests/</code> is a sibling of <code>src/</code>, and <code>[tool.flet.app] path = "src"</code> (the template omits <code>module</code> — it defaults to <code>main</code>, we write it explicitly). Stock <code>src/main.py</code> also ends in <code>if __name__ == "__main__": ft.run(main)</code>, the same guard shape we use via <code>run_app()</code>.</li>
+<li>Stock scaffold does <strong>not</strong> have <code>src/__init__.py</code>, <code>[tool.setuptools]</code> or <code>[project.scripts]</code>. Crucially its pytest config is <code>asyncio_mode = "auto"</code>, <code>testpaths = ["tests"]</code>, <code>**pythonpath = ["src"]**</code> — stock Flet treats <code>src/</code> as a <strong>sys.path root, not a package</strong>. So a multi-file stock app would import siblings as top-level names (<code>from ui import CalculatorApp</code>), which needs no shim because the packaged app dir is the same flattened directory put on <code>sys.path</code>.</li>
+<li>anycalc deliberately went the other way: <code>src</code> is a real package, absolute <code>src.*</code> imports everywhere, plus the <code>_ensure_src_package()</code> shim in the entry module. That is what makes <code>pip install -e .</code> and <code>[project.scripts] anycalc = "src.main:run_app"</code> meaningful; the price is one shim function. (Honest caveat: <code>[tool.setuptools] packages = ["src"]</code> installs a top-level package literally named <code>src</code> into site-packages, which is its own smell — the fully conventional fix would be <code>src/anycalc/</code>.)</li>
+<li>Minor stock-config diffs we could adopt: <code>[dependency-groups] dev = ["flet-cli", "flet-desktop", "flet-web", "flet[test]"]</code> (PEP 735) instead of <code>[project.optional-dependencies].dev</code>; <code>requires-python = "&gt;=3.10"</code> (ours <code>&gt;=3.11</code>); <code>desktop_flavor = "light"</code>, <code>company</code>, <code>copyright</code> keys; and stock <code>tests/test_main.py</code> never imports the app at all — it drives it purely through the <code>flet_app</code> fixture with <code>find_by_key</code> / <code>find_by_text</code>, which is how our <code>test_app.py</code> works too except for its one <code>from src.conversions import load_conversion_config</code>.</li>
+</ul>
+<h2 id="2026-10-24-switched-to-the-stock-flet-import-convention-shim-and-console-script-removed">2026-10-24 — switched to the stock Flet import convention (shim and console script removed)</h2>
+<p>Prompted by the question "is this how a regular Flet app would be organized?". Answer measured against <code>flet create</code> from this project's own flet-cli 1.0.5 (scaffolded to <code>/tmp/tpl_probe</code>): the <strong>folder shape already matched</strong> (<code>pyproject.toml</code> + <code>src/main.py</code> + <code>src/assets/</code> + <code>tests/</code>), but the <strong>import convention did not</strong> — the stock scaffold has no <code>src/__init__.py</code> and its pytest config carries <code>pythonpath = ["src"]</code>, i.e. <code>src/</code> is an import root, not a package. The user picked the stock convention.</p>
+<ul>
+<li>All 25 cross-module imports lost their <code>src.</code> prefix: <code>src/ui.py</code> 9, <code>src/variable_dialogs.py</code> 3, <code>src/conversions.py</code> 2, <code>src/conversion_view.py</code> 2, and 1 each in <code>calculate</code>, <code>clipboard</code>, <code>history_view</code>, <code>keypad</code>, <code>main</code>; plus 4 in tests (<code>test_calculator_engine.py</code> 2, <code>test_app.py</code> 1, <code>test_conversion_engine.py</code> 1). Assertions and UI selectors untouched — import lines only.</li>
+<li>Deleted: <code>src/__init__.py</code>, <code>ensure_src_package()</code> + its call + the <code># noqa: E402</code> markers in <code>src/main.py</code>, and the <code>REPO_ROOT</code> <code>sys.path</code> insert in <code>tests/conftest.py</code> (that file is now documentation only). <code>src/</code> is 11 modules.</li>
+<li>Added: <code>pythonpath = ["src"]</code> to <code>[tool.pytest.ini_options]</code>, and <code>.vscode/settings.json</code> with <code>"python.analysis.extraPaths": ["src"]</code> so Pylance resolves the bare-name imports (there was no <code>.vscode</code> before).</li>
+<li>Removed <code>[project.scripts] anycalc = "src.main:run_app"</code>; <code>[tool.setuptools]</code> is now <code>packages = []</code>, <code>py-modules = []</code> (deliberately installs nothing — <code>pip install</code> is dependency resolution only), and <code>[tool.setuptools.package-data]</code> is gone. <strong>This breaks the AGENTS.md instruction to keep "the</strong> <code>**anycalc**</code> <strong>entry point" in pyproject.toml</strong> — the user was told before the change and chose this anyway; the Flet entry point (<code>[tool.flet.app] path = "src"</code>, <code>module = "main"</code>) remains. AGENTS.md itself was not edited.</li>
+<li><code>calculator_spec.md</code> §"Packaging &amp; entry point" rewritten for the new rule (bare-name imports, <code>src/</code> as import root, no console script); the <code>flet build linux</code> bullet was preserved (it was briefly dropped in the edit and restored). <code>README.md</code> run/test sections updated: <code>flet run</code> instead of <code>flet run src/main.py</code> / <code>anycalc</code>.</li>
+<li>Verified: <code>python -m compileall src tests</code> clean; importing all 11 modules from inside <code>src/</code> works (<code>main.__package__ == ''</code>); <code>python -m pytest -k engine</code> → <strong>178 passed</strong>; <code>flet test</code> → <strong>185 passed</strong> with the app repackaged from the new sources, which is the case that matters (the bundle's import root has no <code>src</code> package, and no shim exists any more).</li>
+<li>Rejected alternative recorded for the future: <code>src/anycalc/…</code> with <code>[tool.flet.app] module = "anycalc.main"</code> would give a properly named package <em>and</em> keep a console script, because the packager preserves subdirectories (<code>assets/</code> survives the copy) — so it needs no shim either. Not done; the user chose the stock convention.</li>
+</ul>
+<p>Addendum to the entry above (numbers, so nothing stale survives): after the convention switch <code>src/</code> is <strong>11 modules, 2,355 lines</strong>, <code>src/main.py</code> is <strong>40 lines</strong> — the earlier "12 modules / 2,387 lines / main.py 70 lines" figures included <code>src/__init__.py</code> and the shim. The test build stages exactly those 11 as <code>build/python-app/{main,calculate,clipboard,config,conversions,conversion_view,history_view,keypad,styles,ui,variable_dialogs}.pyc</code> + <code>assets/conversions.yaml</code>, with <strong>no</strong> <code>**__init__.pyc**</code> — verified on disk after the run. <code>pip wheel . --no-deps</code> now produces a metadata-only <code>anycalc-0.1.0-py3-none-any.whl</code> (just <code>*.dist-info/</code>, 3.4 KB), which is the intended shape: installing the project resolves dependencies and installs no modules.</p>
+<h2 id="2026-10-24-agentsmd-amended-to-match-the-stock-import-convention">2026-10-24 — AGENTS.md amended to match the stock import convention</h2>
+<p>Supersedes the sentence "AGENTS.md itself was not edited." in the entry above.</p>
+<p><code>AGENTS.md</code> line 10 no longer asks for "the <code>anycalc</code> entry point" in <code>pyproject.toml</code>. It now names the <strong>Flet</strong> entry point — <code>[tool.flet.app] path = "src"</code>, <code>module = "main"</code> — plus the <code>[tool.pytest.ini_options]</code> config, and states outright that there is deliberately no console script, so <code>[project.scripts]</code> does not get re-added by a future session. A second paragraph was added capturing the convention itself, since that old wording was precisely what would have caused the shim to come back: <code>src/</code> is Flet's import root and not a package, modules use bare-name imports, never add <code>src/__init__.py</code> / a <code>src.</code> prefix / a <code>sys.path</code> shim (artifacts flatten <code>src/</code> and contain no <code>__init__.pyc</code>), pytest gets the root from <code>pythonpath = ["src"]</code>, Pylance from <code>.vscode/settings.json</code>, run = <code>flet run</code>, test = <code>flet test</code> (<code>-k engine</code> for engine only). <code>.clinerules</code> was checked and left alone — it only holds the "sed is off-limits" rule.</p>
+<h2 id="2026-10-24-workspace-is-now-a-git-repo-pushed-to-github">2026-10-24 — workspace is now a git repo, pushed to GitHub</h2>
+<p>Repo created by the user in the GitHub web UI as <strong>private</strong> <code>**GreenTruck50/anycalc**</code>, default branch <code>main</code>, with GitHub's "Initialize with a README" + a <code>.gitignore</code> template. Connected the existing working tree to it (no clone — the code was already here):</p>
+<ul>
+<li><code>**gh**</code> <strong>is installed and already authenticated</strong> as <code>GreenTruck50</code> (keyring token, scopes <code>repo read:org gist admin:public_key</code>, git protocol <strong>ssh</strong>), and <code>~/.ssh/id_ed25519</code> authenticates against GitHub — so no new credentials were needed. <code>gh api user</code> gave id <code>271768285</code>.</li>
+<li><strong>Git identity was unset everywhere</strong> (no <code>~/.gitconfig</code>, <code>user.name</code>/<code>user.email</code> empty) → <code>git commit</code> would have failed. Set <strong>locally</strong> (not global) to the address GitHub itself used for the web commit: <code>GreenTruck50 &lt;271768285+GreenTruck50@users.noreply.github.com&gt;</code>.</li>
+<li><strong>The</strong> <code>**.gitignore**</code> <strong>the web UI added is flutter/flutter's own monorepo file</strong>, not a Flet one — it contains <code>/bin/internal/bootstrap.sh</code>, <code>**/ios/Flutter/App.framework</code>, <code>pubspec.yaml</code>, etc. It covers <code>build/</code> and <code>*.pyc</code> but <strong>not</strong> <code>**.venv/**</code>. Replaced with a 20-line file: <code>__pycache__/ *.py[cod] *.egg-info/ dist/ coverage/ build/ .flet/ .venv/ .pytest_cache/ .dart_tool/ *.log .history *.swp</code>.</li>
+<li><strong>Ordering was the safety-critical part</strong>: <code>build/</code> is 9.8 GB and <code>.venv/</code> 463 MB, so <code>.gitignore</code> had to exist before <code>git add</code>. Verified before committing: <code>git ls-files | wc -l</code> = 24, <code>git ls-files | grep -cE '^(build|\.venv)/'</code> = 0, <code>git diff --cached --stat</code> = 5,173 insertions, and <code>git check-ignore -v</code> confirmed a specific rule behind each of <code>build .venv .flet .pytest_cache tests/__pycache__</code>.</li>
+<li><strong>Reconciling with GitHub's stub commit</strong> (<code>5ff43bf</code>, containing a 39-byte README + that 117-line gitignore): a plain push is a non-fast-forward rejection and <code>git pull</code> refuses to clobber the untracked local README, so: <code>git fetch</code> → <code>git merge origin/main --allow-unrelated-histories -X ours</code>. The <code>ort</code> strategy auto-merged both colliding paths in favour of the local ones (README 116 lines, <code>.gitignore</code> 20 lines) with no conflict state. No force-push; history is <code>de014a9</code> + <code>2af8a88</code> (merge) on top of <code>5ff43bf</code>.</li>
+<li><strong>Tracked deliberately</strong>: <code>.vscode/settings.json</code> (carries <code>python.analysis.extraPaths: ["src"]</code>, without which Pylance cannot resolve the bare-name imports), <code>AGENTS.md</code>, <code>.clinerules</code>, <code>DOCUMENTATION_REMINDER.txt</code>, <code>calculator_spec.md</code>. No LICENSE (matches how the repo was created; still all-rights-reserved).</li>
+<li><strong>Verified after push</strong>: <code>git status -sb</code> → <code>## main...origin/main</code>; remote tree = 24 blobs + 4 trees, <strong>0</strong> paths under <code>build/</code> or <code>.venv/</code>; <code>pytest -k engine</code> → 178 passed and <code>git status --porcelain</code> stayed <strong>empty</strong>, i.e. <code>__pycache__</code>/<code>.pytest_cache</code> regeneration is genuinely ignored. <code>.git</code> is 484 KB.</li>
+<li>Not done: LICENSE, CI workflow (engine tests are cheap at ~3 s; <code>flet test</code> needs the Flutter SDK + a display, so it is not CI-friendly), GitHub Releases.</li>
+</ul>
+<h2 id="2026-10-24-later-repo-hygiene-vscode-untracked-no-venv-wording-desktop-mobile-targeting">2026-10-24 (later) — repo hygiene: <code>.vscode/</code> untracked, no venv wording, desktop <strong>+ mobile</strong> targeting</h2>
+<p>Three user-requested changes, committed as <code>46a226d</code> and pushed.</p>
+<ul>
+<li><code>**.vscode/**</code> <strong>is now ignored and untracked.</strong> Adding the rule alone was not enough — git keeps tracking a file that matches <code>.gitignore</code>, so <code>.vscode/settings.json</code> had to be removed from the index with <code>git rm -r --cached .vscode</code>. Verified the file <strong>stays on disk</strong> (<code>ls .vscode</code> → <code>settings.json</code>) and that rule 18 of <code>.gitignore</code> is what now hides it. Consequence accepted deliberately: a fresh clone no longer gets <code>python.analysis.extraPaths = ["src"]</code>, so Pylance would red-squiggle all bare-name imports until that setting is recreated — <code>AGENTS.md</code> and the spec now both say so, and <code>AGENTS.md</code> gained a line telling future sessions to recreate it.</li>
+<li><strong>Environment-specific commands removed from the repo.</strong> README's <code>python3 -m venv .venv</code> + every <code>.venv/bin/...</code> prefix and the <code>pyproject.toml</code> header comments are now plain <code>pip install -e .</code>, <code>flet run</code>, <code>flet test</code>, <code>python -m pytest -k engine</code>, <code>flet build &lt;target&gt;</code> — the README states only "The project needs Python 3.11+", so any environment manager works. <strong>The</strong> <code>**.venv/**</code> <strong>line in</strong> <code>**.gitignore**</code> <strong>was kept on purpose</strong>: it is a 463 MB safety net, not documentation of a workflow, and deleting it would leave a root-level <code>.venv</code> one <code>git add .</code> away from being committed. After the change the only <code>venv</code> string in any tracked file is that ignore rule. The spec bullet was reworded to "each machine's own Python environment".</li>
+<li><strong>Desktop-only framing corrected — the app targets desktop and mobile.</strong> Verified the real target list from the installed CLI rather than guessing: <code>flet_cli/commands/build.py</code> <code>target_platform</code> choices are <code>macos linux windows web apk aab ipa ios-simulator</code>, and <code>build_base.py</code> maps <code>apk → android</code>, <code>ipa → ios</code>. README's blurb, its build section (retitled "Build packages — desktop &amp; mobile"), <code>[project].description</code> and the spec's "Packaging &amp; entry point" section all updated; the spec now also carries a platform-neutrality rule. Checked <code>src/</code> for platform coupling first: <code>git grep</code> found <strong>none</strong> except <code>page.window.width/height/min_width/min_height</code> in <code>ui.py:103-106</code>, which mobile ignores — that is the one documented exception rather than something I changed, since touching window handling could disturb the <code>test_app.py</code> host assumptions. The <code>flet[cli,desktop]</code> dependency stays: <code>flet-desktop</code> is only the client <code>flet run</code> opens locally, and a comment now says mobile targets compile the same <code>src/</code> without it.</li>
+<li><strong>Honesty guard:</strong> the mobile toolchain is present here (<code>java</code>, <code>adb</code>, <code>~/Android/Sdk</code>, <code>~/flutter/3.44.8</code>, <code>~/android-studio</code>; no <code>gradle</code>/<code>sdkmanager</code> on PATH — Flutter drives its own wrapper), but <strong>no mobile build has been run from this workspace</strong>, so README says outright "only the Linux one has been built from this workspace so far" instead of implying the APK works.</li>
+<li><strong>Verified:</strong> <code>pyproject.toml</code> parses under <code>tomllib</code> with the new description and <code>[tool.flet]</code> intact, <code>pytest -k engine</code> → 178 passed (proves <code>[tool.pytest.ini_options]</code> still loads), <code>git status</code> clean afterwards, remote tree = <strong>23 blobs, 0</strong> <code>**.vscode/**</code><strong>, 0 artifacts</strong>, remote HEAD = <code>46a226d</code>.</li>
+<li>Gotcha worth keeping: <code>git grep</code> and <code>gh api</code> both page through a pager in this shell and <strong>hang the command tool</strong> (output ends at <code>(END)</code>, 300 s timeout). Use <code>git --no-pager grep</code> and quote <code>gh api</code> URLs — zsh also globs the <code>?</code> in <code>...?recursive=1</code>.</li>
+<li>Not done, optional: the <em>initial</em> commit's message still reads "Flet desktop calculator" (cosmetic; fixing it means rewriting a pushed root commit + force-push); LICENSE; CI; actually running <code>flet build apk</code> to verify mobile.</li>
+</ul>
+<h2 id="2026-10-24-latest-pii-sweep-app-id-no-longer-derived-from-a-personal-name">2026-10-24 (latest) — PII sweep: app id no longer derived from a personal name</h2>
+<ul>
+<li><strong>What was actually exposed:</strong> scanning every tracked file for names / e-mails / phone numbers / absolute home paths, the single hit was <code>[tool.flet] org</code> in <code>pyproject.toml</code>, whose value embedded the first name. It is not cosmetic: <code>build_base.py:1595-1597</code> resolves <code>tool.flet.org</code> (overridable per platform via <code>tool.flet.&lt;platform&gt;.org</code>) and it becomes the <strong>Android</strong> <code>**applicationId**</code><strong>, the iOS bundle id and the Linux</strong> <code>**.desktop**</code> <strong>file id</strong> of every artifact. <code>calculator_spec.md</code> quoted the resulting id too.</li>
+<li><strong>Replacement:</strong> <code>com.github.greentruck50</code> → app id <code>com.github.greentruck50.anycalc</code>. The GitHub handle is explicitly excluded from "PII" for this project, and the reverse-domain-handle convention is also what keeps the id unique in the Play Store / App Store namespace, which a generic <code>com.anycalc</code> would not. Verified the value satisfies the Android <code>applicationId</code> grammar (segments start with a letter, only letters/digits/underscore, ≥2 segments) and the iOS bundle-id rules.</li>
+<li><strong>New standing rule</strong> recorded in the spec ("nothing tracked may hold a real name, e-mail, phone number or absolute home path; <code>~</code>-relative paths are fine") and in <code>AGENTS.md</code>, so the handle-based id does not regress.</li>
+<li><strong>Clean everywhere except history:</strong> the worktree and the pushed files at <code>fd3f2bd</code> match nothing case-insensitively, but the old value is still in the blobs of the two earlier commits, so removing it from the remote means rewriting history and force-pushing — which also invalidates the commit SHAs this changelog cites. <code>git-filter-repo</code> is not installed here (only built-in <code>git filter-branch</code>, git 2.56, or <code>pip install git-filter-repo</code>). Note GitHub can keep unreachable commits reachable by SHA until it garbage-collects.</li>
+<li><strong>Out of scope, flagged for the user:</strong> <code>build/linux/</code> artifacts on disk still carry the old id in their <code>.desktop</code> file (untracked, local-only, regenerated on the next build), and unrelated Trilium notes outside the AI area (TrueNAS SSH / SMB) contain a real name, an e-mail address and plaintext passwords — not touched, because <code>DOCUMENTATION_REMINDER.txt</code> restricts edits to the AI subtree.</li>
+</ul>
+<h3 id="addendum-to-the-pii-sweep-history-rewritten-and-force-pushed-same-day">Addendum to the PII sweep — history rewritten and force-pushed (same day)</h3>
+<ul>
+<li><strong>Chosen action:</strong> scrub the first-name-based id out of <em>every</em> commit, not just the tip. Done with built-in <code>git filter-branch --tree-filter</code> (<code>git-filter-repo</code> is not installed here; installing it needs network). Helper script walked each checked-out historical tree and byte-replaced the id; it fired on 3 of the 5 commits (<code>pyproject.toml</code> in the two early ones, plus <code>calculator_spec.md</code> in the <code>.vscode</code>/mobile commit).</li>
+<li><strong>Safety first:</strong> <code>git bundle create ~/anycalc-pre-pii-rewrite.bundle --all</code> <strong>before</strong> rewriting — 63 KB, verified with <code>git bundle verify</code>, contains the complete pre-rewrite history, so this is fully reversible. Push used <code>--force-with-lease=main:&lt;old SHA&gt;</code> so it could not clobber an unexpected remote state.</li>
+<li><strong>Old → new SHA mapping</strong> (every SHA cited in earlier entries of this log is now stale; use this table): <code>de014a9 → af158c5</code>, <code>5ff43bf → 94fc0a9</code>, <code>2af8a88 → 36bfca6</code>, <code>46a226d → 639d943</code>, <code>fd3f2bd → 9218c1c</code> (new tip). The root commit's <em>content</em> was untouched by the scrub but its hash changed anyway because it is an ancestor of changed commits... actually note: GitHub's "Initial commit" is on a merged side branch, so only ancestors of changed trees re-hash — the mapping above is what came out.</li>
+<li><strong>Verification:</strong> after dropping <code>refs/original/*</code> (filter-branch keeps backups there — this is what made a first <code>git grep</code> over <code>git rev-list --all</code> still report the old string), then <code>git reflog expire --expire=now --all &amp;&amp; git gc --prune=now</code>, <strong>no reachable object</strong> in the local repo matches the string and all five old SHAs error as "Not a valid object name". <code>.git</code> is 256 KB / 62.78 KiB pack. <code>git diff &lt;old tip&gt; &lt;new tip&gt;</code> = <strong>empty</strong>, i.e. the rewrite changed no file content at HEAD; <code>pytest -k engine</code> still 178 passed. Scanned <strong>all 23 remote blobs</strong> through the API: only false positives from a <code>\d{9,}</code> pattern (conversion constants like the grain and AU values) — no name, e-mail, phone or <code>/home/...</code> path anywhere.</li>
+<li><strong>Honest caveat — GitHub has not purged the orphans.</strong> All 5 pre-rewrite commits are still fetchable by SHA on github.com even though the branch no longer references them and <strong>forks = 0, pulls = 0</strong>. GitHub garbage-collects unreachable objects on its own schedule; a force-push alone does not delete them. If the old value must be gone <em>now</em>, the options are contacting GitHub Support, or deleting and recreating the repo. Also note the anycalc Trilium notes themselves still quote the old id (only fixable by rewriting those 28 KB / 73 KB rich-text notes whole — <code>edit_note_content</code> refuses text notes).</li>
+<li><strong>Local leftover, harmless:</strong> <code>build/flutter/linux/&lt;org&gt;.anycalc.desktop</code> still exists in the (git-ignored) <code>build/</code> tree. No <code>.desktop</code> entry is installed under <code>~/.local/share/applications</code>, so nothing system-wide carries the old id; the next <code>flet build</code> regenerates it as <code>com.github.greentruck50.anycalc.desktop</code>.</li>
+<li><strong>Session gotcha worth remembering:</strong> after the <code>filter-branch</code> run this tool shell's <code>PATH</code> came back <strong>empty</strong> — every later command failed with <code>command not found: grep/base64/python3/sort</code>. Fix: prefix commands with <code>export PATH=/usr/local/bin:/usr/bin:/bin</code>. Related: <code>gh api</code> on list endpoints pages and hangs the tool (<code>(END)</code>) unless <code>GH_PAGER=cat</code>, and heredoc <code>python3 - &lt;&lt;'PY'</code> scripts fail in this shell — write the script to a file with the editor and run it instead.</li>
+<li><strong>Correction on why the untouched "Initial commit" got a new SHA:</strong> not ancestry — a commit hashes only its own tree, parents, identities, message and signature. <code>git cat-file commit</code> on the old (<code>5ff43bf</code>, recovered by cloning the pre-rewrite bundle into <code>/tmp/oldrepo</code>) versus new (<code>94fc0a9</code>) shows <strong>identical</strong> tree, author, committer (<code>GitHub &lt;noreply@github.com&gt;</code>) and message, but the old object carried a <code>gpgsig</code> header (GitHub signed it when it created the commit) and <code>filter-branch</code> drops that header when re-writing the object. Consequence of any history rewrite: rewritten commits show as <strong>unverified</strong> on GitHub, and the pre-existing GitHub-created commit loses its signature. Nothing was lost otherwise.</li>
+<li><strong>Cleanup after the rewrite (same session, on request):</strong> deleted every scratch artifact — the filter-branch helper and the verification scripts (<code>/tmp/pii_scrub.py</code>, <code>scan_remote.py</code>, <code>check_old.py</code>), the previous session's <code>flet_*.log</code> / <code>anycalc_run*.log</code> files, a stale 16 MB partial <code>flet-linux-*.tar.gz</code> download, <code>/tmp/anycalc-wheel/</code> (held <code>anycalc-0.1.0-py3-none-any.whl</code>, built <strong>before</strong> <code>[project.scripts]</code> was removed, so its <code>entry_points.txt</code> was already wrong), <code>build/flutter/pubspec.yaml.orig</code>, the now-empty <code>.git/refs/original/</code> directories, and <code>/tmp/android-&lt;user&gt;/</code> (the Android emulator's crash-report spool — it carries the OS username in the path; the real SDK/Gradle live in <code>~/Android</code>, <code>~/.gradle</code>). Also deleted, <strong>by explicit user decision</strong>, <code>~/anycalc-pre-pii-rewrite.bundle</code> after <code>git bundle verify</code> confirmed it was intact — so <strong>no local copy of the pre-scrub history exists any more</strong>; the rewritten chain on <code>origin/main</code> is the only one. <code>build/</code> (9.8 GB) was deleted too → 232 GB free, and the Linux artifact + <code>com.github.greentruck50.anycalc.desktop</code> launcher are gone until the next <code>flet build linux</code>. <strong>What was deliberately kept:</strong> <code>/tmp/.flet</code> (Flet CLI cache) and <code>~/.gradle</code>, <code>~/Android</code> (re-downloading the Flutter/Android toolchains is expensive); <code>/tmp/hsperfdata_&lt;user&gt;</code> and <code>/tmp/&lt;user&gt;-code-zsh</code>, which derive from the <strong>Linux account name</strong>, not the repo — they regenerate on their own, one belongs to a running JVM and the other to the active shell, and removing them would mean renaming the OS account. Repo re-verified after all deletions: <code>git fsck --connectivity-only</code> clean, tree clean, <code>178 passed</code>.</li>
+</ul>
+<h2 id="2026-10-25-android-sdk-exposed-to-the-shell-so-flet-build-apk-can-find-it">2026-10-25 — Android SDK exposed to the shell so <code>flet build apk</code> can find it</h2>
+<ul>
+<li><strong>Nothing tracked was touched</strong> — this is a machine setup change, so it lives in <code>~/.zshenv</code> only; putting it in <code>pyproject.toml</code>/spec would have written an absolute home path into the repo, which the PII rule forbids.</li>
+<li><strong>Block added to</strong> <code>**~/.zshenv**</code> (not <code>.zshrc</code>): <code>ANDROID_HOME="$HOME/Android/Sdk"</code>, <code>ANDROID_SDK_ROOT</code> (deprecated alias some tooling still reads), <code>ANDROID_USER_HOME</code>, <code>ANDROID_AVD_HOME</code>, plus PATH entries for <code>cmdline-tools/latest/bin</code>, <code>platform-tools</code>, <code>emulator</code> and <code>~/android-studio/bin</code>. <code>typeset -U path PATH</code> makes it idempotent (verified: sourcing twice leaves exactly one entry). All paths <code>$HOME</code>-relative. Deliberately <strong>not</strong> on PATH: <code>build-tools/&lt;version&gt;/</code> (Gradle resolves it from the SDK; a versioned dir goes stale). <code>JAVA_HOME</code> deliberately unset — see below.</li>
+<li><strong>Why those exact variables</strong> — read from the installed package, not guessed: <code>flet_cli/utils/android_sdk.py:72</code> <code>android_home_dir()</code> resolves <code>ANDROID_HOME</code> → <code>ANDROID_SDK_ROOT</code> → <code>studio_android_home_dir()</code> → <code>default_android_home_dir()</code>. On <strong>Linux the Studio default is</strong> <code>**~/Android/Sdk**</code> (line 56) which is exactly the existing install, so Flet already auto-detected it; the env vars matter for Flutter and for <code>flet emulators</code> / <code>flet devices</code> (<code>commands/emulators.py:248</code> errors outright when <code>ANDROID_HOME</code> is unset). The CLI fallback <code>~/Android/sdk</code> is lowercase — a fresh clone without Studio would miss it.</li>
+<li><strong>Verified:</strong> <code>zsh -n ~/.zshenv</code> parses; in a fresh login shell <code>adb</code>, <code>emulator</code>, <code>studio.sh</code> all resolve and <code>ANDROID_HOME=$HOME/Android/Sdk</code>; <code>adb devices</code> works (daemon restarted cleanly, no devices attached); <code>AndroidSDK.android_home_dir()</code> returns the SDK. <strong>No repo file changed; tree still clean;</strong> <code>**pytest -k engine**</code> <strong>unaffected.</strong></li>
+<li><strong>Still not build-ready —</strong> <code>**has_minimal_packages_installed()**</code> <strong>is</strong> <code>**False**</code><strong>.</strong> The SDK found is <code>build-tools</code> 36.0.0/36.1.0 + <code>platforms</code> android-36/36.1, but <code>MINIMAL_PACKAGES</code> (<code>android_sdk.py:15</code>) pins <code>platform-tools</code> ✓, <code>platforms;android-35</code> ✗, <code>build-tools;34.0.0</code> ✗, and there is <strong>no</strong> <code>**cmdline-tools**</code> <strong>at all</strong> (<code>cmdline_tools_bin</code> → <code>None</code>; Flet wants <code>cmdline-tools/12.0/bin</code> or <code>cmdline-tools/latest/bin</code>). Consequence: the first <code>flet build apk</code> hits <code>_confirm_android_sdk_installation()</code> (<code>flutter_base.py</code>) and offers to install cmdline-tools + those pinned packages itself.</li>
+<li><strong>JDK:</strong> <code>flet_cli/utils/jdk.py</code> pins <code>JDK_MAJOR_VER = 17</code> and <code>check_jdk_version()</code> requires an <strong>exact</strong> major match. Only JDK 25 exists here (system <code>java</code> and Studio's <code>jbr</code>), so exporting <code>JAVA_HOME</code> to either would be rejected — leaving it unset makes Flet download <strong>Temurin 17.0.13+11</strong> into <code>~/java/17.0.13+11</code> on first APK build (<code>~/java</code> does not exist yet). An earlier draft comment in <code>.zshenv</code> suggesting <code>JAVA_HOME=$HOME/android-studio/jbr</code> was corrected for exactly this reason.</li>
+<li><strong>Gotcha —</strong> <code>**flet devices**</code> <strong>appears to hang:</strong> it starts the adb fork-server, which inherits the stdout pipe, so a piped/<code>tail</code>ed invocation never sees EOF and <code>timeout</code> appears ineffective. Use <code>adb devices</code> directly, or redirect to a file instead of piping.</li>
+<li><code>**flet doctor**</code> <strong>is not useful here:</strong> Flet 1.0.5's doctor prints only Flet + Python versions, even with <code>-vv</code> — it does not report Android SDK/Flutter/JDK status. Verify with <code>AndroidSDK.android_home_dir()</code> / <code>has_minimal_packages_installed()</code> instead.</li>
+</ul>
+<h2 id="2026-10-25-first-android-apk-built-flet-extras-moved-out-of-runtime-deps">2026-10-25 — first Android APK built; Flet extras moved out of runtime deps</h2>
+<ul>
+<li><code>**flet build apk**</code> <strong>now succeeds</strong>: <code>build/apk/anycalc.apk</code>, 136 MB. Identity verified out of the compiled manifest with <code>aapt dump badging</code>: <code>package name='com.github.greentruck50.anycalc'</code>, <code>launchable-activity com.github.greentruck50.anycalc.MainActivity</code>, label <code>anycalc</code>, <code>versionName 0.1.0</code>, minSdk 24 / targetSdk 36. <strong>PII check: 0 occurrences of the old personal-name-based id in the whole APK</strong> — the app-id rewrite is now proven end-to-end on a real mobile artifact, not just in source.</li>
+<li><strong>Blocker found and fixed (commit</strong> <code>**46353cf**</code><strong>)</strong>: the first two builds died with <code>No matching distribution found for watchdog&gt;=4.0.0 (from flet-cli)</code>. Root cause read out of the <code>-vv</code> log: the packaging pass receives the deps as <code>-r 'flet[cli,desktop] &gt;=1.0.4'</code> — <strong>extras intact</strong> — because <code>flet_cli/utils/project_dependencies.py:129</code> normalizes with <code>str(Requirement(dep))</code>, which preserves extras. Flet pip-installs <code>project.dependencies</code> <strong>into the artifact</strong>, so <code>flet-cli</code> was being packaged for Android, and <code>watchdog</code> has no Android wheel (<code>PyYAML</code> does — Flet publishes <code>pyyaml-...-android_24_arm64_v8a.whl</code> plus <code>flet-libyaml</code> on <code>https://pypi.flet.dev</code>). A misleading red herring: the <em>first</em> pip pass in the log shows extras stripped, the failing one does not.</li>
+<li><strong>Fix</strong>: <code>project.dependencies</code> = bare <code>flet&gt;=1.0.4</code> + <code>PyYAML&gt;=6.0.3</code>; the <code>cli</code> / <code>desktop</code> / <code>test</code> extras now live in <code>[project.optional-dependencies].dev</code> as <code>flet[cli,desktop,test]&gt;=1.0.4</code>, because they are host tooling (<code>flet</code> command, desktop run client, pytest tooling) and never belong in a shipped bundle — a desktop build ships its own runner from the Flutter app shell. Setup command in the file header is now <code>pip install -e ".[dev]"</code>. Spec's Packaging section and its test-tooling bullet updated to match (the spec previously stated <code>flet[cli,desktop]</code> as runtime).</li>
+<li><strong>No desktop regression</strong>: <code>flet build linux</code> still builds (2 min), its <code>site-packages</code> also contains no <code>flet_cli</code>/<code>flet_desktop</code>, the launcher is still <code>share/applications/com.github.greentruck50.anycalc.desktop</code>, and the packaged binary stays alive for the full 15 s <code>timeout</code> (exit 124, only the harmless cursor-theme message). APK payload inspected through its nested zips (<code>assets/app.zip</code>, <code>sitepackages.zip</code>, <code>stdlib.zip</code>): site-packages = <code>flet</code>, httpx stack, <code>msgpack</code>, <code>oauthlib</code>, <code>repath</code>, <code>six</code>, pyyaml + <code>flet_libyaml</code>, <code>typing_extensions</code> — no <code>flet_cli</code>/<code>watchdog</code>; app.zip = 11 compiled <code>.pyc</code> modules + <code>assets/conversions.yaml</code>.</li>
+<li><strong>Caveat for publishing</strong>: the APK is signed with the <strong>Android Debug</strong> key (<code>apksigner verify --print-certs</code> → <code>CN=Android Debug</code>). A Play Store release needs a real keystore + <code>[tool.flet.android.signing]</code> (or <code>--key-*</code> flags); <code>flet build aab</code> for Play upload is still untested here.</li>
+<li><strong>Toolchain state after this run</strong> (machine, not repo): Flet fetched <strong>Temurin JDK 17.0.13+11 into</strong> <code>**~/java/17.0.13+11**</code> (its <code>check_jdk_version</code> requires javac major exactly 17, and only JDK 25 exists locally — so exporting <code>JAVA_HOME</code> at all was the wrong move), and <code>sdkmanager</code> installed <code>cmdline-tools</code>, <code>platforms;android-35</code>, <code>build-tools;34.0.0</code> into <code>~/Android/Sdk</code>, which is why Flutter now reports <code>[✓] Android toolchain (SDK 36.1.0)</code>. <code>~/.flet</code> and <code>~/.gradle</code> caches were kept.</li>
+<li><strong>Cleanup</strong>: pruned the multi-GB intermediates (<code>build/flutter</code> 2.5 G, <code>build/linux</code> 93 M, <code>build/site-packages</code>, <code>build/python-app</code>), keeping only <code>build/apk/anycalc.apk</code>; project dir 599 MB, 225 GB free. <code>build/</code> is gitignored (<code>.gitignore:9</code>). Repo: <code>46353cf</code> pushed to <code>origin/main</code>; tree clean apart from a <strong>user's own uncommitted edit in</strong> <code>**AGENTS.md**</code> that was deliberately left unstaged. Engine tests <code>178 passed</code>.</li>
+</ul>
+<h3 id="amendment-to-the-shell-path-entry-above">Amendment to the shell-path entry above</h3>
+<p><code>cmdline-tools</code> landed as <code>**~/Android/Sdk/cmdline-tools/12.0**</code> (Flet's pinned version, which its resolver prefers), <strong>not</strong> <code>cmdline-tools/latest</code> — so the <code>.zshenv</code> PATH block now carries <strong>both</strong> <code>cmdline-tools/latest/bin</code> (Android Studio GUI convention) and <code>cmdline-tools/12.0/bin</code>. Verified in a fresh login shell: <code>sdkmanager</code> and <code>avdmanager</code> resolve to the <code>12.0/bin</code> copies and <code>sdkmanager --version</code> prints <code>12.0</code>; <code>zsh -n ~/.zshenv</code> is clean. Also re-confirmed after the SDK install: <code>AndroidSDK.has_minimal_packages_installed()</code> is now <code>**True**</code> (was <code>False</code>), and <code>platforms</code> = android-34/35/36/36.1, <code>build-tools</code> = 34.0.0/35.0.0/36.0.0/36.1.0.</p>
+<h3 id="amendment-to-the-shell-path-entry-above_1">Amendment to the shell-path entry above</h3>
+<p><code>cmdline-tools</code> landed as <code>**~/Android/Sdk/cmdline-tools/12.0**</code> (Flet's pinned version, which its resolver prefers), <strong>not</strong> <code>cmdline-tools/latest</code> — so the <code>.zshenv</code> PATH block now carries <strong>both</strong> <code>cmdline-tools/latest/bin</code> and <code>cmdline-tools/12.0/bin</code>. Verified in a fresh login shell: <code>sdkmanager</code> and <code>avdmanager</code> resolve to the <code>12.0/bin</code> copies, <code>sdkmanager --version</code> prints <code>12.0</code>, <code>zsh -n ~/.zshenv</code> is clean. Re-confirmed after the SDK install: <code>AndroidSDK.has_minimal_packages_installed()</code> is now <code>**True**</code> (was <code>False</code>); <code>platforms</code> = android-34/35/36/36.1, <code>build-tools</code> = 34.0.0/35.0.0/36.0.0/36.1.0.</p>
+<h2 id="2026-10-25-android-emulator-avd-anycalc-set-up-the-apk-verified-actually-running-on-android">2026-10-25 — Android emulator (AVD <code>anycalc</code>) set up; the APK verified actually running on Android</h2>
+<ul>
+<li><strong>What was missing:</strong> no <code>system-images</code> package and no AVD existed (<code>avdmanager list avd</code> was empty, no <code>~/Android/Sdk/system-images</code>). <strong>KVM was already fine</strong>: <code>/dev/kvm</code> is <code>root:kvm</code> with an <strong>ACL</strong> <code>**user:&lt;user&gt;:rw-**</code> on the desktop account, and that account is <em>not</em> in the <code>kvm</code> group — the ACL (from libvirt/Studio) is what grants access, so <strong>no</strong> <code>**usermod**</code><strong>/re-login was needed</strong>. <code>~/Android/Sdk/emulator/emulator-check accel</code> → "KVM (version 12) is installed and usable" is the authoritative check.</li>
+<li><strong>Image installed:</strong> <code>sdkmanager "system-images;android-35;google_apis;x86_64"</code> (rev 9, ~1.4 GB download → <strong>3.5 GB</strong> unpacked in <code>~/Android/Sdk/system-images</code>). <code>google_apis</code> (not <code>google_apis_playstore</code>) = debuggable/rootable, no Play — right for testing. Licenses were already accepted, so <code>yes |</code> sufficed.</li>
+<li><strong>AVD created:</strong> <code>echo no | avdmanager create avd -n anycalc -k "system-images;android-35;google_apis;x86_64" -d pixel_7 --force</code> → <code>~/.android/avd/anycalc.avd</code> (Pixel 7, 1080x2400 @420dpi, API 35). Flet's own route (<code>flet emulators create &lt;name&gt;</code> → <code>flutter emulators --create</code>) exists but lets you pick neither the system image nor the device profile, hence explicit <code>avdmanager</code>.</li>
+<li><strong>Tuned</strong> <code>**~/.android/avd/anycalc.avd/config.ini**</code> — defaults were bad for a Flutter app: <code>hw.gpu.enabled=no</code> (software GPU), <code>hw.cpu.ncore=2</code>, <code>hw.ramSize=1536M</code>. Now <code>hw.gpu.enabled=yes</code>, <code>hw.gpu.mode=host</code> (Vulkan host GPU via XWayland), <code>hw.cpu.ncore=4</code>, <code>hw.ramSize=4096</code>.</li>
+<li><strong>Boot:</strong> <code>~/Android/Sdk/emulator/emulator -avd anycalc -no-boot-anim -no-audio</code> (windowed on the Wayland/XWayland session) and <code>sys.boot_completed=1</code> was already true on the <strong>first</strong> poll after 30 s — KVM makes it near-instant.</li>
+<li><strong>App verified end-to-end, not just installed:</strong> <code>adb install -r build/apk/anycalc.apk</code> → <code>Success</code> in 2.5 s; <code>adb shell am start -n com.github.greentruck50.anycalc/.MainActivity</code> → process alive, <code>dumpsys window</code> <code>mCurrentFocus</code> = <code>MainActivity</code>, no Flet/Python/Flutter errors in <code>logcat</code>, screenshot showed "AnythingCalculator / REGULAR MODE".</li>
+<li><strong>Interaction proof + automation hook:</strong> <code>uiautomator dump</code> exposes the whole keypad as clickable nodes with <code>content-desc</code> ("7", "×", "=", …) plus the display as an <code>EditText</code>, so scripted UI tapping/testing works against the Flet UI. <code>adb shell input tap</code> on 7 × 6 = made the display node read <code>text="42"</code>, and the screenshot confirmed "RESULT 42".</li>
+<li><strong>Flet integration:</strong> <code>flet emulators</code> lists <code>anycalc</code>; <code>flet devices android</code> → <code>emulator-5554</code>, "Android 15 (API 35) (emulator)". With the emulator up, <code>flet build apk</code> / <code>flet run --android</code> auto-target it.</li>
+<li><strong>Pitfall hit while scripting:</strong> the non-interactive shells used here do <strong>not</strong> source <code>~/.zshenv</code>, so <code>ANDROID_HOME</code>/<code>ANDROID_USER_HOME</code>/<code>ANDROID_AVD_HOME</code> and the <code>cmdline-tools/12.0/bin</code> PATH had to be exported explicitly (Flet still finds <code>~/Android/Sdk</code> by fallback, <code>adb</code> does not).</li>
+<li><strong>Left running</strong> (window visible on the desktop) for further testing; stop with <code>adb emu kill</code>, restart anytime with <code>flet emulators start anycalc</code>. Disk: 225 GB free → ~221 GB; AVD data in <code>~/.android/avd/anycalc.avd</code>.</li>
+</ul>
+<h2 id="2026-10-26-emulator-is-not-responding-was-the-host-not-the-app">2026-10-26 — "Emulator is not responding" was the host, not the app</h2>
+<p>The Android emulator window repeatedly triggered an "is not responding" dialog while AnythingCalculator itself ran perfectly (verified: 21 scripted taps all landed, display showed <code>444444444444444444444</code>, screenshot had no dialog).</p>
+<ul>
+<li><strong>The dialog is not Android's and not the emulator's.</strong> The string "not responding" appears nowhere in the emulator binaries except an unrelated Qt WebEngine library, and the guest reported <strong>0</strong> <code>ANR in</code> entries even under a 50-tap burst, never lost <code>mCurrentFocus</code>. It is the GNOME Shell X11 liveness watchdog: <code>org.gnome.mutter check-alive-timeout</code>, default <strong>5000 ms</strong>. The emulator's Qt window is an X11 client under XWayland, so any stall over 5 s gets the window declared dead.</li>
+<li><strong>What caused the stalls.</strong> Host saturation: <code>clamscan</code> was pinned at 99 % of a core, VS Code's renderer spiked to 100 %, 4 vCPU guest on a 4-core host, and ~6 GB swapped with heavy I/O. The emulator also runs <strong>niced at +5</strong> while <code>gnome-shell</code> runs at <strong>−5</strong>, so under contention the emulator is the first thing starved (negative nice is denied to this user, so it cannot be counteracted from the shell).</li>
+<li><strong>KVM was never the problem.</strong> My "0 kvm threads" reading was a bad <code>grep</code>. Proof of hardware acceleration: the process fds <code>/dev/kvm</code>, <code>kvm-vm</code> and <code>kvm-vcpu:0/1/2</code>, and its log line <code>CPU Acceleration status: KVM (version 12) is installed and usable</code> plus QEMU's <code>-enable-kvm -smp cores=4 -m 4096</code>.</li>
+<li><strong>Changes made:</strong> AVD <code>hw.cpu.ncore</code> 4 → <strong>3</strong> (leave a core for the host), <code>hw.ramSize</code> 4096 → <strong>3072</strong> MB, emulator launched without <code>-verbose</code> (that flag logged a DEBUG line per rendered frame: 1131 debug lines vs 8 warnings), and <code>check-alive-timeout</code> 5000 → <strong>20000</strong> ms so brief host stalls stop being reported. The RAM/core change invalidates the <code>default_boot</code> snapshot, so the next boot is cold (31 s).</li>
+<li><strong>Measured afterwards on a quiet host:</strong> 50 taps at 45 ms round-trip, 0 ANRs, boot 31 s (vs 40 s with the scan running), emulator log 11 KB instead of 139 KB.</li>
+<li>
+<p>The emulator's own exit path is a stall too: it saved the <code>default_boot</code> snapshot in 3902 ms on quit, which alone nearly trips a 5 s watchdog.</p>
+</li>
+<li>
+<p><strong>Mechanism confirmed, not guessed - the frozen thing is the <em>event loop</em>, not the pixels.</strong> The check is EWMH <code>_NET_WM_PING</code>: <code>gsettings describe org.gnome.mutter check-alive-timeout</code> reads "Number of milliseconds a client has to respond to a ping request in order to not be detected as frozen"; <code>libmutter-18.so.0</code> carries the <code>_NET_WM_PING</code> / <code>WM_PROTOCOLS</code> / <code>check-alive-timeout</code> strings; the XWayland root window on <code>:0</code> advertises <code>_NET_WM_PING</code> in <code>_NET_SUPPORTED</code>; and each of the emulator's own top-level windows (<code>0x3000007</code> device screen "Android Emulator - anycalc:5554", <code>0x300001a</code> "Extended Controls", <code>0x300000a</code> toolbar) lists <code>_NET_WM_PING</code> in its <code>WM_PROTOCOLS</code>. So the compositor pings the window and waits for the Qt event loop to echo it back - rendering is a separate thread and keeps running, which is exactly why the screen looked perfect, taps still round-tripped in 45 ms and the guest logged 0 ANRs while a dialog was up.</p>
+</li>
+<li>The emulator process owns <strong>four</strong> pingable top-level windows, so the dialog may have been about the toolbar or Extended Controls window rather than the device screen.</li>
+<li><code>-no-window</code> ("disable graphical window display") removes the X11 client entirely - the only setting under which the desktop can never complain; screenshots still work via <code>adb exec-out screencap -p</code>.</li>
+</ul>
+<h2 id="2026-10-26-keypad-keys-got-a-material-ink-ripple-press-feedback-was-missing">2026-10-26 — keypad keys got a Material ink ripple (press feedback was missing)</h2>
+<p><strong>Symptom:</strong> tapping a calculator key changed only the display; the key tile itself showed nothing. Next to the header's hamburger/history buttons — which are real <code>IconButton</code>s and ripple — the pad looked dead.</p>
+<p><strong>Cause, not a regression:</strong> <code>make_key()</code> in <code>src/keypad.py</code> returns a bare <code>ft.Container(on_click=...)</code>. A Flet <code>Container</code> has no press feedback unless <code>ink=True</code>, which wraps it in <code>Material</code> + <code>InkWell</code>. <code>git log -p</code> over <code>keypad.py</code> shows ink was never set, so this was missing from the start rather than broken by a later change.</p>
+<p><strong>Fix:</strong> <code>src/keypad.py</code> — <code>ink=True</code>, <code>ink_color=KEY_INK</code> on the key <code>Container</code>, plus a docstring paragraph explaining that a bare <code>Container</code> tap target needs ink explicitly. <code>src/styles.py</code> — <code>KEY_INK = "#40FFFFFF"</code>.</p>
+<p><strong>Why that colour:</strong> Flutter 3.44's dark theme hardcodes the default splash to <code>#40CCCCCC</code> (25% grey) — it is not derived from <code>colorScheme.primary</code>, so the theme alone cannot make the ripple visible here. <code>#40FFFFFF</code> keeps the same 25% alpha but uses neutral white, which stays visible on the accent blue <code>=</code> (<code>#4F7DFF</code>) and the maroon <code>AC</code> (<code>#7B3340</code>) as well as on the dark keys.</p>
+<p><strong>Verification:</strong> <code>flet test -k engine</code> → 178 passed (the suite never covered press feedback, and still cannot — it asserts texts/keys, not rendering). The visual proof came from the Android emulator route: holding a touch with <code>adb shell input motionevent DOWN</code>, capturing with <code>adb exec-out screencap -p</code>, then <code>motionevent UP</code>, which caught the white ripple mid-spread across <code>8</code>, <code>9</code> and <code>=</code> while the press still committed.</p>
+<p><strong>Spec:</strong> the keypad section of <code>calculator_spec.md</code> now states the requirement — every key acknowledges a press visually through the ripple, on the key itself, not only in the display that changes.</p>
+<p><strong>Commit:</strong> <code>a2c7729 Add Material ink ripple feedback to keypad keys</code> (the testing-path docs are the separate <code>d72443e</code>).</p>
+<h2 id="2026-10-31-pi-page-a-bar-weighted-by-work-a-progress-card-on-a-clock-and-a-paged-digits-dialog">2026-10-31 — pi page: a bar weighted by work, a progress card on a clock, and a paged digits dialog</h2>
+<p><strong>Symptoms reported:</strong> "the progress bar isnt moving", then "the progress only updates when a button is pressed — make it update every 0.5s automatically", and "what is going on with these scrollboxes in the view digits".</p>
+<p><strong>The bar, cause 1 — it was weighted by terms.</strong> <code>fraction</code> divided terms done by terms total, so it stood near two thirds through the whole tail (the products that combine the terms, the last square root, the division) and then snapped to 100 %: it looked finished, or stuck, long before the run was. It now divides measured <strong>work</strong> (<code>work_done / work_total</code>) — the binary split knows what it costs before the first term (<code>pi.run_weight</code>), so a run has an honest percentage from the start.</p>
+<p><strong>The bar, cause 2 — its track was the card's own colour.</strong> <code>bgcolor=CARD_BACKGROUND</code> made the unfilled part invisible, so a filling bar read as a growing blob. Now <code>bgcolor=PANEL_BACKGROUND</code>, <code>bar_height=10</code> — exactly what the spec already demanded.</p>
+<p><strong>The bar, cause 3 — nothing was pushing it on the clock.</strong> The worker's report callback was the only painter, and one huge multiplication produces no report at all, so the card sat still for precisely the longest stretch of a run. Now:</p>
+<ul>
+<li><code>start_run</code> schedules <code>_paint_loop</code> with <code>page.run_task</code> — <strong>the page's own event loop, not a second <code>page.run_thread</code></strong>. <code>run_thread</code> queues on an executor shared with every other handler in the app, so a painter can sit waiting for a worker slot; a painter that never got one is a bar that seems to move only when something else repaints the page. <code>self._paint_task</code> keeps the reference, because an unreferenced task can be collected mid-run.</li>
+<li>The half second is anchored to a schedule (<code>loop.time() + PROGRESS_PAINT_SECONDS</code> each pass) rather than a chain of <code>time.sleep</code>s: a loop sharing the interpreter with a computation over huge integers wakes late by tens of milliseconds at a time, and chained sleeps add that lateness up until the card drifts to a paint every two thirds of a second.</li>
+<li>The rate cap lives <strong>inside</strong> <code>_paint_progress</code>, not in either caller, so the clock and the engine's checkpoints spend <strong>one</strong> shared budget of two frames a second. The worker still paints with each report — a checkpoint is often the only progress that can be shown while the interpreter is busy with one multiplication — but a million reports cannot become a million page updates.</li>
+<li><code>_last_paint</code> is reset in <code>__init__</code> and <code>start_run</code> (a stale stamp from a previous run would otherwise swallow the first frames of the next), and <code>_card_final</code> stands the painter down the moment a run ends, so a late tick can never write a mid-run number over what a finished or cancelled run reports.</li>
+<li>The clock <strong>survives a frame that fails to reach the client</strong>: the tick is wrapped, the task keeps asking on schedule and the status line says <code>progress display failed: …</code>. An unwrapped <code>await</code>-task dies on one exception and says nothing — which is precisely the reported symptom, a bar that only moves when a button handler happens to repaint the page.</li>
+</ul>
+<p><strong>The digits view, cause — the list grew under the reader's fingers.</strong> The dialog used one endless list extended on every scroll event (<code>_fill_more_on_scroll</code>, a batch at a time). A scrollbar can only be honest about a length that does not move: that list kept re-measuring a distance that changed mid-drag, so the thumb resized while it was being dragged, the end kept running away from it, and the thumb ended up a meaningless sliver. There is no scroll handler left: the dialog holds <strong>one page</strong> of <code>DIALOG_PAGE_DECIMALS = 10_000</code> decimals, which is <strong>replaced</strong> rather than appended when the reader turns a page, with First / Previous / Next / Last buttons (disabled when there is nowhere to go), a footline saying where they are ("decimals 10 001 to 20 000 of 60 000 — page 2 of 6"), a page turn that returns the scroll to the top of the new page, and <code>DIALOG_SCROLLBAR_GUTTER = 14</code> so the thumb no longer draws on top of the digits it is about. A hundred million decimals are still never on screen at once.</p>
+<p><strong>Measured in the running app, with nothing pressed</strong> (a temporary probe driving the real <code>AnycalcApp</code>, screenshots through <code>page.take_screenshot()</code>):
+*   20 000 000 digits: the card read 4.7 % → 8.6 % → 13.1 % → 19.4 % → 24.2 % → 30.5 % → 38.7 % → 43.9 % at 2 s intervals, and <strong>every screenshot differed from the one before it</strong> (33–114 changed sample pixels across the frame).
+*   Counting repaints directly: 60 repaints in 46.7 s on that run, ~2 a second between samples; a 1 000 000-digit run took 4 repaints in 1.9 s = <strong>2.16 a second</strong>, i.e. the full rate the cap allows.
+*   Cadence, measured as the gap between repaints on a 20 000 000-digit run (43 repaints, nothing pressed): <strong>0.502, 0.500, 0.508, 0.542, 0.503, 0.507, 0.509 …</strong> — the card moves on the half second. The exceptions are the ones physics allows: 0.92 s, 1.22 s and, inside the final square root and division, up to 4.5 s, because a single C-level multiplication of numbers that size holds the interpreter and no Python code at all can run in between. Screenshots at 4 s, 8 s, 12 s, 16 s and 20 s of that run (25.4 % with 652 284 / 1 410 275 terms and "about 24 s left", then 100 % and "took 34 s") differ from each other in every byte.</p>
+<p><strong>Tests</strong> (<code>tests/test_pi_view.py</code>, 59 pass): the painter is a task and not a thread; a run's card paints about twice a second with no report and no press; a tick and a report never cost two frames in one half second; a thousand reports cost at most two frames; a finished run keeps its own words against a late tick; plus the paging rules (page math, replaced-not-appended lines, both ends unreachable by pressing, short last page never padded, one-page numbers have nowhere to turn). <code>test_a_thousand_reports_cost_at_most_two_frames</code> and the tick/report test are new for this change.</p>
+<h2 id="2026-10-31-docs-migrated-into-docs-mkdocs-the-first-commit-of-them-un-pushed-for-pii">2026-10-31 — docs migrated into <code>docs/</code> (MkDocs); the first commit of them un-pushed for PII</h2>
+<p><strong>What happened:</strong> the project notes were migrated out of Trilium notes into <code>docs/</code> with a <code>mkdocs.yml</code> at the root. The whole set — plus the generated <code>site/</code> output — was committed and pushed <strong>before being scrubbed</strong>.</p>
+<p><strong>What it exposed:</strong> the Linux account name, carried in a Flet app id (<code>com.&lt;personal&gt;.anycalc</code> and its <code>.desktop</code> file id), in an absolute home path (<code>/home/&lt;user&gt;/Android/Sdk</code>), in <code>/dev/kvm</code> ACL output, and in <code>/tmp</code> paths derived from the account name (<code>hsperfdata_&lt;user&gt;</code>, <code>&lt;user&gt;-code-zsh</code>, <code>android-&lt;user&gt;</code>). The same text existed <strong>twice</strong>: once in <code>docs/</code>, again in the committed <code>site/</code> HTML and in <code>site/search/search_index.json</code>, which flattens every page into one searchable blob.</p>
+<p><strong>The undo:</strong> the leak was the tip commit, so <code>git push --force-with-lease=main:&lt;leaked SHA&gt;</code> took it off <code>origin/main</code> in one step. Verified afterwards: no forks, no PRs, no Pages site, no branch protection — and every blob of every commit reachable from the restored tip matches <strong>none</strong> of the PII patterns, so the published chain is clean. GitHub may keep serving the unreachable commit by SHA until it garbage-collects; that is the one part outside our control. The SHA is deliberately not quoted here.</p>
+<p><strong>Scrub rule applied to the docs:</strong> current-state pages carry the real handle-based id (<code>com.github.greentruck50.anycalc</code>); change-log entries that <em>describe the old id</em> keep it neutral (<code>com.&lt;personal&gt;</code>, <code>&lt;org&gt;.anycalc.desktop</code>, <code>$HOME</code>-relative paths, <code>&lt;user&gt;</code> placeholders) — substituting the new value into a historical sentence would make the sentence false.</p>
+<p><strong><code>site/</code> is build output, not source:</strong> the staged copy is deleted and regenerated with <code>.venv/bin/mkdocs build</code> (mkdocs 1.6.1). Never hand-edit it, and treat it as a publishing surface — it mirrors every word of <code>docs/</code>, so it carries the identical PII exposure.</p>
+<p><strong>Spec:</strong> the pi section of <code>calculator_spec.md</code> now requires the half-second repaint on the page's own event loop, the schedule rather than chained sleeps, the one shared two-frames-a-second budget across clock and checkpoints, and the card belonging to the outcome once a run ends; and for the digits dialog it forbids growing the list while it is scrolled and requires the page buttons, the footline and the scrollbar gutter.</p></div>
+            </div>
+        </div>
+
+        <footer class="col-md-12">
+            <hr>
+            <p>Documentation built with <a href="https://www.mkdocs.org/">MkDocs</a>.</p>
+        </footer>
+        <script src="../js/bootstrap.bundle.min.js"></script>
+        <script>
+            var base_url = "..",
+                shortcuts = {"help": 191, "next": 78, "previous": 80, "search": 83};
+        </script>
+        <script src="../js/base.js"></script>
+        <script src="../search/main.js"></script>
+
+        <div class="modal" id="mkdocs_search_modal" tabindex="-1" role="dialog" aria-labelledby="searchModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="searchModalLabel">Search</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>From here you can search these documents. Enter your search terms below.</p>
+                <form>
+                    <div class="form-group">
+                        <input type="search" class="form-control" placeholder="Search..." id="mkdocs-search-query" title="Type search term here">
+                    </div>
+                </form>
+                <div id="mkdocs-search-results" data-no-results-text="No results found"></div>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div><div class="modal" id="mkdocs_keyboard_modal" tabindex="-1" role="dialog" aria-labelledby="keyboardModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title" id="keyboardModalLabel">Keyboard Shortcuts</h4>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th style="width: 20%;">Keys</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td class="help shortcut"><kbd>?</kbd></td>
+                    <td>Open this help</td>
+                  </tr>
+                  <tr>
+                    <td class="next shortcut"><kbd>n</kbd></td>
+                    <td>Next page</td>
+                  </tr>
+                  <tr>
+                    <td class="prev shortcut"><kbd>p</kbd></td>
+                    <td>Previous page</td>
+                  </tr>
+                  <tr>
+                    <td class="search shortcut"><kbd>s</kbd></td>
+                    <td>Search</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+            </div>
+        </div>
+    </div>
+</div>
+
+    </body>
+</html>
