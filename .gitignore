@@ -9,6 +9,11 @@ coverage/
 build/
 .flet/
 
+# --- MkDocs: `mkdocs build` output, and CI rebuilds it - never tracked.
+#     It mirrors every word of docs/ (plus search/search_index.json flattened),
+#     so committing it doubles any leak. ---
+site/
+
 # --- local environment & tooling caches ---
 .venv/
 .pytest_cache/

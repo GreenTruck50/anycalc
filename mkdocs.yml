@@ -1,1 +1,13 @@
-site_name: My Docs
+site_name: anycalc
+repo_url: https://github.com/GreenTruck50/anycalc
+repo_name: GreenTruck50/anycalc
+
+theme:
+  name: mkdocs
+
+nav:
+  - Overview: index.md
+  - The app: "anycalc (Flet calculator app).md"
+  - Source layout: "Source layout — modules and the Flet import root.md"
+  - Testing: "Testing — pytest + flet test suite.md"
+  - Change log & decisions: "Change log & decisions.md"

@@ -346,4 +346,18 @@ The Android emulator window repeatedly triggered an "is not responding" dialog w
 
 **`site/` is build output, not source:** the staged copy is deleted and regenerated with `.venv/bin/mkdocs build` (mkdocs 1.6.1). Never hand-edit it, and treat it as a publishing surface — it mirrors every word of `docs/`, so it carries the identical PII exposure.
 
+## 2026-10-31 — docs publish themselves: MkDocs → GitHub Actions → Pages
+
+**Requested:** when `docs/` changes, rebuild `site/` and put it on Pages automatically.
+
+**Now:** `.github/workflows/docs.yml` fires on a push to `main` that touches `docs/**`, `mkdocs.yml` or the workflow itself, plus a build-only `pull_request` trigger and a `workflow_dispatch` button. It runs `pip install -e ".[docs]"` → `mkdocs build --strict` → `actions/upload-pages-artifact@v3` → `actions/deploy-pages@v4`. A `concurrency` group keeps two pushes from deploying over each other, and the deploy job is pinned to push-on-`main` so PRs build without publishing.
+
+**`mkdocs` is finally a declared dependency** — a `[docs]` extra (`mkdocs>=1.6`). It had been installed into `.venv` ad hoc and appeared in no manifest, so CI had nothing to install. Kept out of `dependencies` (that list is pip-installed into every `flet build` artifact) and out of `dev` (the docs job installs only this extra, never flet or the gmpy2 C extension).
+
+**`site/` is gitignored now**, which is the real fix rather than a convenience: CI regenerates it, so it never needs to be tracked — and today's leak is the argument, since the built site duplicated every word of `docs/` in HTML and again flattened into `search/search_index.json`.
+
+**`mkdocs.yml` stopped being `mkdocs new` scaffolding:** `site_name: anycalc`, `repo_url` / `repo_name` (the GitHub handle — the only identity this project publishes), `theme: mkdocs`, and a `nav` over the five pages. `--strict` is what turns a broken internal link into a failed deploy instead of a quietly wrong site.
+
+**One step stays with the user:** Pages cannot be enabled while the repo is private on a free plan — `gh api -X POST repos/GreenTruck50/anycalc/pages -f build_type=workflow` answers `422 "Your current plan does not support GitHub Pages for this repository"`. Making the repo public frees it; then re-run that call or pick Settings → Pages → Source: GitHub Actions. **Before flipping visibility**, prune the un-pushed docs commit locally (`git reflog expire --expire=now --all && git gc --prune=now`) — an unreachable commit can still be served by SHA, and going public is what would make that readable by anyone.
+
 **Spec:** the pi section of `calculator_spec.md` now requires the half-second repaint on the page's own event loop, the schedule rather than chained sleeps, the one shared two-frames-a-second budget across clock and checkpoints, and the card belonging to the outcome once a run ends; and for the digits dialog it forbids growing the list while it is scrolled and requires the page buttons, the footline and the scrollbar gutter.

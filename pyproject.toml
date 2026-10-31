@@ -10,6 +10,9 @@
 #                  - run from THIS directory (the workspace root), not from src/;
 #                  [tool.flet.app] below tells Flet that the app itself lives in
 #                  src/ and main.py is its entry point.
+#   docs:          mkdocs build          (from the [docs] extra; writes site/,
+#                  which is gitignored - .github/workflows/docs.yml rebuilds and
+#                  publishes it to GitHub Pages whenever docs/ changes)
 #
 # src/ is Flet's import root, not a Python package: the modules inside it import
 # each other by bare name (from ui import AnycalcApp), and pytest is given the
@@ -75,6 +78,14 @@ dev = [
     # (gmpy2.const_pi) as a second opinion, and this keeps the gmpy2 path of
     # src/pi.py - the one a desktop run takes - the path under test.
     "gmpy2>=2.3.2",
+]
+# Docs tooling only - `mkdocs build` locally and the Pages workflow in
+# .github/workflows/docs.yml. Deliberately not in `dependencies` (that list is
+# pip-installed INTO every flet build artifact) and not folded into `dev`: the CI
+# docs job installs just this extra, so it never has to resolve flet or build the
+# gmpy2 C extension.
+docs = [
+    "mkdocs>=1.6",
 ]
 
 [build-system]
