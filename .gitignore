@@ -22,6 +22,18 @@ site/
 # --- editor settings (per-machine, not part of the project) ---
 .vscode/
 
+# --- Cline IDE checkpoints ---
+#     These are NOT a gitignore case: they are git *refs* under
+#     .git/refs/cline/checkpoints/<session>/<n>, i.e. inside .git/ itself.
+#     A .gitignore pattern only governs working-tree files, so nothing here can
+#     reach them - and refs are never staged, committed or pushed, so they can
+#     never end up in a commit either. Verified invariant: no commit in any ref
+#     has ever contained a checkpoint path.
+#     The only Cline file in the tree is .clinerules, which IS tracked on
+#     purpose (it carries the project instructions) - do NOT ignore it.
+#     Defensive catch-all in case a future version starts writing files:
+checkpoints/
+
 # --- misc ---
 *.log
 .history
