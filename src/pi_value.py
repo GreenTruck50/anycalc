@@ -28,6 +28,7 @@ class PiComputation:
     seconds: float
     decimals: str = ""
     cancelled: bool = False
+    cancelled_at: str = ""
 
     @property
     def complete(self) -> bool:
@@ -48,17 +49,21 @@ class PiComputation:
 class PiProgress:
     """Where a running computation stands, in the numbers the page prints.
 
-    The binary split knows its leaf count before it evaluates the first term
-    (:func:`pi.pi_term_count`), so a run has a real percentage from the start
-    rather than a spinner - and once a few terms are in, the same count gives a
-    speed and therefore a finish time.
+    The binary split knows what it costs before it evaluates the first term
+    (:func:`pi.run_weight`), so a run has a real percentage from the start rather
+    than a spinner, and the phase it is in is carried along because a bar alone
+    cannot say what the wait is currently doing.
     """
 
+    phase: str
     terms_done: int
     terms_total: int
     digits: int
     fraction: float
     percent: float
+    work_done: float
+    work_total: float
+    work_per_second: float
     terms_per_second: float
     digits_per_second: float
     seconds_left: Optional[float]
@@ -67,28 +72,49 @@ class PiProgress:
     def estimated_seconds(self) -> Optional[float]:
         """What the whole run is expected to take, so far."""
 
-        if self.terms_per_second <= 0:
+        if self.work_per_second <= 0:
             return None
-        return self.terms_total / self.terms_per_second
+        return self.work_total / self.work_per_second
+
+    @property
+    def phase_label(self) -> str:
+        """What the wait is currently doing, in words the page can print."""
+
+        return {
+            pi.PHASE_SPLIT: "the terms of the series and their products",
+            pi.PHASE_FINALISING: "the last square root and division",
+        }.get(self.phase, self.phase)
 
 
-def progress_snapshot(
-    digits: int, terms_done: int, terms_total: int, elapsed: float
-) -> PiProgress:
-    """The progress of a run after ``terms_done`` of ``terms_total`` terms."""
+def progress_snapshot(digits: int, work: pi.PiWork, elapsed: float) -> PiProgress:
+    """The progress of a run at one :class:`pi.PiWork` checkpoint.
 
-    terms_done = max(0, min(int(terms_done), int(terms_total)))
-    fraction = terms_done / terms_total if terms_total else 1.0
-    speed = terms_done / elapsed if elapsed > 0 and terms_done else 0.0
-    remaining = terms_total - terms_done
+    ``work.work_done`` of ``work_total`` is measured cost, not a term count: it
+    covers the terms, the products they are combined into and the last square root
+    and division, which is why the bar reaches its end when the run does instead of
+    while nearly half the wait is still to come.
+    """
+
+    total = float(work.work_total)
+    done = max(0.0, min(float(work.work_done), total))
+    fraction = done / total if total else 1.0
+    speed = done / elapsed if elapsed > 0 and done else 0.0
+    remaining = total - done
+
     return PiProgress(
-        terms_done=terms_done,
-        terms_total=int(terms_total),
+        phase=work.phase,
+        terms_done=int(work.terms_done),
+        terms_total=int(work.terms_total),
         digits=digits,
         fraction=fraction,
         percent=fraction * 100,
-        terms_per_second=speed,
-        digits_per_second=speed * pi.DIGITS_PER_TERM,
+        work_done=done,
+        work_total=total,
+        work_per_second=speed,
+        terms_per_second=(work.terms_done / elapsed) if elapsed > 0 else 0.0,
+        # The run's own average: whatever share of the whole cost is done, that
+        # share of the decimals is as good as in hand.
+        digits_per_second=(digits * fraction / elapsed) if elapsed > 0 else 0.0,
         seconds_left=(remaining / speed) if speed > 0 else None,
     )
 
@@ -117,26 +143,32 @@ def compute_pi(
 ) -> PiComputation:
     """Compute ``digits`` decimals of pi, reporting progress as it goes.
 
-    This is a blocking call - the Pi page runs it on a worker thread. A run that
-    is asked to stop comes back ``cancelled`` with no digits rather than raising,
-    so the caller can tell the user where it stopped and keep the pi the program
-    already uses.
+    This is a blocking call - the Pi page runs it on a worker thread. Progress is
+    reported at every checkpoint of the split - each term, each combination of two
+    half-results, each step of the tail - so the page sees a stream and is
+    expected to rate-limit what it makes of it. ``cancel_check`` is asked at those
+    same checkpoints, so a run can be stopped in any phase, and a run that is
+    stopped comes back ``cancelled`` with no digits rather than raising: the caller
+    can say where it stopped and keep the pi the program already uses.
     """
 
     started = monotonic()
 
-    def report(terms_done: int, terms_total: int) -> None:
+    def report(work: pi.PiWork) -> None:
         if on_progress is not None:
-            elapsed = monotonic() - started
-            on_progress(progress_snapshot(digits, terms_done, terms_total, elapsed))
+            on_progress(progress_snapshot(digits, work, monotonic() - started))
 
     try:
         integer = pi.pi_chudnovsky(
             digits, progress_callback=report, cancel_check=cancel_check
         )
-    except pi.PiCancelled:
+    except pi.PiCancelled as error:
         return PiComputation(
-            value=None, digits=digits, seconds=monotonic() - started, cancelled=True
+            value=None,
+            digits=digits,
+            seconds=monotonic() - started,
+            cancelled=True,
+            cancelled_at=str(error),
         )
 
     # The integer the algorithm returns is pi scaled by 10**digits, so its first

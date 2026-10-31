@@ -128,33 +128,83 @@ def test_the_same_run_works_without_gmpy2(monkeypatch: pytest.MonkeyPatch) -> No
     assert computation.decimals == mpfr_pi_decimals(200)
 
 def test_progress_snapshot_carries_percentage_speed_and_an_estimate() -> None:
-    """The bar's numbers come from the term count, not from a guess."""
+    """The bar's numbers come from the run's measured cost, not from a guess."""
 
-    total = pi.pi_term_count(10_000)
-    done = total // 4
-    progress = pi_value.progress_snapshot(10_000, done, total, elapsed=2.0)
+    terms_total = pi.pi_term_count(10_000)
+    work_total = pi.run_weight(terms_total)
+    work = pi.PiWork(
+        phase=pi.PHASE_SPLIT,
+        terms_done=terms_total // 4,
+        terms_total=terms_total,
+        work_done=work_total / 4,
+        work_total=work_total,
+    )
+    progress = pi_value.progress_snapshot(10_000, work, elapsed=2.0)
 
-    assert progress.fraction == pytest.approx(done / total)
-    assert progress.percent == pytest.approx(done / total * 100)
-    assert progress.terms_per_second == pytest.approx(done / 2.0)
-    assert progress.digits_per_second == pytest.approx(done / 2.0 * pi.DIGITS_PER_TERM)
+    assert progress.fraction == pytest.approx(0.25)
+    assert progress.percent == pytest.approx(25.0)
+    assert progress.terms_per_second == pytest.approx((terms_total // 4) / 2.0)
+    assert progress.digits_per_second == pytest.approx(10_000 * 0.25 / 2.0)
     # A quarter of the way in after 2 s, the whole run reads as about four times
     # that - and three quarters of it are still ahead.
     assert progress.estimated_seconds == pytest.approx(8.0, rel=0.02)
     assert progress.seconds_left == pytest.approx(6.0, rel=0.02)
-    assert progress.terms_total == total
+    assert progress.terms_total == terms_total
     assert progress.digits == 10_000
+    # The page prints which part of the run is taking the time.
+    assert progress.phase == pi.PHASE_SPLIT
+    assert "series" in progress.phase_label
 
 
 def test_progress_before_the_first_term_has_no_speed_to_show() -> None:
     """No terms yet means no rate, and the page prints "-" rather than a guess."""
 
-    progress = pi_value.progress_snapshot(1_000, 0, 75, elapsed=0.0)
+    work = pi.PiWork(
+        phase=pi.PHASE_SPLIT,
+        terms_done=0,
+        terms_total=75,
+        work_done=0.0,
+        work_total=pi.run_weight(75),
+    )
+    progress = pi_value.progress_snapshot(1_000, work, elapsed=0.0)
     assert progress.fraction == 0.0
     assert progress.terms_per_second == 0.0
     assert progress.seconds_left is None
     assert progress.estimated_seconds is None
     assert pi_value.format_duration(progress.seconds_left) == "-"
+
+
+def test_the_bar_divides_cost_so_it_cannot_finish_before_the_run() -> None:
+    """The page's central promise: the bar ends when the run does.
+
+    Counting terms was the old model, and it left the bar at 100% while nearly half
+    the wait was still to come - the products the split builds from those terms and
+    the last square root and division were never counted. A checkpoint of the cost
+    model has to keep arriving after the final term, and the bar has to be clearly
+    unfinished when that term goes by.
+    """
+
+    terms = pi.pi_term_count(200_000)
+    # The combining and the tail together outweigh the terms themselves - which is
+    # the whole reason a term count made a misleading bar.
+    assert pi.run_weight(terms) > 2 * terms
+
+    seen: list[pi_value.PiProgress] = []
+    computation = pi_value.compute_pi(200_000, on_progress=seen.append)
+    assert computation.complete
+
+    # Reports kept coming while the number was being finished off, long after the
+    # terms had gone by ...
+    finalising = [step for step in seen if step.phase == pi.PHASE_FINALISING]
+    assert finalising, "the tail reported no progress at all"
+    # ... and at the last term the run was nowhere near done.
+    at_last_term = max(
+        (step for step in seen if step.phase == pi.PHASE_SPLIT),
+        key=lambda step: step.work_done,
+    )
+    assert at_last_term.terms_done == terms
+    assert at_last_term.fraction < 0.95
+    assert seen[-1].fraction == pytest.approx(1.0)
 
 
 def test_the_term_count_is_known_before_a_run_starts() -> None:
@@ -336,20 +386,23 @@ def test_the_fallback_pi_claims_only_the_decimals_it_holds() -> None:
 
 
 def test_a_calculation_reaches_the_programs_pi_only_as_far_as_the_engine_goes() -> None:
-    """The 50-digit Decimal context is the ceiling, not the 100 digits computed.
+    """The Decimal context is the ceiling, not the decimals that were computed.
 
-    Adopting a longer pi does make the pads calculate with it - but every
-    expression is evaluated at ``DECIMAL_PRECISION`` significant digits, so a
-    hundred-decimal pi shows through as fifty. That is the calculator's own
-    precision, and it is what the spec states.
+    Adopting a longer pi does make the pads calculate with it - but every expression
+    is evaluated at ``DECIMAL_PRECISION`` significant digits, one of which goes to the
+    ``3``, so a pi with more decimals than that shows through as only
+    ``DECIMAL_PRECISION - 1`` of them. That is the calculator's own precision, and it
+    is what the spec states. A pi shorter than the context is not enough to show this,
+    which is why the adopted run is twice as long as the context.
     """
 
-    pi_value.adopt(pi_value.compute_pi(100))
+    pi_value.adopt(pi_value.compute_pi(2 * DECIMAL_PRECISION))
+    assert pi.program_pi_digits() == 2 * DECIMAL_PRECISION
     shown = calculate("pi", scientific=True)
 
     significant = len(shown.replace(".", "").lstrip("0"))
-    assert significant == DECIMAL_PRECISION
-    assert shown == f"3.{PI_DECIMALS[: DECIMAL_PRECISION - 1]}"
+    assert significant == DECIMAL_PRECISION, "the context caps it, not the run"
+    assert shown == f"3.{mpfr_pi_decimals(DECIMAL_PRECISION - 1)}"
 
 
 def test_a_computation_can_be_shown_as_a_leading_slice() -> None:

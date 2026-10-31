@@ -648,7 +648,7 @@ class AnycalcApp:
             if self.expression in ERROR_MESSAGES:
                 self.expression = ""
 
-            if key == "π":
+            if key == "𝜋":
                 self.expression += "pi"
             elif key == "×":
                 self.expression += "*"

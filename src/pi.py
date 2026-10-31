@@ -13,7 +13,7 @@ import math
 import sys
 from decimal import Decimal, InvalidOperation
 from time import time
-from typing import Callable, Optional
+from typing import Callable, NamedTuple, Optional
 
 try:
     from gmpy2 import mpz, isqrt
@@ -41,19 +41,91 @@ class PiCancelled(Exception):
     """Raised out of :func:`pi_chudnovsky` when a run is asked to stop."""
 
 
+# A run does not spend its time the way its term count suggests. The binary split
+# walks depth first, so the terms of the series are evaluated long before the run
+# is anywhere near done: measured on a desktop with gmpy2, the last term is
+# reported at 59-64% of the wall clock at 50 000, 200 000 and 1 000 000 decimals.
+# A bar that counts terms therefore sits at 100% while nearly half the wait is
+# still to come - and a Stop that is only ever asked at a term cannot be honoured
+# during that tail, which is what makes a stopped run look like it kept going.
+#
+# So the bar divides *cost*, not terms. A leaf costs one unit; a node that combines
+# two halves spanning ``span`` terms costs ``span ** NODE_EXPONENT``, because that
+# is how the big multiplications it performs scale. The exponent is not theory but
+# measurement: 1.2 puts the bar within about seven points of the real clock at
+# every quarter of a run of 50 000, 200 000 or 1 000 000 decimals, where counting
+# terms is off by half the run. The tail - one last square root, product and
+# division - weighs about what the root node of the split weighs, and is split
+# between its three steps in the measured 45/15/35 proportion.
+PHASE_SPLIT = "splitting"
+PHASE_FINALISING = "finalising"
+NODE_EXPONENT = 1.2
+TAIL_WEIGHT = 1.0
+TAIL_STEP_WEIGHTS = (0.45, 0.15, 0.40)
+
+# A big run passes millions of nodes. Every one of them is asked whether the run
+# should stop - that is what makes a Stop button answer wherever the run happens
+# to be - but a report is only sent once this much work has piled up, so a
+# progress stream cannot cost more than the arithmetic between its checkpoints.
+REPORTS_PER_RUN = 4000
+
+
+class PiWork(NamedTuple):
+    """One progress report out of a running computation.
+
+    ``phase`` names what the run is doing right now. ``terms_done`` of
+    ``terms_total`` is the count of series terms, which is the number the page
+    quotes as the work a digit count implies. ``work_done`` of ``work_total`` is
+    the measured cost of everything done so far, which is what a progress bar
+    divides - and unlike the term count, it only reaches its total when the run
+    actually ends.
+    """
+
+    phase: str
+    terms_done: int
+    terms_total: int
+    work_done: float
+    work_total: float
+
+
+def node_weight(span: int) -> float:
+    """What combining the two halves of a ``span``-term node costs."""
+
+    return float(span) ** NODE_EXPONENT
+
+
+def run_weight(terms: int) -> float:
+    """The whole cost of a split over ``terms`` terms, plus its tail.
+
+    The split halves its range until a node covers one term, so the nodes at
+    depth ``k`` span ``2**k`` terms and there are about ``terms / 2**k`` of
+    them - which turns the sum over the tree into this loop. The exact shape of
+    a split whose term count is not a power of two differs slightly; the bar is
+    a progress bar, not a benchmark.
+    """
+
+    total = float(terms)  # the leaves, one unit each
+    span = 1
+    while span < terms:
+        span *= 2
+        total += (terms / span) * node_weight(span)
+    return total + TAIL_WEIGHT * node_weight(terms)
+
+
 def pi_chudnovsky(
     digits: int,
     show_progress: bool = False,
-    progress_callback: Optional[Callable[[int, int], None]] = None,
+    progress_callback: Optional[Callable[["PiWork"], None]] = None,
     cancel_check: Optional[Callable[[], bool]] = None,
 ) -> mpz:
     """
     Compute floor(π * 10**digits) using Chudnovsky + Binary Splitting.
 
-    ``progress_callback(terms_done, terms_total)`` is called once per leaf of the
-    binary split, which is what a progress bar reads. ``cancel_check()`` is asked
-    the same number of times; returning True raises
-    :class:`PiCancelled` so a long run can be abandoned mid-way.
+    ``progress_callback(PiWork)`` is called at every node of the binary split -
+    each term, each combination of two half-results and each step of the tail -
+    which is what lets a progress bar cover the whole run rather than only its
+    first half. ``cancel_check()`` is asked at those same points, so a run can be
+    abandoned in any phase, and returning True raises :class:`PiCancelled`.
     """
     if digits < MIN_PI_DIGITS:
         raise ValueError(f"digits must be at least {MIN_PI_DIGITS}")
@@ -62,25 +134,71 @@ def pi_chudnovsky(
     C3_OVER_24 = C**3 // 24
     N = pi_term_count(digits)
 
-    # Progress tracking
-    completed = 0
-    total = N  # we count leaves as the main work unit
+    # Progress tracking, in cost rather than terms - see the note on
+    # :data:`NODE_EXPONENT`. A leaf is one unit; an internal node is worth the
+    # combining it performs, which grows past the number of terms it covers.
+    terms_done = 0
+    work_total = run_weight(N)
+    tail_weight = TAIL_WEIGHT * node_weight(N)
+    work_done = 0.0
+    report_step = work_total / REPORTS_PER_RUN
+    next_report = 0.0
+
+    # Whether anyone is listening for progress at all - the page, or the command
+    # line's bar. Without a listener a node only pays for the Stop check.
+    listening = progress_callback is not None or show_progress
 
     pbar = None
-    if show_progress and HAS_TQDM:
-        pbar = tqdm(total=total, desc="Computing π", unit="term")
+    shown_work = 0.0
+    if listening and HAS_TQDM and __name__ == "__main__":
+        pbar = tqdm(total=work_total, desc="Computing π", unit="w")
 
-    def report():
-        nonlocal completed
+    def stop_check(phase: str) -> None:
+        """Ask whether the run has been told to stop."""
+
         if cancel_check is not None and cancel_check():
-            raise PiCancelled(f"cancelled after {completed} of {total} terms")
-        completed += 1
-        if pbar:
-            pbar.update(1)
-        if progress_callback:
-            progress_callback(completed, total)
+            raise PiCancelled(
+                f"cancelled while {phase} after {terms_done} of {N} terms"
+            )
+
+    def report(phase: str, work: float, force: bool = False) -> None:
+        """A node of the split: always a Stop checkpoint, sometimes a report.
+
+        Every node is asked whether the run should stop, which is what makes a
+        Stop button answer wherever the run happens to be - in the terms, in the
+        combining, or in the last square root and division. Where the run stands
+        is reported only once :data:`REPORTS_PER_RUN` reports' worth of work has
+        piled up, and not at all when nobody is listening, so the checkpoints
+        cannot cost more than the arithmetic between them.
+        """
+
+        nonlocal work_done, shown_work, next_report
+
+        stop_check(phase)
+        work_done += work
+        if not listening:
+            return
+        if not force and work_done < next_report:
+            return
+        next_report = work_done + report_step
+
+        if progress_callback is not None:
+            progress_callback(
+                PiWork(
+                    phase=phase,
+                    terms_done=terms_done,
+                    terms_total=N,
+                    work_done=work_done,
+                    work_total=work_total,
+                )
+            )
+        if pbar is not None:
+            pbar.update(work_done - shown_work)
+            shown_work = work_done
 
     def bs(a: int, b: int) -> tuple[mpz, mpz, mpz]:
+        nonlocal terms_done
+
         if b - a == 1:
             # Leaf node
             if a == 0:
@@ -92,23 +210,27 @@ def pi_chudnovsky(
                 Tab = Pab * (13591409 + 545140134 * a)
                 if a & 1:
                     Tab = -Tab
-            report()
+            terms_done += 1
+            report(PHASE_SPLIT, 1.0, force=terms_done == N)
             return Pab, Qab, Tab
 
         m = (a + b) // 2
         Pam, Qam, Tam = bs(a, m)
         Pmb, Qmb, Tmb = bs(m, b)
 
+        # A Stop is asked before the multiplications below - the expensive part of
+        # this node, and the reason a stop request is answered promptly even at the
+        # very top of the tree, where one node can be a tenth of the whole run.
+        stop_check(PHASE_SPLIT)
+
         Pab = Pam * Pmb
         Qab = Qam * Qmb
         Tab = Qmb * Tam + Pam * Tmb
+        report(PHASE_SPLIT, node_weight(b - a))
         return Pab, Qab, Tab
 
     # Run binary splitting
     P, Q, T = bs(0, N)
-
-    if pbar:
-        pbar.close()
 
     # Final calculation. ``isqrt`` is an integer floor, so the square root is up
     # to one unit short and the quotient can then land one decimal too low in its
@@ -117,9 +239,23 @@ def pi_chudnovsky(
     # truncated back. The series is itself good for some twenty-eight decimals past
     # ``digits`` - that is what the "+ 2" terms of :func:`pi_term_count` buy - so
     # the guard costs a little time and no accuracy.
+    #
+    # These three steps are a fifth to a third of the whole run, which is exactly
+    # why the bar cannot stop counting at the terms: it would sit at 100% through
+    # the longest part of a long wait. They carry their own weight (measured), and
+    # the last one is credited with whatever the run has left, so the bar reaches
+    # its end as the run does however unevenly the split's tree turned out.
+    stop_check(PHASE_FINALISING)
     one_squared = mpz(10) ** (2 * (digits + GUARD_DECIMALS))
     sqrtC = isqrt(10005 * one_squared)
-    pi = (Q * 426880 * sqrtC) // T // mpz(10) ** GUARD_DECIMALS
+    report(PHASE_FINALISING, tail_weight * TAIL_STEP_WEIGHTS[0], force=True)
+    product = Q * 426880 * sqrtC
+    report(PHASE_FINALISING, tail_weight * TAIL_STEP_WEIGHTS[1], force=True)
+    pi = product // T // mpz(10) ** GUARD_DECIMALS
+    report(PHASE_FINALISING, max(0.0, work_total - work_done), force=True)
+
+    if pbar is not None:
+        pbar.close()
 
     return pi
 

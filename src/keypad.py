@@ -38,7 +38,7 @@ REGULAR_ROWS = (
 # has.
 SCIENTIFIC_ROWS = (
     ("sin", "cos", "tan", "√"),
-    ("log", "ln", "π", "e", "^"),
+    ("log", "ln", "𝜋", "e", "^"),
     ("Set Variable", "Insert Variable"),
 )
 

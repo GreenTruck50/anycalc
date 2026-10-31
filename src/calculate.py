@@ -268,6 +268,19 @@ def calculate(expression, scientific, degrees=False, variables=None, pi_provider
         # same value from ``pi.program_pi`` - see that module. A caller (a test)
         # can hand over its own pi instead.
         "pi": _program_pi_value(pi_provider),
+        "π": _program_pi_value(pi_provider),   # U+03C0 GREEK SMALL LETTER PI
+        "ϖ": _program_pi_value(pi_provider),   # U+03D6 GREEK PI SYMBOL
+        "ℼ": _program_pi_value(pi_provider),   # U+213C DOUBLE-STRUCK SMALL PI
+        "𝛑": _program_pi_value(pi_provider),   # U+1D6D1 MATHEMATICAL BOLD SMALL PI
+        "𝜛": _program_pi_value(pi_provider),   # U+1D6E1 MATHEMATICAL BOLD PI SYMBOL
+        "𝜋": _program_pi_value(pi_provider),   # U+1D70B MATHEMATICAL ITALIC SMALL PI
+        "𝜛": _program_pi_value(pi_provider),   # U+1D71B MATHEMATICAL ITALIC PI SYMBOL
+        "𝝅": _program_pi_value(pi_provider),   # U+1D745 MATHEMATICAL BOLD ITALIC SMALL PI
+        "𝜛": _program_pi_value(pi_provider),   # U+1D755 MATHEMATICAL BOLD ITALIC PI SYMBOL
+        "𝝿": _program_pi_value(pi_provider),   # U+1D77F MATHEMATICAL SANS-SERIF BOLD SMALL PI
+        "𝝿": _program_pi_value(pi_provider),   # U+1D78F MATHEMATICAL SANS-SERIF BOLD PI SYMBOL
+        "𝝅": _program_pi_value(pi_provider),   # U+1D7B9 MATHEMATICAL SANS-SERIF BOLD ITALIC SMALL PI
+        "𝝅": _program_pi_value(pi_provider),   # U+1D7C9 MATHEMATICAL SANS-SERIF BOLD ITALIC PI SYMBOL
         "e": math.e,
     }
     variables = variables or {}

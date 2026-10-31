@@ -1,6 +1,6 @@
 """One clipboard, backing every copy button in the app."""
 
-from typing import Any, Callable
+from typing import Any, Callable, Optional
 
 import flet as ft
 
@@ -46,12 +46,27 @@ class ClipboardService:
         self,
         get_value: Callable[[], Any],
         tooltip: str = "Copy",
-    ) -> ft.IconButton:
-        """Small icon-only copy button reading its value when clicked."""
+        label: Optional[str] = None,
+    ) -> ft.Control:
+        """A copy button reading its value when clicked.
+
+        Without a ``label`` it is the small icon button every result in the app
+        carries. With one it says out loud what it copies, which is what a button
+        next to something too long to select by hand has to do - copying a hundred
+        thousand decimals by dragging over them is not a thing a person can do.
+        """
 
         async def handle_copy(e):
             del e
             await self.copy(get_value())
+
+        if label:
+            return ft.TextButton(
+                content=label,
+                icon=ft.Icons.CONTENT_COPY,
+                tooltip=tooltip,
+                on_click=handle_copy,
+            )
 
         return ft.IconButton(
             icon=ft.Icons.CONTENT_COPY,
