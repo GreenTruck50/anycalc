@@ -1,2 +1,2 @@
 Previously used Trillium notes for this project documentation, now uses docs/
-Trillium notes is migrating to docs/
+Trillium notes is migrated to docs/
