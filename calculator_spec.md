@@ -34,6 +34,12 @@ There should be a conversions.yaml file that says "There should be this tab with
 
 - Show the selected conversion form in the main content area used by the
   calculators, rather than in a popup.
+- Head that form with the group's icon and name from the YAML, and put the group's
+  description line under it, so the entry and the page say the same thing.
+- Say on the form itself that it works without a button: a muted hint under the
+  fields reads "Converts as you type or change units".
+- Keep the result field read-only and put its copy button inside it as a suffix,
+  so there is no separate control drifting next to it.
 
 ## Volume and weight conversions
 
@@ -196,16 +202,19 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Refresh the notes whenever either unit changes, including on the swap button,
   and show them for the pair the page opens on - independently of the value: an
   empty or half-typed value clears the result and the chain but never the notes.
+- Repeat nothing: two selected units carrying the same sentence produce one line,
+  and when neither unit carries a note the caption goes with them rather than
+  leaving an empty block behind.
 - A `guidance` value must be non-empty text or loading the configuration fails.
 
 ## Conversion chain of operations
 
 - Below the conversion result, show the chain of operations that produced it: a
-  heading "Chain of operations (N steps)" and one card per formula hop, in the
-  order the hops were applied.
-- Each hop card names the hop by unit name and symbol (for example
-  "Centimeter (cm) → Meter (m)") and shows that hop's input and output values
-  ("2500 → 25").
+  heading - written in the app's caption spelling, "CHAIN OF OPERATIONS (N steps)"
+  - and one card per formula hop, in the order the hops were applied.
+- Each hop card is numbered in hop order and names the hop by unit name and symbol
+  (for example "1. Centimeter (cm) → Meter (m)") and shows that hop's input and
+  output values ("2500 → 25").
 - The formula is not shown by default. Each hop card carries a "View formula"
   button that reveals the formula applied for that hop, and clicking it again
   collapses it.
@@ -260,7 +269,11 @@ There should be a conversions.yaml file that says "There should be this tab with
   in one utility row above the digits `0-9`, `.`, `=` and the operators `÷`, `×`,
   `−`, `+`.
 - The Scientific Calculator keypad keeps those rows and adds `sin`, `cos`, `tan`,
-  `√`, `log`, `ln`, `π`, `e`, `^` and the two variable buttons above them.
+  `√`, `log`, `ln`, `𝜋`, `e`, `^` and the two variable buttons above them.
+- The pi key is labelled with the mathematical italic small pi (U+1D70B) rather
+  than the plain Greek letter (U+03C0), and pressing it appends the engine's own
+  `pi` name to the expression - the display reads `pi`, never the glyph - so the
+  key's test id is `key-𝜋`.
 - A key appears on the pad exactly once: the scientific rows add only what the
   regular rows lack, so scientific mode does not show a second `(`, `)`, `%` or
   `±`, and every keypad control keeps a unique `key-<label>` id.
@@ -303,19 +316,124 @@ There should be a conversions.yaml file that says "There should be this tab with
   modulo, `9%` is an operator awaiting a number and the sign goes at the end.
 - An expression with no number in it (`""`, `sin(`) is left as it is.
 
+## Expression engine
+
+- Both pads sit on one engine (`src/calculate.py`): an expression is parsed with
+  `ast` and evaluated on `Decimal` values, so the precedence is the ordinary
+  PEMDAS/BODMAS one and nothing is rounded through a float on the way.
+- Every calculation runs at `config.DECIMAL_PRECISION` significant digits (500
+  today). The Decimal context is process-wide, so it is set once in `config.py`
+  and both engines reach it from there.
+- `^` is the power key and reaches the parser as `**`; an exponent past
+  `config.MAX_EXPONENT` reports "Exponent too large", and an expression longer
+  than `config.MAX_EXPRESSION_LENGTH` reports "Expression too long".
+- Only the Scientific Calculator evaluates names and calls: `sin`, `cos`, `tan`,
+  `√` (stored as `sqrt(`), `log`, `ln`, the constants `pi` and `e` and any named
+  variable that has been set. On the Regular Calculator a name or a call is not
+  arithmetic and reports "Invalid expression" - only numbers, brackets and the
+  arithmetic operators are read there.
+- A result is formatted for the display rather than printed raw: an integral
+  answer loses its decimal point, any other answer has its trailing zeros stripped,
+  and the number is never shown in scientific notation.
+- A calculation that cannot be carried out reports one of the fixed error strings
+  listed in `config.ERROR_MESSAGES` ("Can't divide by 0", "Number Overflow",
+  "Invalid result", "Exponent too large", "Expression too long", "Unknown
+  constant", "Invalid function", "Invalid operator", "Invalid number", "Invalid
+  expression", "Error") - never a Python exception name or a traceback.
+- The engine takes pi from one place, the value the program calculated (see "Pi
+  calculation"), and a caller - a test - can hand it its own pi instead.
+
+## Calculator display and typing
+
+- The display is an ordinary editable text field and not a label, so an
+  expression can be typed as well as pressed; the ASCII spellings of the operators
+  (`+ - * / ^ %`) are accepted next to the labelled `×`, `÷` and `−`.
+- The caption above the display names the state it is in: "EXPRESSION" while an
+  expression is being entered, "RESULT" once the display rests on an answer.
+- An empty display shows `0`.
+- After `=` the next key decides what happens to the answer: an operator (`+`,
+  `-`, `−`, `×`, `÷`, `^`, `%`) continues from it, `AC` clears it, and any other
+  key starts a new entry.
+- Tapping the display while it rests on a result selects the whole number, so a
+  new entry can be typed straight over it.
+- A rejected calculation shows its error string in the display, and the next key
+  pressed - including `±` and backspace - clears the error instead of editing it.
+
+## Angle mode
+
+- The display's caption row carries a button that switches between `DEG` and
+  `RAD`; the label always states the mode currently in force, and the app starts
+  in `DEG`.
+- The mode applies to `sin`, `cos` and `tan`, to the live preview, and to the
+  value entered in the Set Variable dialog, which is evaluated by the same engine.
+- Switching modes re-evaluates the live preview, so the answer under the display
+  changes with it.
+
+## Named variables
+
+- The Scientific Calculator carries two keys, "Set Variable" and "Insert
+  Variable", that open dialogs instead of editing the expression.
+- Set Variable asks for a name and a value. The value is not stored literally: it
+  goes through the scientific engine first, in the angle mode currently in force,
+  so `2 * pi` or another variable can be assigned. While the display rests on a
+  number, a third button - "Use Result Number" - offers that number directly.
+- The names come from one list in `config.py`: a set of physics symbols whose
+  meaning is spelled out beside them in the picker ("μ — friction / coefficient of
+  friction", "ρ — density", "λ — wavelength", and the rest), followed by every
+  remaining single lower-case letter as a plain name. The picker is searchable.
+- A value the engine rejects is reported inside the field and leaves the variable
+  untouched; a name that is not on the list is reported the same way.
+- Insert Variable offers only the variables that already have a value, each
+  labelled `name = value`; with nothing set yet it says so instead of opening an
+  empty list.
+- Inserting appends the name to the expression, multiplying implicitly when the
+  expression already ends on a number, a name or a closing bracket, and replacing
+  the display outright when it rests on a result.
+- A line under the display lists the variables currently set (`x = 3    F = 12`).
+  It is shown only in scientific mode and only while at least one variable has a
+  value.
+- Variables live in the app for the session: they survive switching between the
+  two calculators, and nothing is kept between runs.
+
+## Calculation history
+
+- Every `=` that produces an answer records the equation and the answer; the most
+  recent `config.MAX_HISTORY_ITEMS` entries are kept and shown newest first.
+- The history lives in its own drawer on the trailing edge of the window and
+  carries a "Clear history" button.
+- Each entry is a card as wide as the drawer, with the expression and the answer
+  both being buttons: tapping the expression puts it back in the display for
+  editing, tapping the answer appends it to the expression. Either closes the
+  drawer afterwards.
+- Each card carries a copy button for its answer (see "Copy to clipboard").
+
+## App header
+
+- The header row at the top of the window carries, left to right: a menu button
+  that opens the navigation drawer, the "AnythingCalculator" title over a small
+  muted caption, and a history button that opens the history drawer.
+- That caption names what the content area is showing: "REGULAR MODE",
+  "SCIENTIFIC MODE", "UNIT CONVERSION" or "PI CALCULATION". It is the same caption
+  style the drawer heading uses.
+
 ## Copy to clipboard
 
-- Every result the app produces carries a small copy button (an icon-only
-  `CONTENT_COPY` button, not a full-width button).
-- Where a value is far too long for anyone to select by hand - the decimals of a
-  computed pi - let that button say out loud what it copies and hand over the whole
-  of it, however little of it happens to be on screen.
+- Every result the app produces carries a small copy button - an icon-only
+  `CONTENT_COPY` button, not a full-width button.
+- The one exception is a value far too long for anyone to select by hand: the
+  decimals of a computed pi. There the button is a text button carrying the same
+  `CONTENT_COPY` icon and a label that says out loud what it copies - "Copy all
+  100,000 decimals" - and it hands over the whole of the value, however little of
+  it happens to be on screen.
 - The button copies the value as it is displayed at the moment of the click, so
   it never copies a stale value.
 - Surfaces that must be copyable:
   - the calculator display (expression or result),
   - the answer of each calculation history entry,
-  - the unit conversion result.
+  - the unit conversion result,
+  - the result of a pi run on the Pi page,
+  - the whole number in the Pi page's digits dialog, and the pi the program is
+    currently calculating with.
 - Use Flet's clipboard service (`ft.Clipboard`), with one service instance
   shared by the whole app rather than one per button.
 - Confirm each copy with a snackbar showing the copied text, truncating long
@@ -352,6 +470,36 @@ There should be a conversions.yaml file that says "There should be this tab with
   engine to multiply by, and the decimals as a string for display. A run is only
   adopted when the digits spell exactly the value handed over, so a half-finished
   or corrupt run can never become what every calculation multiplies by.
+- Until the app has computed its own pi it falls back on the expansion of the
+  float `math.pi` - 15 decimals - and the digit count it reports says how accurate
+  that really is, so nothing ever claims more digits than it holds.
+- Pi is reachable in an expression under the ASCII name `pi` and under the Unicode
+  pi codepoints as well: the Greek small pi (U+03C0), the Greek pi symbol (U+03D6),
+  the double-struck small pi (U+213C) and the mathematical alphanumeric pi
+  codepoints (bold, italic, bold-italic and sans-serif). Every alias resolves to
+  the one program's pi, so an expression typed or pasted with any pi glyph still
+  calculates. The mathematical forms need no per-style entry: Python normalizes
+  identifiers to their base letter form, so a bold or sans-serif pi reaches the
+  Greek small pi alias whatever the table lists.
+- Computing pi needs no third-party library in the artifact: `src/pi.py` runs on
+  plain Python integers. Where `gmpy2` is installed on the host it is used for
+  `mpz` and the integer square root because it is faster; it is an optional
+  extra (`[project.optional-dependencies] pi`, and pulled in by `dev` for the
+  tests), never a runtime dependency, because it has no Android wheel and would
+  break `flet build apk|aab`.
+- `src/pi.py` additionally has a command-line entry - `python src/pi.py [digits]`
+  - for computing a pi outside the app. It uses a `tqdm` bar when `tqdm` happens
+  to be installed and runs without one when it is not; the app's page never uses
+  either.
+- Opening the Pi page again after a run shows what that run produced - the digits,
+  the progress numbers and the typed digit count are held in the page's own
+  controls and the control tree is reused, not rebuilt empty.
+- The page shows two numbers of its own: the pi the program is calculating with at
+  the top, as its leading decimals, and the finished run in a result card, again
+  as a leading slice with an ellipsis when the run is longer than the card can
+  hold. The whole number is only ever opened in the digits dialog.
+- A run that fails for a reason other than being stopped says so on the page and
+  leaves the buttons ready to try again; the program keeps the pi it already used.
 - While a run is going show a progress bar with, under it, the percentage done,
   the term count, which part of the run is under way, the speed in digits per
   second and a time estimate (what is left and what the whole run is expected to
@@ -453,13 +601,13 @@ There should be a conversions.yaml file that says "There should be this tab with
 
 - Verify a change with the Flet tooling on the host and stop there: `flet run`
   starts the app to look at it, `flet test` runs the whole suite, and
-  `flet test -k engine` the pure engine files (the fast check - 269 tests in
-  about seven seconds). Give the full suite about seventeen minutes (314 tests;
-  each UI test boots its own app host), so a `flet test` that runs for minutes is
-  working, not hung. No emulator, device or APK is involved in this path, and it is
-  what a change is judged by unless Android testing is asked for; the device route
-  is the separate, opt-in path under "The Android emulator path: only when it is
-  asked for".
+  `flet test -k engine` the pure engine files (the fast check - 270 tests in
+  about four seconds). The full suite is 342 tests and takes about eight minutes
+  (340 pass and 2 are skipped; each UI test boots its own app host), so a
+  `flet test` that runs for minutes is working, not hung. No emulator, device or
+  APK is involved in this path, and it is what a change is judged by unless
+  Android testing is asked for; the device route is the separate, opt-in path
+  under "The Android emulator path: only when it is asked for".
 - Run the suite with `flet test` (pytest flags only, no file paths - select with
   `-k`); the pure engine tests and the pi page tests (`test_pi_view.py`, which
   drives the page against a stub page) additionally run under plain `pytest`
@@ -492,7 +640,11 @@ There should be a conversions.yaml file that says "There should be this tab with
   so a conversion group whose drawer entry falls below the host window height
   cannot be opened from a UI test at all. Skip such a page test with a reason
   rather than dropping it or reshuffling the groups, and leave the group covered by
-  the conversion engine tests.
+  the conversion engine tests. Two page tests are skipped that way today: the Force
+  Conversion entry, ninth in the list, and the Pi Calculation entry under "Other".
+  The pi page is not left uncovered by that skip - `test_pi_view.py` drives the
+  whole page, its progress card and its digits dialog against a stub page, and
+  `test_pi_engine.py` covers the computation.
 - Keep the conversion engine covered independently of the UI: every pair of units
   within a group must be reachable, every factor that is a terminating decimal
   must survive a conversion exact, and every chain hop the engine reports must
@@ -618,7 +770,9 @@ There should be a conversions.yaml file that says "There should be this tab with
   - `conversions.py` - the conversion configuration, route finding, formula
     application and the reported chain of hops;
   - `pi.py` - the pi computation itself (Chudnovsky + binary splitting), the
-    digit counts the app offers and the one pi the program calculates with;
+    digit counts the app offers and the one pi the program calculates with; it
+    runs on stdlib integers, borrows `gmpy2` only when the host happens to have
+    it, and doubles as a command-line tool;
   - `pi_value.py` - a pi run packaged for the page: timing, progress numbers and
     adopting a finished run;
   - `ui.py` - the app object: page setup, the display state (expression, result
@@ -633,6 +787,8 @@ There should be a conversions.yaml file that says "There should be this tab with
   - `clipboard.py` - the single clipboard service behind every copy button;
   - `styles.py` - the colour palette, so one hex value cannot drift between
     controls.
+- The unit data sits with them as `src/assets/conversions.yaml`, addressed only
+  through `config.CONVERSION_CONFIG_PATH` so the packaged artifact finds it.
 - Keep the engines free of UI imports, so they stay importable - and testable -
   without an app host; view and dialog modules receive what they need
   (page, controls, callbacks) instead of reaching into an app closure.
@@ -653,6 +809,12 @@ There should be a conversions.yaml file that says "There should be this tab with
   "No matching distribution found for watchdog". The `flet` command and the
   desktop run client are therefore host tooling and are never part of a shipped
   bundle; a desktop build ships its own runner from the Flutter app shell.
+- The optional extras are `dev` (the `flet[cli,desktop,test]` extra plus `pytest`,
+  `pytest-asyncio` and `gmpy2`, which the tests import directly), `pi` (`gmpy2`,
+  the accelerator for `src/pi.py`) and `docs` (`mkdocs`). None of them is ever a
+  runtime dependency for the reason above - `gmpy2` is a C extension with no
+  Android wheel, exactly like `watchdog` - and each stays in its own extra so a CI
+  job installs only what it needs.
 - The app's entry point is `src/main.py`, declared to Flet with
   `[tool.flet.app] path = "src"` and `module = "main"`. There is no console
   script: the app is started with `flet run` (from the workspace root) or run
@@ -693,4 +855,25 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Only sources and project configuration are tracked. Everything a build or a
   test run regenerates (`build/`, the Python/pytest/Dart caches) stays ignored,
   along with each machine's own Python environment and editor settings.
+
+## Documentation
+
+- The prose documentation lives in `docs/` at the workspace root and is built by
+  MkDocs from `mkdocs.yml` beside it. This file stays the requirements document:
+  the docs describe what the app is, this file says what it must be.
+- The hub is `docs/anycalc (Flet calculator app).md`, with a source-layout page, a
+  testing page, and `docs/Change log & decisions.md`, which records each change
+  with the reasoning behind it - including the dead ends, which is what keeps the
+  same mistake from being made twice.
+- Those notes were kept in Trillium notes before being migrated into `docs/`;
+  `DOCUMENTATION_REMINDER.txt` is the reminder that they live here now.
+- `mkdocs build` writes `site/`, which is gitignored and never committed: it
+  mirrors every word of `docs/`, so a tracked copy only duplicates the repository.
+- `.github/workflows/docs.yml` rebuilds and publishes `docs/` to GitHub Pages on
+  any push to `main` touching `docs/**`, `mkdocs.yml` or the workflow itself, and
+  builds with `mkdocs build --strict`, so a broken internal link fails the deploy
+  instead of shipping. That job installs only the `[docs]` extra.
+- The documentation carries no personal data either: the project is named by its
+  GitHub handle (`GreenTruck50/anycalc` in `mkdocs.yml`), never by a real name, an
+  e-mail address or a path under someone's home directory.
 
