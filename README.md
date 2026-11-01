@@ -1,4 +1,5 @@
 # anycalc
+![GitHub commit activity](https://img.shields.io/github/commit-activity/m/GreenTruck50/anycalc) ![GitHub last commit](https://img.shields.io/github/last-commit/GreenTruck50/anycalc) ![GitHub repo size](https://img.shields.io/github/repo-size/GreenTruck50/anycalc) ![GitHub Issues](https://img.shields.io/github/issues/GreenTruck50/anycalc) ![GitHub repo file or directory count](https://img.shields.io/github/directory-file-count/GreenTruck50/anycalc) ![GitHub forks](https://img.shields.io/github/forks/GreenTruck50/anycalc) ![GitHub Pull Requests](https://img.shields.io/github/issues-pr/GreenTruck50/anycalc)
 
 Calculate anything — a Flet calculator for desktop and mobile: expressions,
 scientific mode, named variables, history, live unit conversions and a π it
