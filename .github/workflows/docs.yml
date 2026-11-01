@@ -38,7 +38,7 @@ jobs:
           python-version: "3.12"
           cache: pip
       - name: Install the docs extra
-        run: pip install -e ".[docs]"
+        run: pip install mkdocs
       - name: Build (strict - a broken internal link fails the deploy)
         run: mkdocs build --strict
       - uses: actions/upload-pages-artifact@v3
