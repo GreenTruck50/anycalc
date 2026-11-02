@@ -976,6 +976,6 @@ def test_the_copy_button_of_the_dialog_copies_all_of_the_digits(view: PiView) ->
     ]
     assert len(copies) == 1, "the dialog offers exactly one way to copy"
     # And it says what it copies, so nobody has to wonder whether it is a screenful.
-    assert copies[0].content == "Copy all 25,000 decimals"
+    assert copies[0].content == "Copy all 25,000 digits"
     assert view.page.copies[-1]() == f"3.{view.computation.decimals}"
     assert len(view.page.copies[-1]()) == 25002, "3. plus every decimal computed"

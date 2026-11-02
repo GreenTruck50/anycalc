@@ -762,8 +762,8 @@ class PiView:
                 actions=[
                     self.make_copy_button(
                         lambda: f"3.{decimals}",
-                        tooltip="Copy every decimal of this pi",
-                        label=f"Copy all {len(decimals):,} decimals",
+                        tooltip="Copy every digits of this pi",
+                        label=f"Copy all {len(decimals):,} digits",
                     ),
                     ft.TextButton(
                         content="Close", on_click=lambda: self.page.pop_dialog()
