@@ -42,6 +42,8 @@ jobs:
         # You may pin to the exact commit or the version.
         # uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
         uses: astral-sh/setup-uv@v10.3.3
+        with:
+          enable-cache: true
       - name: Install mkdocs via uv
         run: uv tool install mkdocs
       - name: Build (strict)
