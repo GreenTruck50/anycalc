@@ -562,9 +562,11 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Viewing the digits opens a popup with one large, selectable text label inside an
   ordinary scrollbox. The label wraps to the scrollbox's width, including on a phone;
   use no per-line controls, custom line sizing, line numbers, monospace, or code-viewer
-  styling. It opens with one batch of 10 000 decimals and appends the next batch to the
-  same label's text when the reader scrolls near the bottom. A hundred million digits
-  are never put in the label at once, which is what would make the app lag or die.
+  styling. Show the complete number beginning with `3.` in the label, consistent with
+  the other pi displays; the leading `3.` is not part of the decimal count. It opens
+  with one batch of 10 000 decimals and appends the next batch to the same label's text
+  when the reader scrolls near the bottom. A hundred million digits are never put in
+  the label at once, which is what would make the app lag or die.
 - Scrolling is the only way more of the number is asked for: no page buttons or pager.
   A scroll within a few lines of the end appends the next batch; a scroll higher up
   appends nothing, and a burst of notifications from one drag must not append the same

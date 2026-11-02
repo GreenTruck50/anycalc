@@ -326,7 +326,7 @@ def test_the_digits_are_plain_text_and_not_a_code_viewer(view: PiView) -> None:
 
     assert scrollbox.scroll == ft.ScrollMode.AUTO
     assert scrollbox.controls == [label]
-    assert label.value == PI_DECIMALS[:600]
+    assert label.value == f"3.{PI_DECIMALS[:600]}"
     assert label.size == 18
     assert label.selectable is True
     assert label.width == dialog_width(None)
@@ -780,7 +780,7 @@ def test_the_dialog_opens_holding_one_batch(view: PiView) -> None:
     assert lines.on_scroll == view._on_digits_scroll, "scrolling loads the rest of it"
     assert len(lines.controls) == 1
     assert view._dialog_loaded == DIALOG_BATCH_DECIMALS
-    assert digits_on_screen(lines) == decimals[:DIALOG_BATCH_DECIMALS]
+    assert digits_on_screen(lines) == f"3.{decimals[:DIALOG_BATCH_DECIMALS]}"
 
 
 def test_scrolling_near_the_bottom_loads_the_next_batch(view: PiView) -> None:
@@ -794,7 +794,7 @@ def test_scrolling_near_the_bottom_loads_the_next_batch(view: PiView) -> None:
         Scrolled(extent_after=DIALOG_LOAD_AHEAD_PIXELS - 1)
     )
 
-    assert digits_on_screen(lines) == decimals[: 2 * DIALOG_BATCH_DECIMALS]
+    assert digits_on_screen(lines) == f"3.{decimals[: 2 * DIALOG_BATCH_DECIMALS]}"
     assert view._dialog_loaded == 2 * DIALOG_BATCH_DECIMALS
     assert lines.controls == [label], "the same label receives the appended text"
 
@@ -838,7 +838,7 @@ def test_a_notification_that_lands_mid_batch_loads_no_second_batch(view: PiView)
     view._on_digits_scroll(Scrolled(extent_after=0.0))
 
     assert view._dialog_loaded == 2 * DIALOG_BATCH_DECIMALS, "one batch, not two"
-    assert digits_on_screen(lines) == decimals[: 2 * DIALOG_BATCH_DECIMALS]
+    assert digits_on_screen(lines) == f"3.{decimals[: 2 * DIALOG_BATCH_DECIMALS]}"
 
 
 def test_scrolling_to_the_end_of_the_number_stops_there(view: PiView) -> None:
@@ -853,7 +853,7 @@ def test_scrolling_to_the_end_of_the_number_stops_there(view: PiView) -> None:
     assert view._dialog_loaded == len(decimals)
     tail = decimals[2 * DIALOG_BATCH_DECIMALS :]
     assert len(tail) == 25_000 - 2 * DIALOG_BATCH_DECIMALS
-    assert digits_on_screen(lines) == decimals, "the last batch is short, never padded"
+    assert digits_on_screen(lines) == f"3.{decimals}", "the last batch is short, never padded"
 
 
 def test_the_bound_keeps_a_never_ending_scroll_from_growing_forever(view: PiView) -> None:
@@ -867,7 +867,7 @@ def test_the_bound_keeps_a_never_ending_scroll_from_growing_forever(view: PiView
         scroll_to_bottom(view)
 
     assert view._dialog_loaded == DIALOG_MAX_LOADED_DECIMALS
-    assert digits_on_screen(lines) == "7" * DIALOG_MAX_LOADED_DECIMALS
+    assert digits_on_screen(lines) == f"3.{'7' * DIALOG_MAX_LOADED_DECIMALS}"
     assert (
         find_by_text(
             dialog,
@@ -924,7 +924,7 @@ def test_the_popup_offers_nothing_but_the_digits_and_two_buttons(view: PiView) -
 def test_a_short_run_is_all_on_screen_at_once(view: PiView) -> None:
     lines = open_dialog_after_a_run(view, "120")
     assert len(lines.controls) == 1
-    assert digits_on_screen(lines) == PI_DECIMALS[:120]
+    assert digits_on_screen(lines) == f"3.{PI_DECIMALS[:120]}"
     scroll_to_bottom(view)
     assert len(lines.controls) == 1, "there is nothing past the end to load"
     assert find_by_text(view.page.dialogs[-1], "all 120 decimals on screen") is not None
@@ -937,7 +937,7 @@ def test_the_programs_own_digits_open_the_same_way(view: PiView) -> None:
     assert dialog.title.value == "Pi the program uses - 12 decimals"
     lines = find_by_key(dialog, "pi-digits-list")
     assert len(lines.controls) == 1, "the popup holds one wrapping label"
-    assert digits_on_screen(lines) == PI_DECIMALS[:12]
+    assert digits_on_screen(lines) == f"3.{PI_DECIMALS[:12]}"
     assert find_by_text(dialog, "all 12 decimals on screen") is not None
 
 
@@ -964,7 +964,7 @@ def test_the_copy_button_of_the_dialog_copies_all_of_the_digits(view: PiView) ->
 
     lines = open_dialog_after_a_run(view, "25000")
     assert (
-        len(digits_on_screen(lines)) == DIALOG_BATCH_DECIMALS
+        len(digits_on_screen(lines)) == DIALOG_BATCH_DECIMALS + 2
     ), "only part of it is on screen"
 
     dialog = view.page.dialogs[-1]

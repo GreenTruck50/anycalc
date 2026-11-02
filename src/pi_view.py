@@ -805,7 +805,7 @@ class PiView:
 
         start, end = dialog_batch_range(self._dialog_decimals, self._dialog_loaded)
         if end > start:
-            self._dialog_label.value = self._dialog_decimals[:end]
+            self._dialog_label.value = f"3.{self._dialog_decimals[:end]}"
             self._dialog_loaded = end
         self._dialog_count.value = self._dialog_footline()
         if paint and end > start:

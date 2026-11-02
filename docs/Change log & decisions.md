@@ -393,3 +393,9 @@ The Android emulator window repeatedly triggered an "is not responding" dialog w
 **Spec:** `calculator_spec.md` now describes the single wrapping label, incremental text appends and the simpler scroll behavior.
 
 **Validation:** `.venv/bin/flet test -k pi_view` — 57 passed.
+
+## 2026-11-02 — Include the whole part in View digits
+
+**Reported:** the other Pi displays show `3.141…`, but the View digits label started at `141…`.
+
+**Fix:** the label now starts with `3.` and appends decimal batches after it. The batch limit and footline continue counting only decimals. The spec now states that the dialog shows the complete number, matching the other Pi displays.
