@@ -762,7 +762,7 @@ class PiView:
                 actions=[
                     self.make_copy_button(
                         lambda: f"3.{decimals}",
-                        tooltip="Copy every digits of this pi",
+                        tooltip="Copy every digit of this pi",
                         label=f"Copy all {len(decimals):,} digits",
                     ),
                     ft.TextButton(
