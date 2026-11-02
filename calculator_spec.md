@@ -559,30 +559,26 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Give every input on the page a row of its own that it can stretch across: two
   inputs sharing one row each take their own intrinsic width and together overflow
   the page, which on a phone leaves the second one off screen and unreachable.
-- Viewing the digits opens a dialog that shows the number as plain text in an
-  ordinary scroll area - digits and nothing else on a line, no line numbers, no
-  monospace, no code-viewer styling. It holds one page of the number at a time -
-  10 000 decimals - and turns pages when asked; a hundred million digits are never
-  put on the screen at once, which is what would make the app lag or die. Lay the
-  list out on a fixed line extent so the renderer only ever builds the lines inside
-  the viewport, and never build a line past the end of the number.
-- Never grow that list while the reader is scrolling it. A list that extends under
-  their fingers keeps changing the very distance its scrollbar is measuring, so the
-  thumb resizes mid-drag, the end keeps running away from them and the thumb ends up
-  a meaningless sliver: a scrollbar can only be honest about a length that does not
-  move. Nothing is added or removed while a page is being read.
-- Give the dialog First / Previous / Next / Last buttons, disabled when there is
-  nowhere left to go, and a footline saying which part of the number is on screen -
-  "decimals 10 001 to 20 000 of 60 000 - page 2 of 6". A page turn replaces the lines
-  rather than appending to them, starts again at the top of the page, keeps the last
-  page short instead of padded, and cannot move past either end of the number. A
-  number that fits one page has all four buttons disabled.
-- Keep the scrollbar off the digits: hold a gutter at the right of the list and
-  measure a line against what is left of it, so the thumb never sits on top of the
-  digits it is supposed to be about.
-- Measure how many decimals one line holds from the window the dialog opens on, so
-  a narrow window gets a shorter line instead of a line whose tail is cut off, and
-  never let a line run wider than the dialog.
+- Viewing the digits opens a popup with one large, selectable text label inside an
+  ordinary scrollbox. The label wraps to the scrollbox's width, including on a phone;
+  use no per-line controls, custom line sizing, line numbers, monospace, or code-viewer
+  styling. It opens with one batch of 10 000 decimals and appends the next batch to the
+  same label's text when the reader scrolls near the bottom. A hundred million digits
+  are never put in the label at once, which is what would make the app lag or die.
+- Scrolling is the only way more of the number is asked for: no page buttons or pager.
+  A scroll within a few lines of the end appends the next batch; a scroll higher up
+  appends nothing, and a burst of notifications from one drag must not append the same
+  batch twice. Asking for more once the end of the number is on screen asks for
+  nothing, and the last batch is short instead of padded.
+- Bound what the label may hold - 200 000 decimals - so nobody can grow its text
+  without limit. When it is the bound and not the end of the number that stops loading,
+  say so in the dialog; the copy button still hands over every decimal either way.
+- Say in the footline how much of the number is in the label and what is still to come
+  - "decimals 1 to 10 000 of 60 000 on screen - keep scrolling for the next 10 000",
+  and "all 60 000 decimals on screen" once the whole number is there.
+- Note the trade-off: appending to the label grows the scrollable extent, so the
+  scrollbar thumb changes size as more decimals load. Keep the batches and label bound
+  to avoid loading or displaying the whole run at once.
 - Give the dialog a button that says what it copies and copies every decimal of the
   run in one press, whatever part of the number happens to be on screen - selecting
   a hundred thousand digits by hand is not something a person can do.
@@ -781,7 +777,7 @@ There should be a conversions.yaml file that says "There should be this tab with
   - `conversion_view.py` - the conversion form, its live re-conversion and its
     chain cards;
   - `pi_view.py` - the pi page: the digit choice, the progress card, adopting a
-    run and the paged digits dialog;
+    run and the digits popup that loads more as it is scrolled;
   - `history_view.py` - the history cards and the history drawer;
   - `variable_dialogs.py` - the Set Variable / Insert Variable dialogs;
   - `clipboard.py` - the single clipboard service behind every copy button;
@@ -876,4 +872,3 @@ There should be a conversions.yaml file that says "There should be this tab with
 - The documentation carries no personal data either: the project is named by its
   GitHub handle (`GreenTruck50/anycalc` in `mkdocs.yml`), never by a real name, an
   e-mail address or a path under someone's home directory.
-

@@ -369,3 +369,27 @@ The Android emulator window repeatedly triggered an "is not responding" dialog w
 
 
 **Spec:** the pi section of `calculator_spec.md` now requires the half-second repaint on the page's own event loop, the schedule rather than chained sleeps, the one shared two-frames-a-second budget across clock and checkpoints, and the card belonging to the outcome once a run ends; and for the digits dialog it forbids growing the list while it is scrolled and requires the page buttons, the footline and the scrollbar gutter.
+
+## 2026-11-01 — View digits is a scrolling popup that loads the digits as they are read
+
+**Asked for:** "redo the View digits in the pi calculation section — make it simply a popup that can scroll and has the digits of Pi in it, but if they scroll near the bottom it loads more, because it may lag if we load all at a time."
+
+**What went:** the pager from 2026-10-31 — First / Previous / Next / Last, `_show_page`, `_turn_page`, `_can_turn_page`, `_scroll_page_to_top`, `dialog_pages`, `dialog_page_range`, `DIALOG_PAGE_DECIMALS`, `DIALOG_NAV_HEIGHT`. Reading a number top down is what scrolling is already for; the pager was chrome in the middle of it, and the reader asked for the scroll back.
+
+**What replaced it** (`src/pi_view.py`): the `ListView` carries `on_scroll=self._on_digits_scroll` again and opens holding `DIALOG_BATCH_DECIMALS = 10_000` decimals. `_scrolled_near_bottom` reads the `extent_after` the scrollable reports and appends the next batch once the reader comes within `DIALOG_LOAD_AHEAD_LINES = 8` lines (160 px) of the end of what is loaded — a few lines early, so nobody stares at a stopped list while the next batch is built. A notification that reports no `extent_after` is measured the other way round (offset plus viewport against the height the loaded lines add up to); one that reports neither loads nothing rather than guessing. `dialog_batch_range` and `dialog_load_ceiling` clamp the slice at the start of the number, at its end and at `DIALOG_MAX_LOADED_DECIMALS = 200_000`, so nobody can grow the control tree without limit by never letting go of the wheel — and the footline then says `… that is as far as this dialog scrolls; the button below copies every decimal of it` instead of stopping quietly. `_append_digits` only ever extends the list, so the lines under the reader's eyes keep their identity, and `_dialog_loading` keeps one drag's burst of notifications from stacking up over the same slice of the number. `item_extent`, `build_controls_on_demand`, the scrollbar gutter and the "Copy all N decimals" button are untouched.
+
+**The trade-off, on record:** this reinstates the growing list the 2026-10-31 entry removed, so the scrollbar thumb resizes mid-drag again. Accepted deliberately, because loading digits as they are read is what was asked for: 10 000-decimal batches, loading only 8 lines before the end, and the 200 000-decimal bound are what keep the thumb from collapsing into the sliver that entry complained about. If the thumb ever becomes unusable in practice, the answer is to reserve the extent up front — a filler line block that shrinks as batches load, keeping the total extent fixed — not to put a pager back unasked.
+
+**Tests** (`tests/test_pi_view.py`, 64 passed): batch math (last batch short and never padded, asking past the end asks for nothing, the ceiling never sits below one batch); the popup opens holding exactly one batch; scrolling near the bottom appends the next one and leaves the existing lines object for object; a scroll higher up, and a notification carrying nothing measurable, append nothing; the extent-free fallback loads at the same place; a notification that lands mid-batch (the test makes `page.update` scroll again) loads one batch and not two; nine hard scrolls reach the end of a 25 000-decimal run and stop there; 40 hard scrolls on a 230 000-decimal number stop at the bound and say so in the footline; the footline wording through all three states; and the dialog offers exactly `Close` and `Copy all 25,000 decimals` — nothing else to press.
+
+**Spec:** the pi section of `calculator_spec.md` now requires the popup to open with one batch and build the next when the reader scrolls near the bottom, forbids any pager, bounds what the list may hold, and requires the footline to say how much of the number is on screen. The 2026-10-31 sentence that forbade growing the list while it is scrolled is replaced, and the thumb trade-off is written next to the requirement that accepts it.
+
+## 2026-11-02 — View digits uses one wrapping label
+
+**Asked for:** replace the digits list with a scrollbox holding one large, wrapping label; append each next batch to that label's text as the reader nears the bottom.
+
+**What changed** (`src/pi_view.py`): the scrollbox now contains one selectable text label constrained to its width. It opens with 10 000 decimals and appends the next batch to the same label as the scrollbox nears its end. Per-line controls, fixed line extents, glyph-width calculations and the scrollbar gutter are gone. The existing 200 000-decimal display limit and full-number copy button remain.
+
+**Spec:** `calculator_spec.md` now describes the single wrapping label, incremental text appends and the simpler scroll behavior.
+
+**Validation:** `.venv/bin/flet test -k pi_view` — 57 passed.

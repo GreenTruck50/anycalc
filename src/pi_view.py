@@ -12,10 +12,9 @@ card is repainted twice a second - by a task on the page's own event loop and by
 engine's checkpoints, spending one shared interval between them - so the bar advances as
 soon as it can and the speed and estimate keep moving even while the engine is inside one
 very large multiplication. The digits are shown as plain text in a scrolling dialog that
-holds one page of them at a time and turns pages when asked - a hundred million digits
-are never put on screen at once, which is what would make the app lag or die, and nothing
-is added under the reader's fingers while they drag - and one button copies the whole
-number.
+opens holding one batch of them and builds the next batch as the reader scrolls near the
+bottom - a hundred million digits are never put on screen at once, which is what would
+make the app lag or die - and one button copies the whole number.
 """
 
 import asyncio
@@ -50,47 +49,20 @@ CURRENT_DECIMALS = 40
 # to press something.
 PROGRESS_PAINT_SECONDS = 0.5
 
-# The digits dialog is the number itself in an ordinary scroll area: no line numbers,
-# no monospace, no box around it. A ListView is used because it has a plain scrollbar
-# and, given ``item_extent``, only ever renders the lines inside the viewport - so a
-# run of a hundred million decimals can be read through without ever being on screen
-# at once.
-DIALOG_FONT_SIZE = 13
-DIALOG_LINE_HEIGHT = 20
-DIALOG_VIEWPORT_LINES = 16
+# The digits dialog is one large, wrapping label inside a plain scroll area.
+DIALOG_FONT_SIZE = 18
 DIALOG_MAX_WIDTH = 560
-DIALOG_PAD = 6
+DIALOG_VIEWPORT_HEIGHT = 340
 
-# The height the dialog gives its scroll area, the room its page buttons take, and how
-# many footer lines sit under those.
-DIALOG_VIEWPORT_HEIGHT = DIALOG_VIEWPORT_LINES * DIALOG_LINE_HEIGHT
-DIALOG_NAV_HEIGHT = 40
-DIALOG_FOOTER_LINES = 1
-DIALOG_MIN_LINE_DIGITS = 20
+# How many decimals the dialog appends to its label at a time.
+DIALOG_BATCH_DECIMALS = 10_000
 
-# The scrollbar is drawn inside the viewport, over whatever is at its right edge. The
-# list keeps a gutter there instead, and a line is measured against what is left - so
-# the thumb never sits on top of the digits it is supposed to be about.
-DIALOG_SCROLLBAR_GUTTER = 14
+# Load more shortly before the label reaches the end of the scroll area.
+DIALOG_LOAD_AHEAD_PIXELS = 160
 
-# A digit of the dialog's font at the dialog's size, in logical pixels. How many
-# decimals fit across the dialog follows from it, so a narrow window gets a shorter
-# line instead of a line whose tail is cut off.
-DIALOG_GLYPH_WIDTH = 8
-
-# How many decimals the dialog holds at a time. The whole page is in the list, so the
-# scrollbar covers exactly the stretch of the number the reader is in and never
-# resizes under a drag, and a hundred million decimals stay out of the tree - they are
-# turned a page at a time instead, which is what keeps the app from lagging or dying.
-DIALOG_PAGE_DECIMALS = 10_000
-
-# The page moves the dialog's buttons ask for. Both ends are named rather than offset
-# by a huge number: that is the only way the last page of a number that does not fill
-# one whole page is reachable.
-_FIRST_PAGE = "first"
-_LAST_PAGE = "last"
-_PREV_PAGE = -1
-_NEXT_PAGE = 1
+# Keep long runs from making the dialog's label unbounded. The copy button still
+# provides the entire value.
+DIALOG_MAX_LOADED_DECIMALS = 200_000
 
 
 def percent_text(percent: float) -> str:
@@ -136,42 +108,29 @@ def dialog_width(page_width: Optional[float]) -> int:
     return max(280, min(DIALOG_MAX_WIDTH, int(page_width) - 48))
 
 
-def dialog_line_digits(page_width: Optional[float]) -> int:
-    """How many decimals fit on one line of the dialog on this window.
+def dialog_load_ceiling(total: int) -> int:
+    """How many decimals the dialog may hold at once for a number this long.
 
-    A line is a row of digits across the dialog's inner width, and a digit of this
-    font is about :data:`DIALOG_GLYPH_WIDTH` pixels wide - so the answer follows from
-    the window the dialog opens on. Rounding down is what keeps a phone from cutting
-    the tail off every line of a long run, and the scrollbar's gutter is taken off
-    first so the thumb cannot cover the last digits of a line.
+    The ceiling only ever bites on numbers longer than it; a shorter number is simply
+    all loadable. One batch is taken as a floor, so a mis-tuned ceiling can never leave
+    the dialog unable to open with the digits it opens on.
     """
 
-    usable = dialog_width(page_width) - 2 * DIALOG_PAD - DIALOG_SCROLLBAR_GUTTER
-    return max(DIALOG_MIN_LINE_DIGITS, usable // DIALOG_GLYPH_WIDTH)
+    return min(total, max(DIALOG_MAX_LOADED_DECIMALS, DIALOG_BATCH_DECIMALS))
 
 
-def dialog_pages(decimals: str) -> int:
-    """How many pages the dialog turns through for this many decimals.
+def dialog_batch_range(decimals: str, loaded: int) -> tuple[int, int]:
+    """The half-open slice of the decimals to build next: first, one past last.
 
-    Ceiling division: a run that does not fill its last page still gets it, and a
-    number shorter than one page is still one page - the buttons only appear when
-    there is actually somewhere to go.
+    ``loaded`` is how far the dialog has already built, so the next batch starts where
+    the last one ended. The slice is clamped at both ends - never before the start of
+    the number, never past its end, never past the ceiling - which is what makes the
+    last batch short instead of padded and makes asking for more once the whole number
+    is on screen ask for nothing.
     """
 
-    return max(1, -(-len(decimals) // DIALOG_PAGE_DECIMALS))
-
-
-def dialog_page_range(decimals: str, page: int) -> tuple[int, int]:
-    """The half-open slice of the decimals one page shows: first, one past last.
-
-    The page number is clamped into the number first, so a page before the first or
-    past the last lands on an end rather than on empty space, and the last page is
-    short rather than padded.
-    """
-
-    pages = dialog_pages(decimals)
-    start = min(max(0, page), pages - 1) * DIALOG_PAGE_DECIMALS
-    return start, min(start + DIALOG_PAGE_DECIMALS, len(decimals))
+    start = min(max(loaded, 0), len(decimals))
+    return start, min(start + DIALOG_BATCH_DECIMALS, dialog_load_ceiling(len(decimals)))
 
 
 class PiView:
@@ -200,17 +159,17 @@ class PiView:
         # The task that repaints the progress card on the clock, kept referenced so
         # the event loop is not free to drop it mid-run.
         self._paint_task: Optional[object] = None
-        self._page = 0
-        self._page_lines: list[ft.Text] = []
-        self._page_buttons: dict[str, ft.TextButton] = {}
+        # The digits dialog: the number it is showing, how many decimals of it the
+        # label currently holds, and the guard that keeps a burst of notifications
+        # from racing over the same batch. Rebuilt by
+        # :meth:`_open_digits_dialog` each time the digits are opened; held here so
+        # they always name a real control rather than nothing.
         self._dialog_decimals = ""
-        # Rebuilt by :meth:`_open_digits_dialog` each time the digits are opened; held
-        # here so they always name a real control rather than nothing.
-        self._dialog_lines = ft.ListView()
+        self._dialog_loaded = 0
+        self._dialog_loading = False
+        self._dialog_label = ft.Text()
+        self._dialog_scrollbox = ft.ListView()
         self._dialog_count = ft.Text()
-        # How many decimals one dialog line holds on the window the dialog opens on;
-        # set again by :meth:`_open_digits_dialog`.
-        self._dialog_line_digits = dialog_line_digits(None)
 
         # The control tree, built by :meth:`build` and reused whenever the page is
         # opened again.
@@ -762,54 +721,30 @@ class PiView:
         )
 
     def _open_digits_dialog(self, decimals: str, heading: str) -> None:
-        """Open the digits in an ordinary scroll area, one page of them at a time.
-
-        A finished run can be a hundred million digits long, and putting that many
-        text controls on the screen at once is exactly what would make the app lag
-        or die. The dialog therefore keeps a single page of
-        :data:`DIALOG_PAGE_DECIMALS` decimals in the list and turns pages when asked.
-        ``item_extent`` still means the Flutter side only renders the lines inside the
-        viewport, and - unlike a list that grows while it is being scrolled - the page
-        never changes under the reader's fingers, so the scrollbar covers the stretch
-        of the number actually on show: its thumb stays the same size mid-drag, it
-        always reaches the real end of the page, and it cannot run off past the
-        bottom.
-
-        The lines hold the digits and nothing else - no line numbers, no monospace,
-        no box. It is a number being read, not source code.
-        """
+        """Open the digits in a wrapping label that grows as it is read."""
 
         self._dialog_decimals = decimals
-        self._page = 0
-        # The line length and the dialog's width follow the window the dialog opens
-        # on: at a fixed length a phone cut the tail off every line, which made a
-        # long run unreadable there.
+        self._dialog_loaded = 0
+        self._dialog_loading = False
         window_width = getattr(self.page, "width", None)
-        self._dialog_line_digits = dialog_line_digits(window_width)
+        width = dialog_width(window_width)
 
-        self._page_buttons = {
-            move: self._page_button(move, label)
-            for move, label in (
-                (_FIRST_PAGE, "First"),
-                (_PREV_PAGE, "Previous"),
-                (_NEXT_PAGE, "Next"),
-                (_LAST_PAGE, "Last"),
-            )
-        }
-        self._dialog_lines = ft.ListView(
-            controls=[],
-            item_extent=DIALOG_LINE_HEIGHT,
-            build_controls_on_demand=True,
+        self._dialog_label = ft.Text(
+            "",
+            key="pi-digits-label",
+            size=DIALOG_FONT_SIZE,
+            selectable=True,
+            width=width,
+        )
+        self._dialog_scrollbox = ft.ListView(
+            controls=[self._dialog_label],
             scroll=ft.ScrollMode.AUTO,
             expand=True,
-            # The thumb is drawn inside the viewport, over whatever sits at its right
-            # edge, so the list keeps that edge clear instead of letting the thumb sit
-            # on top of the digits it is meant to be about.
-            padding=ft.Padding(0, 0, DIALOG_SCROLLBAR_GUTTER, 0),
+            on_scroll=self._on_digits_scroll,
             key="pi-digits-list",
         )
         self._dialog_count = ft.Text(size=11, color=TEXT_FAINT, selectable=True)
-        self._show_page(paint=False)
+        self._append_digits(paint=False)
 
         self.page.show_dialog(
             ft.AlertDialog(
@@ -817,17 +752,12 @@ class PiView:
                 title=ft.Text(heading, size=18),
                 content=ft.Column(
                     [
-                        self._dialog_lines,
-                        ft.Row(
-                            list(self._page_buttons.values()), spacing=4, wrap=True
-                        ),
+                        self._dialog_scrollbox,
                         self._dialog_count,
                     ],
                     spacing=8,
-                    height=DIALOG_VIEWPORT_HEIGHT
-                    + DIALOG_NAV_HEIGHT
-                    + DIALOG_FOOTER_LINES * DIALOG_LINE_HEIGHT,
-                    width=dialog_width(window_width),
+                    height=DIALOG_VIEWPORT_HEIGHT,
+                    width=width,
                 ),
                 actions=[
                     self.make_copy_button(
@@ -844,110 +774,71 @@ class PiView:
         )
         self.page.update()
 
-    def _page_button(self, move: str | int, label: str) -> ft.TextButton:
-        """One of the four page buttons, bound to the move it asks for.
-
-        ``e`` is optional: the page hands the click event to it, while a test presses
-        the button by calling the handler bare.
-        """
-
-        return ft.TextButton(
-            content=label, on_click=lambda e=None, step=move: self._turn_page(step)
-        )
-
-    def _dialog_line(self, start: int, end: int) -> ft.Text:
-        """One line of the dialog: the digits, and nothing else on them.
-
-        ``start`` is where the line begins in the whole number, which is how a page
-        after the first starts mid-number rather than at its beginning, and ``end`` is
-        where the page stops - so a line never carries digits that belong to the next
-        page.
-        """
-
-        width = self._dialog_line_digits
-        return ft.Text(
-            self._dialog_decimals[start : min(start + width, end)],
-            size=DIALOG_FONT_SIZE,
-            no_wrap=True,
-            selectable=True,
-        )
-
     def _dialog_footline(self) -> str:
-        """Where the page on screen sits inside the whole number."""
+        """How much of the number the label currently holds.
+
+        The reader loads digits by scrolling at them, so the footer says what is there
+        and what is still to come - and says it differently
+        once it is the ceiling rather than the end of the number that stops the list.
+        """
 
         total = len(self._dialog_decimals)
-        pages = dialog_pages(self._dialog_decimals)
-        if pages == 1:
+        loaded = self._dialog_loaded
+        if loaded >= total:
             return f"all {total:,} decimals on screen"
-        first, last = dialog_page_range(self._dialog_decimals, self._page)
+        if loaded >= dialog_load_ceiling(total):
+            return (
+                f"decimals 1 to {loaded:,} of {total:,} - that is as far as this "
+                "dialog scrolls; the button below copies every decimal of it"
+            )
         return (
-            f"decimals {first + 1:,} to {last:,} of {total:,} - "
-            f"page {self._page + 1:,} of {pages:,}"
+            f"decimals 1 to {loaded:,} of {total:,} on screen - keep scrolling for "
+            f"the next {DIALOG_BATCH_DECIMALS:,}"
         )
 
-    def _show_page(self, paint: bool = True) -> None:
-        """Put the page the reader is on into the list, and say where they are.
+    def _append_digits(self, paint: bool = True) -> None:
+        """Append the next batch of decimals to the label.
 
-        The whole page goes in at once, so the list keeps a fixed extent for as long
-        as that page is shown - which is what makes the scrollbar honest - and turning
-        a page replaces the controls instead of appending to them. The scroll returns
-        to the top with it, or the reader would land halfway down digits they have not
-        seen yet.
+        The same label stays in the scrollbox as its text grows. The footer is updated
+        with each batch, including when the last batch reaches the end or the limit.
         """
 
-        first, last = dialog_page_range(self._dialog_decimals, self._page)
-        width = self._dialog_line_digits
-        self._page_lines = [
-            self._dialog_line(start, last) for start in range(first, last, width)
-        ]
-        self._dialog_lines.controls = self._page_lines
-        for move, button in self._page_buttons.items():
-            button.disabled = not self._can_turn_page(move)
+        start, end = dialog_batch_range(self._dialog_decimals, self._dialog_loaded)
+        if end > start:
+            self._dialog_label.value = self._dialog_decimals[:end]
+            self._dialog_loaded = end
         self._dialog_count.value = self._dialog_footline()
-        if not paint:
+        if paint and end > start:
+            self.page.update()
+
+    def _on_digits_scroll(self, e: object) -> None:
+        """Load the next batch once the reader nears the end of the loaded digits.
+
+        One drag arrives as a burst of scroll notifications, which is harmless rather
+        than wasteful: as soon as a batch goes in, the bottom of the number is another
+        :data:`DIALOG_BATCH_DECIMALS` decimals away again, so the next notification is
+        nowhere near it. The guard is for notifications that land while a batch is
+        being built, which would otherwise stack up over the same slice of the number.
+        """
+
+        if self._dialog_loading:
             return
-        # A page turn starts at the top of the new page: the scroll position outlives
-        # the controls it was measuring, so without this the reader would land halfway
-        # down digits they have not seen. It is a coroutine, so it goes through the
-        # page's own task runner.
-        self.page.run_task(self._scroll_page_to_top)
-        self.page.update()
+        if self._dialog_loaded >= dialog_load_ceiling(len(self._dialog_decimals)):
+            return
+        if not self._scrolled_near_bottom(e):
+            return
 
-    async def _scroll_page_to_top(self) -> None:
-        """Jump the digits back to the top of the scroll area."""
+        self._dialog_loading = True
+        try:
+            self._append_digits()
+        finally:
+            self._dialog_loading = False
 
-        await self._dialog_lines.scroll_to(offset=0, duration=0)
+    def _scrolled_near_bottom(self, e: object) -> bool:
+        """Whether the scrollbox reports that its end is near."""
 
-    def _can_turn_page(self, move: str | int) -> bool:
-        """Whether a page button has anywhere to go from the page on screen.
-
-        A number that fits in one page has nowhere to turn, so all four buttons are
-        disabled instead of sitting there as dead weight.
-        """
-
-        pages = dialog_pages(self._dialog_decimals)
-        if pages <= 1:
-            return False
-        if move == _FIRST_PAGE:
-            return self._page > 0
-        if move == _LAST_PAGE:
-            return self._page < pages - 1
-        return 0 <= self._page + int(move) < pages
-
-    def _turn_page(self, move: str | int) -> None:
-        """Turn to another page of the digits - and never past either end.
-
-        Both ends are asked for by name rather than by a huge offset, so the last page
-        of a number that does not fill one whole page is reachable too.
-        """
-
-        pages = dialog_pages(self._dialog_decimals)
-        if move == _FIRST_PAGE:
-            page = 0
-        elif move == _LAST_PAGE:
-            page = pages - 1
-        else:
-            page = self._page + int(move)
-        self._page = min(max(page, 0), pages - 1)
-        self._show_page()
-
+        extent_after = getattr(e, "extent_after", None)
+        return (
+            extent_after is not None
+            and float(extent_after) <= DIALOG_LOAD_AHEAD_PIXELS
+        )

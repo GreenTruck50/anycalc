@@ -9,10 +9,10 @@ here against a stub page. What gets pinned is the behaviour the page promises:
   field wins over the menu;
 * a finished run can be adopted, and the program's pi is what it became;
 * a stopped run adopts nothing and leaves the program's pi alone;
-* the digits dialog is the plain number in an ordinary scroll area; it holds one
-  page of the number at a time and turns pages when asked, so the list never grows
-  under the reader's fingers - which is what made its scrollbar lie about how much
-  number there was - and a run of a hundred million decimals is never on screen.
+* the digits dialog is the plain number in an ordinary scroll area that opens holding
+  one batch of it and appends the next batch when the reader scrolls near the bottom of
+  what is there - and never past the bound on what it may hold - so a run of a hundred
+  million decimals is never built at once;
 """
 
 import asyncio
@@ -29,23 +29,18 @@ import pi_value
 from calculate import calculate
 from config import DECIMAL_PRECISION
 from pi_view import (
-    DIALOG_GLYPH_WIDTH,
-    DIALOG_LINE_HEIGHT,
-    DIALOG_PAGE_DECIMALS,
+    DIALOG_BATCH_DECIMALS,
+    DIALOG_LOAD_AHEAD_PIXELS,
+    DIALOG_MAX_LOADED_DECIMALS,
     PROGRESS_PAINT_SECONDS,
     PiView,
-    dialog_line_digits,
-    dialog_page_range,
-    dialog_pages,
+    dialog_batch_range,
+    dialog_load_ceiling,
     dialog_width,
     percent_text,
     precision_notice,
 )
 from styles import CARD_BACKGROUND
-
-# How many decimals one dialog line holds when the dialog has no window geometry to
-# go by - which is the case for every dialog opened in this file.
-LINE_DIGITS = dialog_line_digits(None)
 
 PI_DECIMALS = (
     # 600 decimals, spelled out here rather than computed, so the page is
@@ -323,46 +318,30 @@ def test_the_progress_track_is_a_different_colour_than_its_card(view: PiView) ->
 
 
 def test_the_digits_are_plain_text_and_not_a_code_viewer(view: PiView) -> None:
-    """The number is being read, not debugged: no gutter, no monospace, no box.
+    """The scrollbox holds one large wrapping label, not a row per line."""
 
-    The dialog used to tag every line with the decimal it starts at and set it in a
-    monospace font on a coloured card - a source-code viewer. What was asked for is
-    the digits in an ordinary scroll area, so a line holds digits and nothing else.
-    """
+    scrollbox = open_dialog_after_a_run(view, "600")
+    label = find_by_key(view.page.dialogs[-1], "pi-digits-label")
+    assert isinstance(label, ft.Text)
 
-    lines = open_dialog_after_a_run(view, "600")
-    first = lines.controls[0]
-
-    assert first.value == PI_DECIMALS[:LINE_DIGITS]
-    assert first.font_family != "monospace"
-    assert first.selectable is True
-    assert lines.scroll == ft.ScrollMode.AUTO, "an ordinary scrollbar"
-    assert all(
-        set(control.value) <= set("0123456789") for control in lines.controls
-    ), "a line of the dialog is digits, and only digits"
+    assert scrollbox.scroll == ft.ScrollMode.AUTO
+    assert scrollbox.controls == [label]
+    assert label.value == PI_DECIMALS[:600]
+    assert label.size == 18
+    assert label.selectable is True
+    assert label.width == dialog_width(None)
+    assert label.no_wrap is not True
 
 
-@pytest.mark.parametrize("page_width", [None, 1400, 900, 420, 360, 300, 240])
-def test_a_line_never_runs_past_the_dialog_it_is_shown_in(
-    page_width: Optional[int]
-) -> None:
-    """A phone used to cut the tail off every line of a long run.
+def test_the_label_width_tracks_the_dialog_width(view: PiView) -> None:
+    """The wrapping label is constrained by the scrollbox on narrow windows too."""
 
-    The line is measured rather than fixed, so it shortens with the window instead of
-    overflowing it.
-    """
-
-    digits = dialog_line_digits(page_width)
-    assert digits >= 20, "never a line too narrow to read"
-    assert digits * DIALOG_GLYPH_WIDTH <= dialog_width(page_width)
-    assert digits <= dialog_line_digits(None)
-
-
-def test_a_phone_gets_a_line_it_can_actually_show() -> None:
-    """The dialog narrows with the window, and so does what one line holds."""
-
+    view.page.width = 360
+    view.open_current_digits()
+    label = find_by_key(view.page.dialogs[-1], "pi-digits-label")
+    assert isinstance(label, ft.Text)
     assert dialog_width(360) < dialog_width(1400)
-    assert dialog_line_digits(360) < dialog_line_digits(1400)
+    assert label.width == dialog_width(360)
 
 
 def test_adopting_makes_the_run_the_pi_every_calculation_uses(view: PiView) -> None:
@@ -710,7 +689,7 @@ def test_a_finished_run_keeps_its_own_words(view: PiView) -> None:
     assert view.phase_text.value == done, "the card still tells the outcome"
 
 
-# --- the digits dialog: one page of the number at a time ---------------------
+# --- the digits popup: the number, built as it is read -----------------------
 
 def open_dialog_after_a_run(view: PiView, typed: str = "600") -> ft.ListView:
     """Finish a run, press "View digits", and hand back the dialog's list."""
@@ -723,146 +702,232 @@ def open_dialog_after_a_run(view: PiView, typed: str = "600") -> ft.ListView:
     return find_by_key(dialog, "pi-digits-list")
 
 
-def digits_on_screen(lines: ft.ListView) -> str:
-    """The decimals the built lines hold, concatenated."""
+def open_dialog_on(view: PiView, decimals: str) -> ft.ListView:
+    """Open the popup on a spelled-out number - no run, no waiting.
 
-    return "".join(control.value for control in lines.controls)
-
-
-def page_button(view: PiView, label: str) -> ft.TextButton:
-    """One of the dialog's page buttons, found by the word it shows."""
-
-    found = [
-        control
-        for control in walk(view.page.dialogs[-1])
-        if isinstance(control, ft.TextButton) and control.content == label
-    ]
-    assert len(found) == 1, f"the dialog offers exactly one {label} button"
-    return found[0]
-
-
-def test_page_math_covers_a_number_that_outgrows_its_last_page() -> None:
-    """The paging rules, without a window or a run."""
-
-    decimals = "3" * 25_000
-    assert dialog_pages(decimals) == 3
-    assert dialog_page_range(decimals, 0) == (0, 10_000)
-    assert dialog_page_range(decimals, 2) == (20_000, 25_000), "short, not padded"
-
-    # A number that fits one page is still one page, and a page asked for outside the
-    # number lands on an end instead of on empty space.
-    assert dialog_pages("14159") == 1
-    assert dialog_page_range("14159", 7) == (0, 5)
-    assert dialog_page_range(decimals, 40) == (20_000, 25_000)
-    assert dialog_page_range(decimals, -3) == (0, 10_000)
-
-
-def test_a_long_run_is_read_a_page_at_a_time(view: PiView) -> None:
-    """The list holds one page, and nothing is added under the reader's fingers.
-
-    This is the fix for the scrollbar: a list that grows while it is being scrolled
-    keeps changing the very distance the thumb is measuring, so the thumb shrank
-    mid-drag and the end kept moving away. A page is fixed while it is shown, so the
-    scrollbar describes the number the reader is actually in - and there is no scroll
-    handler left to grow the list with.
+    The bounds on what the popup holds are only interesting on numbers far longer
+    than a test wants to compute, and the digits themselves are irrelevant to them.
     """
 
-    lines = open_dialog_after_a_run(view, "25000")
-    assert lines.on_scroll is None, "scrolling adds nothing to the list"
-    assert lines.item_extent == DIALOG_LINE_HEIGHT, (
-        "a fixed extent is what lets Flutter render only the lines in the viewport"
+    view._open_digits_dialog(decimals, f"Pi to {len(decimals):,} decimals")
+    return find_by_key(view.page.dialogs[-1], "pi-digits-list")
+
+
+def digits_on_screen(scrollbox: ft.ListView) -> str:
+    """The digits in the scrollbox's one text label."""
+
+    label = scrollbox.controls[0]
+    assert isinstance(label, ft.Text)
+    assert label.value is not None
+    return label.value
+
+
+class Scrolled:
+    """A scroll notification reporting the extent below the viewport."""
+
+    def __init__(
+        self,
+        extent_after: Optional[float] = None,
+        pixels: Optional[float] = None,
+        viewport: float = 0.0,
+    ) -> None:
+        if extent_after is not None:
+            self.extent_after = extent_after
+        if pixels is not None:
+            self.pixels = pixels
+        self.viewport_dimension = viewport
+
+
+def scroll_to_bottom(view: PiView) -> None:
+    """Hand the digits list the notification that says its end is in view."""
+
+    view._on_digits_scroll(Scrolled(extent_after=0.0))
+
+
+def test_the_batch_math_covers_a_number_that_outgrows_its_last_batch() -> None:
+    """The loading rules, without a window or a run."""
+
+    decimals = "3" * 25_000
+    assert dialog_batch_range(decimals, 0) == (0, 10_000)
+    assert dialog_batch_range(decimals, 10_000) == (10_000, 20_000), "next, not again"
+    assert dialog_batch_range(decimals, 20_000) == (20_000, 25_000), "short, not padded"
+
+    # A number shorter than one batch is one batch, asking past its end asks for
+    # nothing, and a position before its start lands on the beginning.
+    assert dialog_batch_range("14159", 0) == (0, 5)
+    assert dialog_batch_range(decimals, 25_000) == (25_000, 25_000)
+    assert dialog_batch_range(decimals, 40_000) == (25_000, 25_000)
+    assert dialog_batch_range(decimals, -3) == (0, 10_000)
+
+    # The bound on what may be held only bites on a number longer than it, and it can
+    # never sit below one batch - otherwise the popup could not open at all.
+    assert dialog_load_ceiling(25_000) == 25_000
+    long_number = "3" * (DIALOG_MAX_LOADED_DECIMALS + 30_000)
+    assert dialog_load_ceiling(len(long_number)) == DIALOG_MAX_LOADED_DECIMALS
+    assert dialog_batch_range(long_number, 25_000) == (25_000, 35_000)
+    assert dialog_batch_range(long_number, DIALOG_MAX_LOADED_DECIMALS) == (
+        DIALOG_MAX_LOADED_DECIMALS,
+        DIALOG_MAX_LOADED_DECIMALS,
     )
-    assert lines.build_controls_on_demand is True
-
-    first, last = dialog_page_range(view.computation.decimals, 0)
-    assert first == 0 and last == DIALOG_PAGE_DECIMALS
-    assert len(lines.controls) == -(-(last - first) // LINE_DIGITS)
-    assert digits_on_screen(lines) == view.computation.decimals[:DIALOG_PAGE_DECIMALS]
 
 
-def test_turning_the_page_replaces_the_digits(view: PiView) -> None:
-    lines = open_dialog_after_a_run(view, "25000")
-    decimals = view.computation.decimals
-    before = len(lines.controls)
-
-    page_button(view, "Next").on_click()
-
-    assert view._page == 1
-    assert view.page.tasks[-1] == "_scroll_page_to_top", "a new page starts at its top"
-    assert digits_on_screen(lines) == decimals[
-        DIALOG_PAGE_DECIMALS : 2 * DIALOG_PAGE_DECIMALS
-    ]
-    # The page is swapped in, not bolted on: the list stays about a page long, which
-    # is what keeps its scrollbar the same size and its end where it is.
-    assert len(lines.controls) <= before + 1
-
-
-def test_the_dialog_turns_to_the_end_of_the_number(view: PiView) -> None:
-    lines = open_dialog_after_a_run(view, "25000")
-    decimals = view.computation.decimals
-
-    page_button(view, "Last").on_click()
-
-    assert view._page == dialog_pages(decimals) - 1 == 2
-    tail = decimals[2 * DIALOG_PAGE_DECIMALS :]
-    assert len(tail) == 25_000 - 2 * DIALOG_PAGE_DECIMALS
-    assert digits_on_screen(lines) == tail, "the last page is short, never padded"
-
-    # From the last page there is nowhere to go, and the buttons say so rather than
-    # sitting there waiting to do nothing.
-    assert page_button(view, "Last").disabled is True
-    assert page_button(view, "Next").disabled is True
-    assert page_button(view, "First").disabled is False
-    assert page_button(view, "Previous").disabled is False
-
-
-def test_no_page_button_goes_past_either_end(view: PiView) -> None:
-    """Pressed harder than anyone would press it, the dialog still stops."""
+def test_the_dialog_opens_holding_one_batch(view: PiView) -> None:
+    """The popup starts with one batch in one wrapping label."""
 
     lines = open_dialog_after_a_run(view, "25000")
     decimals = view.computation.decimals
+    assert len(decimals) == 25_000
+    assert lines.on_scroll == view._on_digits_scroll, "scrolling loads the rest of it"
+    assert len(lines.controls) == 1
+    assert view._dialog_loaded == DIALOG_BATCH_DECIMALS
+    assert digits_on_screen(lines) == decimals[:DIALOG_BATCH_DECIMALS]
 
-    for _ in range(6):
-        page_button(view, "First").on_click()
-        page_button(view, "Previous").on_click()
-    assert view._page == 0
-    assert digits_on_screen(lines) == decimals[:DIALOG_PAGE_DECIMALS]
+
+def test_scrolling_near_the_bottom_loads_the_next_batch(view: PiView) -> None:
+    """The reader's own scroll asks for more, and the answer only ever appends."""
+
+    lines = open_dialog_after_a_run(view, "25000")
+    decimals = view.computation.decimals
+    label = lines.controls[0]
+
+    view._on_digits_scroll(
+        Scrolled(extent_after=DIALOG_LOAD_AHEAD_PIXELS - 1)
+    )
+
+    assert digits_on_screen(lines) == decimals[: 2 * DIALOG_BATCH_DECIMALS]
+    assert view._dialog_loaded == 2 * DIALOG_BATCH_DECIMALS
+    assert lines.controls == [label], "the same label receives the appended text"
+
+
+def test_a_scroll_higher_up_loads_nothing(view: PiView) -> None:
+    """Only reaching the bottom of the loaded digits asks for more of the number."""
+
+    lines = open_dialog_after_a_run(view, "25000")
+    before = lines.controls[0].value
+
+    view._on_digits_scroll(
+        Scrolled(extent_after=DIALOG_LOAD_AHEAD_PIXELS + 1)
+    )
+    view._on_digits_scroll(Scrolled(extent_after=5_000.0))
+    view._on_digits_scroll(object())  # a notification carrying nothing to measure
+
+    assert lines.controls[0].value == before, "the middle of a number is not its end"
+    assert view._dialog_loaded == DIALOG_BATCH_DECIMALS
+
+
+def test_a_scroll_without_an_extent_does_not_guess_at_the_bottom(view: PiView) -> None:
+    """Only the scrollbox's measured remaining extent can request more digits."""
+
+    lines = open_dialog_after_a_run(view, "25000")
+    before = digits_on_screen(lines)
+    view._on_digits_scroll(Scrolled(pixels=100_000.0, viewport=300.0))
+    assert digits_on_screen(lines) == before
+    assert view._dialog_loaded == DIALOG_BATCH_DECIMALS
+
+
+def test_a_notification_that_lands_mid_batch_loads_no_second_batch(view: PiView) -> None:
+    """One drag arrives as a burst of notifications; one slice of the number goes in."""
+
+    lines = open_dialog_after_a_run(view, "25000")
+    decimals = view.computation.decimals
+
+    def update_that_scrolls_again() -> None:
+        view._on_digits_scroll(Scrolled(extent_after=0.0))
+
+    view.page.update = update_that_scrolls_again
+    view._on_digits_scroll(Scrolled(extent_after=0.0))
+
+    assert view._dialog_loaded == 2 * DIALOG_BATCH_DECIMALS, "one batch, not two"
+    assert digits_on_screen(lines) == decimals[: 2 * DIALOG_BATCH_DECIMALS]
+
+
+def test_scrolling_to_the_end_of_the_number_stops_there(view: PiView) -> None:
+    """Scrolled harder than anyone would scroll it, the popup still stops."""
+
+    lines = open_dialog_after_a_run(view, "25000")
+    decimals = view.computation.decimals
 
     for _ in range(9):
-        page_button(view, "Next").on_click()
-        page_button(view, "Last").on_click()
-    assert view._page == 2
-    assert digits_on_screen(lines) == decimals[2 * DIALOG_PAGE_DECIMALS :]
+        scroll_to_bottom(view)
+
+    assert view._dialog_loaded == len(decimals)
+    tail = decimals[2 * DIALOG_BATCH_DECIMALS :]
+    assert len(tail) == 25_000 - 2 * DIALOG_BATCH_DECIMALS
+    assert digits_on_screen(lines) == decimals, "the last batch is short, never padded"
 
 
-def test_the_footline_says_which_page_of_the_number_is_on_screen(view: PiView) -> None:
-    open_dialog_after_a_run(view, "25000")
+def test_the_bound_keeps_a_never_ending_scroll_from_growing_forever(view: PiView) -> None:
+    """The list stops at what it may hold and says so instead of going quiet."""
+
+    total = DIALOG_MAX_LOADED_DECIMALS + 30_000
+    lines = open_dialog_on(view, "7" * total)
+    dialog = view.page.dialogs[-1]
+
+    for _ in range(40):
+        scroll_to_bottom(view)
+
+    assert view._dialog_loaded == DIALOG_MAX_LOADED_DECIMALS
+    assert digits_on_screen(lines) == "7" * DIALOG_MAX_LOADED_DECIMALS
+    assert (
+        find_by_text(
+            dialog,
+            f"decimals 1 to {DIALOG_MAX_LOADED_DECIMALS:,} of {total:,} - that is as "
+            "far as this dialog scrolls; the button below copies every decimal of it",
+        )
+        is not None
+    ), "a bound is not the end of the number, and the reader is told which they reached"
+
+
+def test_the_footline_says_how_much_of_the_number_is_on_screen(view: PiView) -> None:
+    lines = open_dialog_after_a_run(view, "25000")
     dialog = view.page.dialogs[-1]
     assert (
         find_by_text(
             dialog,
-            f"decimals 1 to {DIALOG_PAGE_DECIMALS:,} of 25,000 - page 1 of 3",
+            f"decimals 1 to {DIALOG_BATCH_DECIMALS:,} of 25,000 on screen - keep "
+            f"scrolling for the next {DIALOG_BATCH_DECIMALS:,}",
         )
         is not None
     )
 
-    page_button(view, "Next").on_click()
+    scroll_to_bottom(view)
     assert (
         find_by_text(
             dialog,
-            f"decimals {DIALOG_PAGE_DECIMALS + 1:,} to {2 * DIALOG_PAGE_DECIMALS:,}"
-            " of 25,000 - page 2 of 3",
+            f"decimals 1 to {2 * DIALOG_BATCH_DECIMALS:,} of 25,000 on screen - keep "
+            f"scrolling for the next {DIALOG_BATCH_DECIMALS:,}",
         )
         is not None
     )
 
+    scroll_to_bottom(view)
+    assert find_by_text(dialog, "all 25,000 decimals on screen") is not None
+    scroll_to_bottom(view)
+    assert (
+        find_by_text(dialog, "all 25,000 decimals on screen") is not None
+    ), "the end of the number is the end; it does not keep moving away"
 
-def test_a_short_run_fits_one_page_with_nowhere_to_turn(view: PiView) -> None:
+
+def test_the_popup_offers_nothing_but_the_digits_and_two_buttons(view: PiView) -> None:
+    """It is a popup that scrolls - no pager, no page buttons, no control bar."""
+
+    open_dialog_after_a_run(view, "25000")
+    dialog = view.page.dialogs[-1]
+    labels = sorted(
+        str(control.content)
+        for control in walk(dialog)
+        if isinstance(control, ft.TextButton)
+    )
+    assert labels == sorted(["Close", "Copy all 25,000 decimals"])
+
+
+def test_a_short_run_is_all_on_screen_at_once(view: PiView) -> None:
     lines = open_dialog_after_a_run(view, "120")
-    assert len(lines.controls) == 2, "120 decimals are two lines, never a third"
+    assert len(lines.controls) == 1
     assert digits_on_screen(lines) == PI_DECIMALS[:120]
-    for label in ("First", "Previous", "Next", "Last"):
-        assert page_button(view, label).disabled is True, "one page, nothing to turn"
+    scroll_to_bottom(view)
+    assert len(lines.controls) == 1, "there is nothing past the end to load"
+    assert find_by_text(view.page.dialogs[-1], "all 120 decimals on screen") is not None
 
 
 def test_the_programs_own_digits_open_the_same_way(view: PiView) -> None:
@@ -871,7 +936,7 @@ def test_the_programs_own_digits_open_the_same_way(view: PiView) -> None:
 
     assert dialog.title.value == "Pi the program uses - 12 decimals"
     lines = find_by_key(dialog, "pi-digits-list")
-    assert len(lines.controls) == 1, "twelve decimals are one line"
+    assert len(lines.controls) == 1, "the popup holds one wrapping label"
     assert digits_on_screen(lines) == PI_DECIMALS[:12]
     assert find_by_text(dialog, "all 12 decimals on screen") is not None
 
@@ -899,8 +964,8 @@ def test_the_copy_button_of_the_dialog_copies_all_of_the_digits(view: PiView) ->
 
     lines = open_dialog_after_a_run(view, "25000")
     assert (
-        len(digits_on_screen(lines)) == DIALOG_PAGE_DECIMALS
-    ), "only one page of it is on screen"
+        len(digits_on_screen(lines)) == DIALOG_BATCH_DECIMALS
+    ), "only part of it is on screen"
 
     dialog = view.page.dialogs[-1]
     copies = [
