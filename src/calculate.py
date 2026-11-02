@@ -23,6 +23,7 @@ import math
 import operator
 import re
 from decimal import Decimal, DivisionByZero, InvalidOperation, Overflow
+from typing import TypeGuard
 
 from config import (
     ERROR_DIVIDE_BY_ZERO,
@@ -74,7 +75,7 @@ BINARY_OPERATOR_CHARACTERS = ("+", "-", "*", "/", "^", "−", "×", "÷")
 PERCENT_FUNCTION = "_percent"
 
 
-def is_percent_call(node: ast.AST) -> bool:
+def is_percent_call(node: ast.AST) -> TypeGuard[ast.Call]:
     """Whether a node is the marker call the percent key is rewritten into."""
 
     return (
@@ -425,4 +426,3 @@ def calculate(expression, scientific, degrees=False, variables=None, pi_provider
     except (InvalidOperation, Overflow):
         # Fallback for very large numbers
         return format(result, 'f')
-

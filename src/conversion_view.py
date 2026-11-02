@@ -39,7 +39,7 @@ class ConversionView:
         conversion: dict[str, Any],
         units: list[dict[str, str]],
         unit_labels: dict[str, str],
-        make_copy_button: Callable[..., ft.IconButton],
+        make_copy_button: Callable[..., ft.Control],
     ) -> None:
         self.page = page
         self.conversion = conversion
@@ -77,12 +77,18 @@ class ConversionView:
                 self.page.update()
                 return
 
+            source_unit_id = self.source_dropdown.value
+            target_unit_id = self.target_dropdown.value
+            if source_unit_id is None or target_unit_id is None:
+                self.page.update()
+                return
+
             try:
                 outcome = convert_units(
                     self.conversion,
                     input_value,
-                    self.source_dropdown.value,
-                    self.target_dropdown.value,
+                    source_unit_id,
+                    target_unit_id,
                 )
             except (ValueError, DivisionByZero, Overflow) as error:
                 self.result_field.error = str(error)
@@ -260,6 +266,8 @@ class ConversionView:
         notes: list[ft.Control] = []
         seen: set[str] = set()
         for unit_id in (self.source_dropdown.value, self.target_dropdown.value):
+            if unit_id is None:
+                continue
             guidance = self.units_by_id.get(unit_id, {}).get("guidance")
             if not guidance or guidance in seen:
                 continue

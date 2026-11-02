@@ -16,9 +16,10 @@ here against a stub page. What gets pinned is the behaviour the page promises:
 """
 
 import asyncio
+import inspect
 import threading
 import time
-from typing import Callable, Optional
+from typing import Awaitable, Callable, Generator, Optional, TypeAlias, cast
 from unittest.mock import patch
 
 import flet as ft
@@ -33,7 +34,7 @@ from pi_view import (
     DIALOG_LOAD_AHEAD_PIXELS,
     DIALOG_MAX_LOADED_DECIMALS,
     PROGRESS_PAINT_SECONDS,
-    PiView,
+    PiView as PiViewClass,
     dialog_batch_range,
     dialog_load_ceiling,
     dialog_width,
@@ -62,6 +63,7 @@ class StubPage:
     """Just enough of a page for the view: it updates, and it opens dialogs."""
 
     def __init__(self) -> None:
+        self.width: int | float | None = None
         self.updates = 0
         self.dialogs: list[ft.AlertDialog] = []
         self.popped = 0
@@ -73,13 +75,14 @@ class StubPage:
         # The coroutines the page was asked to schedule, by name.
         self.tasks: list[str] = []
 
-    def update(self) -> None:
+    def update(self, *_controls: ft.Control) -> None:
+        del _controls
         self.updates += 1
 
-    def show_dialog(self, dialog) -> None:
+    def show_dialog(self, dialog: ft.AlertDialog) -> None:
         self.dialogs.append(dialog)
 
-    def pop_dialog(self) -> None:
+    def pop_dialog(self) -> ft.DialogControl | None:
         self.popped += 1
 
     def run_thread(self, handler: Callable[..., object], *args: object) -> None:
@@ -88,7 +91,7 @@ class StubPage:
         self.threads.append(handler)
         threading.Thread(target=handler, args=args, daemon=True).start()
 
-    def run_task(self, handler: Callable[..., object]) -> object:
+    def run_task(self, handler: Callable[..., Awaitable[object]]) -> object:
         """Stand in for ``Page.run_task``, which schedules a coroutine.
 
         There is no event loop here, so the coroutine is closed rather than awaited -
@@ -97,9 +100,9 @@ class StubPage:
         """
 
         self.tasks.append(getattr(handler, "__name__", str(handler)))
-        coroutine = handler()
-        if coroutine is not None:
-            coroutine.close()
+        result = handler()
+        if inspect.iscoroutine(result):
+            result.close()
         return f"task:{self.tasks[-1]}"
 
     def make_copy_button(
@@ -113,8 +116,11 @@ class StubPage:
         return ft.IconButton(ft.Icons.COPY, tooltip=tooltip)
 
 
+PiView: TypeAlias = PiViewClass[StubPage]
+
+
 @pytest.fixture()
-def view() -> PiView:
+def view() -> Generator[PiView, None, None]:
     """A pi page on a stub page, on the pi the app installs at startup.
 
     The program's pi is process-wide state, so the fixture installs what
@@ -124,7 +130,7 @@ def view() -> PiView:
     before = (pi.program_pi(), pi.program_pi_digits(), pi.program_pi_decimals())
     pi_value.install_default_pi()
     page = StubPage()
-    page_view = PiView(page, page.make_copy_button)
+    page_view = PiViewClass(page, page.make_copy_button)
     page_view.build()
     try:
         yield page_view
@@ -468,7 +474,8 @@ def test_a_stopped_run_adopts_nothing_and_says_so(view: PiView) -> None:
     assert find_by_key(page, "pi-percent").value == "0%"
     # A stopped run leaves the bar where the terms left it - a hair past zero,
     # never a finished bar - and the percentage still reads 0%.
-    assert 0.0 <= view.progress_bar.value < 0.01
+    progress = view.progress_bar.value
+    assert progress is not None and 0.0 <= progress < 0.01
     assert "the program still uses its previous pi" in (
         find_by_key(page, "pi-status").value
     )
@@ -588,11 +595,11 @@ def test_one_bad_frame_does_not_kill_the_clock(view: PiView) -> None:
     real_update = view.page.update
     attempts = {"raised": 0}
 
-    def flaky_update() -> None:
+    def flaky_update(*controls: ft.Control) -> None:
         if not attempts["raised"]:
             attempts["raised"] += 1
             raise RuntimeError("patch of the card failed")
-        real_update()
+        real_update(*controls)
 
     # The frame fails where it really fails: sending the patch to the client.
     view.page.update = flaky_update
@@ -621,7 +628,6 @@ def test_a_tick_and_a_report_never_paint_twice_in_one_half_second(view: PiView) 
     update costs a patch of the whole card.
     """
 
-    page = view.build()
     reports: list[pi_value.PiProgress] = []
     pi_value.compute_pi(5000, on_progress=reports.append)
 
@@ -713,6 +719,12 @@ def open_dialog_on(view: PiView, decimals: str) -> ft.ListView:
     return find_by_key(view.page.dialogs[-1], "pi-digits-list")
 
 
+def computed_decimals(view: PiView) -> str:
+    computation = view.computation
+    assert computation is not None
+    return computation.decimals
+
+
 def digits_on_screen(scrollbox: ft.ListView) -> str:
     """The digits in the scrollbox's one text label."""
 
@@ -775,7 +787,7 @@ def test_the_dialog_opens_holding_one_batch(view: PiView) -> None:
     """The popup starts with one batch in one wrapping label."""
 
     lines = open_dialog_after_a_run(view, "25000")
-    decimals = view.computation.decimals
+    decimals = computed_decimals(view)
     assert len(decimals) == 25_000
     assert lines.on_scroll == view._on_digits_scroll, "scrolling loads the rest of it"
     assert len(lines.controls) == 1
@@ -787,7 +799,7 @@ def test_scrolling_near_the_bottom_loads_the_next_batch(view: PiView) -> None:
     """The reader's own scroll asks for more, and the answer only ever appends."""
 
     lines = open_dialog_after_a_run(view, "25000")
-    decimals = view.computation.decimals
+    decimals = computed_decimals(view)
     label = lines.controls[0]
 
     view._on_digits_scroll(
@@ -803,7 +815,7 @@ def test_a_scroll_higher_up_loads_nothing(view: PiView) -> None:
     """Only reaching the bottom of the loaded digits asks for more of the number."""
 
     lines = open_dialog_after_a_run(view, "25000")
-    before = lines.controls[0].value
+    before = digits_on_screen(lines)
 
     view._on_digits_scroll(
         Scrolled(extent_after=DIALOG_LOAD_AHEAD_PIXELS + 1)
@@ -811,7 +823,7 @@ def test_a_scroll_higher_up_loads_nothing(view: PiView) -> None:
     view._on_digits_scroll(Scrolled(extent_after=5_000.0))
     view._on_digits_scroll(object())  # a notification carrying nothing to measure
 
-    assert lines.controls[0].value == before, "the middle of a number is not its end"
+    assert digits_on_screen(lines) == before, "the middle of a number is not its end"
     assert view._dialog_loaded == DIALOG_BATCH_DECIMALS
 
 
@@ -829,9 +841,10 @@ def test_a_notification_that_lands_mid_batch_loads_no_second_batch(view: PiView)
     """One drag arrives as a burst of notifications; one slice of the number goes in."""
 
     lines = open_dialog_after_a_run(view, "25000")
-    decimals = view.computation.decimals
+    decimals = computed_decimals(view)
 
-    def update_that_scrolls_again() -> None:
+    def update_that_scrolls_again(*_controls: ft.Control) -> None:
+        del _controls
         view._on_digits_scroll(Scrolled(extent_after=0.0))
 
     view.page.update = update_that_scrolls_again
@@ -845,7 +858,7 @@ def test_scrolling_to_the_end_of_the_number_stops_there(view: PiView) -> None:
     """Scrolled harder than anyone would scroll it, the popup still stops."""
 
     lines = open_dialog_after_a_run(view, "25000")
-    decimals = view.computation.decimals
+    decimals = computed_decimals(view)
 
     for _ in range(9):
         scroll_to_bottom(view)
@@ -879,7 +892,7 @@ def test_the_bound_keeps_a_never_ending_scroll_from_growing_forever(view: PiView
 
 
 def test_the_footline_says_how_much_of_the_number_is_on_screen(view: PiView) -> None:
-    lines = open_dialog_after_a_run(view, "25000")
+    open_dialog_after_a_run(view, "25000")
     dialog = view.page.dialogs[-1]
     assert (
         find_by_text(
@@ -918,7 +931,7 @@ def test_the_popup_offers_nothing_but_the_digits_and_two_buttons(view: PiView) -
         for control in walk(dialog)
         if isinstance(control, ft.TextButton)
     )
-    assert labels == sorted(["Close", "Copy all 25,000 decimals"])
+    assert labels == sorted(["Close", "Copy all 25,000 digits"])
 
 
 def test_a_short_run_is_all_on_screen_at_once(view: PiView) -> None:
@@ -934,6 +947,7 @@ def test_the_programs_own_digits_open_the_same_way(view: PiView) -> None:
     view.open_current_digits()
     dialog = view.page.dialogs[-1]
 
+    assert isinstance(dialog.title, ft.Text)
     assert dialog.title.value == "Pi the program uses - 12 decimals"
     lines = find_by_key(dialog, "pi-digits-list")
     assert len(lines.controls) == 1, "the popup holds one wrapping label"
@@ -950,7 +964,9 @@ def test_the_close_button_pops_the_dialog(view: PiView) -> None:
         if isinstance(control, ft.TextButton) and control.content == "Close"
     ]
     assert len(close) == 1
-    close[0].on_click()
+    callback = close[0].on_click
+    assert callback is not None
+    cast(Callable[[], object], callback)()
     assert view.page.popped == 1
 
 
@@ -977,5 +993,5 @@ def test_the_copy_button_of_the_dialog_copies_all_of_the_digits(view: PiView) ->
     assert len(copies) == 1, "the dialog offers exactly one way to copy"
     # And it says what it copies, so nobody has to wonder whether it is a screenful.
     assert copies[0].content == "Copy all 25,000 digits"
-    assert view.page.copies[-1]() == f"3.{view.computation.decimals}"
+    assert view.page.copies[-1]() == f"3.{computed_decimals(view)}"
     assert len(view.page.copies[-1]()) == 25002, "3. plus every decimal computed"

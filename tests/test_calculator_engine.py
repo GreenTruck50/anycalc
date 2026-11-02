@@ -210,8 +210,8 @@ def test_sign_change_reads_the_scientific_pads_percent_as_an_operator(
     assert toggle_sign(expression, percent_is_modulo=True) == expected
 
 
-@pytest.mark.parametrize(("expression", "_expected"), SIGN_CASES)
-def test_sign_change_is_its_own_inverse(expression, _expected):
+@pytest.mark.parametrize("expression", [case[0] for case in SIGN_CASES])
+def test_sign_change_is_its_own_inverse(expression):
     """A second press removes the sign rather than stacking another one."""
 
     assert toggle_sign(toggle_sign(expression)) == expression

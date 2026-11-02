@@ -53,6 +53,7 @@ knowing before adding a test here:
 
 import flet.testing as ftt
 import pytest
+from flet.testing.remote_tester import RemoteTester
 
 from conversions import load_conversion_config
 
@@ -62,6 +63,7 @@ UNIT_LABELS = {
     for group in UNIT_GROUPS
     for unit in group["units"]
 }
+TestDriver = ftt.Tester | RemoteTester
 
 
 def hop_line(source_id: str, target_id: str, index: int = 1) -> str:
@@ -70,7 +72,7 @@ def hop_line(source_id: str, target_id: str, index: int = 1) -> str:
     return f"{index}. {UNIT_LABELS[source_id]} → {UNIT_LABELS[target_id]}"
 
 
-async def open_page(tester: ftt.Tester, label: str) -> None:
+async def open_page(tester: TestDriver, label: str) -> None:
     """Open the drawer and select the entry with this label.
 
     Only entries the window height actually renders can be found - the drawer's
@@ -243,7 +245,8 @@ async def test_pi_page_computes_and_adopts_a_value(
         await tester.find_by_text_containing("3.141592653589")
     ).count >= 1
 
-    await tester.tap(await tester.find_by_key("pi-compute").first)
+    compute_button = await tester.find_by_key("pi-compute")
+    await tester.tap(compute_button.first)
     await tester.pump_and_settle()
 
     assert (await tester.find_by_text("100%")).count == 1
@@ -253,7 +256,8 @@ async def test_pi_page_computes_and_adopts_a_value(
         )
     ).count == 1
 
-    await tester.tap(await tester.find_by_key("pi-adopt").first)
+    adopt_button = await tester.find_by_key("pi-adopt")
+    await tester.tap(adopt_button.first)
     await tester.pump_and_settle()
     assert (
         await tester.find_by_text_containing("calculates with pi to 12 decimals")
@@ -291,7 +295,7 @@ async def test_editing_the_value_reconverts_and_clearing_it_stays_quiet(
     assert (await tester.find_by_text_containing("No conversion path")).count == 0
 
 
-async def tap_swap(tester: ftt.Tester) -> None:
+async def tap_swap(tester: TestDriver) -> None:
     """Press the conversion form's swap button once.
 
     The first pointer event the page receives after the app has replaced its

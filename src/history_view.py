@@ -4,14 +4,14 @@ The app owns the history list and what a click inserts; this module only turns a
 ``(equation, answer)`` pair into the card the user sees.
 """
 
-from typing import Awaitable, Callable
+from typing import Callable
 
 import flet as ft
 
 from styles import CARD_BACKGROUND, PANEL_BACKGROUND, TEXT_MUTED
 
 # A click handler for a history card; the app closes the drawer afterwards.
-HistoryClick = Callable[[ft.ControlEvent], Awaitable[None]]
+HistoryClick = Callable[[ft.Event[ft.TextButton]], object]
 
 
 def build_history_card(
@@ -19,43 +19,45 @@ def build_history_card(
     answer: str,
     on_equation: HistoryClick,
     on_answer: HistoryClick,
-    copy_button: ft.IconButton,
+    copy_button: ft.Control,
 ) -> ft.Container:
     """One entry: the equation and the answer, each tappable and copyable."""
 
+    answer_controls: list[ft.Control] = [
+        ft.TextButton(
+            content=answer,
+            tooltip="Insert answer",
+            on_click=on_answer,
+            expand=True,
+        ),
+        copy_button,
+    ]
+    card_controls: list[ft.Control] = [
+        ft.Text(
+            "EXPRESSION",
+            size=10,
+            color=TEXT_MUTED,
+        ),
+        ft.TextButton(
+            content=equation,
+            tooltip="Insert equation",
+            on_click=on_equation,
+            expand=True,
+        ),
+        ft.Text(
+            "RESULT",
+            size=10,
+            color=TEXT_MUTED,
+        ),
+        ft.Row(
+            answer_controls,
+            spacing=4,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        ),
+    ]
     return ft.Container(
         content=ft.Column(
-            [
-                ft.Text(
-                    "EXPRESSION",
-                    size=10,
-                    color=TEXT_MUTED,
-                ),
-                ft.TextButton(
-                    content=equation,
-                    tooltip="Insert equation",
-                    on_click=on_equation,
-                    expand=True,
-                ),
-                ft.Text(
-                    "RESULT",
-                    size=10,
-                    color=TEXT_MUTED,
-                ),
-                ft.Row(
-                    [
-                        ft.TextButton(
-                            content=answer,
-                            tooltip="Insert answer",
-                            on_click=on_answer,
-                            expand=True,
-                        ),
-                        copy_button,
-                    ],
-                    spacing=4,
-                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                ),
-            ],
+            card_controls,
             spacing=0,
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
         ),
@@ -68,7 +70,7 @@ def build_history_card(
 
 def build_history_drawer(
     history_list: ft.Column,
-    on_clear,
+    on_clear: HistoryClick,
 ) -> ft.NavigationDrawer:
     """The end drawer: scrollable cards plus the button that empties them."""
 

@@ -225,7 +225,7 @@ class AnycalcApp:
             size=PREVIEW_TEXT_SIZE,
             color=PREVIEW_TEXT_COLOR,
             text_align=ft.TextAlign.RIGHT,
-            animate_size=ft.AnimationStyle(
+            animate_size=ft.Animation(
                 duration=PREVIEW_MORPH_MS,
                 curve=ft.AnimationCurve.EASE_OUT_CUBIC,
             ),
@@ -233,15 +233,15 @@ class AnycalcApp:
         self.preview_slot = ft.Container(
             content=self.preview_value,
             alignment=ft.Alignment.CENTER_RIGHT,
-            animate_size=ft.AnimationStyle(
+            animate_size=ft.Animation(
                 duration=PREVIEW_MORPH_MS,
                 curve=ft.AnimationCurve.EASE_OUT_CUBIC,
             ),
-            animate_offset=ft.AnimationStyle(
+            animate_offset=ft.Animation(
                 duration=PREVIEW_MORPH_MS,
                 curve=ft.AnimationCurve.EASE_OUT_CUBIC,
             ),
-            animate_opacity=ft.AnimationStyle(
+            animate_opacity=ft.Animation(
                 duration=PREVIEW_MORPH_MS,
                 curve=ft.AnimationCurve.EASE_IN,
             ),

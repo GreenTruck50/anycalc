@@ -20,7 +20,7 @@ make the app lag or die - and one button copies the whole number.
 import asyncio
 import threading
 from time import monotonic
-from typing import Callable, Optional
+from typing import Awaitable, Callable, Generic, Optional, Protocol, TypeVar
 
 import flet as ft
 
@@ -65,6 +65,24 @@ DIALOG_LOAD_AHEAD_PIXELS = 160
 DIALOG_MAX_LOADED_DECIMALS = 200_000
 
 
+class _PiPage(Protocol):
+    @property
+    def width(self) -> int | float | None: ...
+
+    def update(self, *_controls: ft.Control) -> None: ...
+
+    def show_dialog(self, dialog: ft.AlertDialog) -> None: ...
+
+    def pop_dialog(self) -> ft.DialogControl | None: ...
+
+    def run_thread(self, handler: Callable[..., object], *args: object) -> object: ...
+
+    def run_task(self, handler: Callable[..., Awaitable[object]]) -> object: ...
+
+
+PageT = TypeVar("PageT", bound=_PiPage)
+
+
 def percent_text(percent: float) -> str:
     """A percentage with no pointless decimal: ``0%``, ``12.3%``, ``100%``."""
 
@@ -99,7 +117,7 @@ def precision_notice(available: int) -> str:
     )
 
 
-def dialog_width(page_width: Optional[float]) -> int:
+def dialog_width(page_width: int | float | None) -> int:
     """How wide the digits dialog may be on this window."""
 
     if not page_width:  # no geometry yet - the desktop default
@@ -133,7 +151,7 @@ def dialog_batch_range(decimals: str, loaded: int) -> tuple[int, int]:
     return start, min(start + DIALOG_BATCH_DECIMALS, dialog_load_ceiling(len(decimals)))
 
 
-class PiView:
+class PiView(Generic[PageT]):
     """The pi calculation page.
 
     :param page: the page the form is shown on - used to update it and to open the
@@ -144,7 +162,7 @@ class PiView:
 
     def __init__(
         self,
-        page: ft.Page,
+        page: PageT,
         make_copy_button: Callable[..., ft.Control],
     ) -> None:
         self.page = page
@@ -401,7 +419,10 @@ class PiView:
             except ValueError:
                 return None
         try:
-            return int(self.digits_dropdown.value)
+            dropdown_value = self.digits_dropdown.value
+            if dropdown_value is None:
+                return None
+            return int(dropdown_value)
         except (TypeError, ValueError):
             return None
 
@@ -417,7 +438,7 @@ class PiView:
 
         del e
         digits = self.requested_digits()
-        if not self.digits_are_valid(digits):
+        if digits is None or not self.digits_are_valid(digits):
             self.plan_text.value = (
                 f"Pick a whole number of decimals between {pi.MIN_PI_DIGITS} and "
                 f"{pi.MAX_PI_DIGITS:,}."
@@ -445,7 +466,7 @@ class PiView:
 
         del e
         digits = self.requested_digits()
-        if not self.digits_are_valid(digits):
+        if digits is None or not self.digits_are_valid(digits):
             self.refresh_plan()
             return
 

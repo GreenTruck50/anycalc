@@ -12,17 +12,23 @@ integers, which is the path a phone takes.
 import math
 import sys
 from decimal import Decimal, InvalidOperation
+from importlib import import_module
 from time import time
-from typing import Callable, NamedTuple, Optional
+from typing import Callable, NamedTuple, Optional, SupportsInt
 
 try:
-    from gmpy2 import mpz, isqrt
+    _gmpy2 = import_module("gmpy2")
 except ImportError:
     # The mobile artifact - and any host that did not install the [pi] extra - has
     # no gmpy2, so the same algorithm runs on stdlib integers: slower, but the app
     # works everywhere.
     mpz = int
     isqrt = math.isqrt
+else:
+    # gmpy2's runtime API has no complete Pylance stub, so resolve its optional
+    # accelerator dynamically rather than importing names the type checker cannot see.
+    mpz = _gmpy2.mpz
+    isqrt = _gmpy2.isqrt
 
 try:
     from tqdm import tqdm
@@ -117,7 +123,7 @@ def pi_chudnovsky(
     show_progress: bool = False,
     progress_callback: Optional[Callable[["PiWork"], None]] = None,
     cancel_check: Optional[Callable[[], bool]] = None,
-) -> mpz:
+) -> SupportsInt:
     """
     Compute floor(π * 10**digits) using Chudnovsky + Binary Splitting.
 
@@ -196,7 +202,7 @@ def pi_chudnovsky(
             pbar.update(work_done - shown_work)
             shown_work = work_done
 
-    def bs(a: int, b: int) -> tuple[mpz, mpz, mpz]:
+    def bs(a: int, b: int) -> tuple[int, int, int]:
         nonlocal terms_done
 
         if b - a == 1:
@@ -230,7 +236,7 @@ def pi_chudnovsky(
         return Pab, Qab, Tab
 
     # Run binary splitting
-    P, Q, T = bs(0, N)
+    _, Q, T = bs(0, N)
 
     # Final calculation. ``isqrt`` is an integer floor, so the square root is up
     # to one unit short and the quotient can then land one decimal too low in its

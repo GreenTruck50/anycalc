@@ -9,8 +9,9 @@ algorithm - a second opinion, not the same code twice.
 
 import math
 from decimal import Decimal
+from importlib import import_module
+from typing import cast
 
-import gmpy2
 import pytest
 
 import pi
@@ -21,6 +22,7 @@ from config import DECIMAL_PRECISION
 # The first 60 decimals of pi, written out rather than computed, so the small runs
 # have a truth that does not come from this repository.
 PI_DECIMALS = "1415926535897932384626433832795028841971693993751058209749445923"
+gmpy2 = import_module("gmpy2")
 
 
 def mpfr_pi_decimals(decimals: int) -> str:
@@ -267,7 +269,7 @@ def test_the_page_offers_three_decimals_up_to_a_hundred_million() -> None:
 def test_the_program_rejects_a_pi_outside_the_offered_range() -> None:
     for bad_digits in (2, 100_000_001, 0, -5, "12", 1.5, True):
         with pytest.raises(ValueError):
-            pi.set_program_pi(Decimal("3.1415926535"), bad_digits)
+            pi.set_program_pi(Decimal("3.1415926535"), cast(int, bad_digits))
 
 
 def test_the_program_rejects_a_value_that_is_not_pi() -> None:
@@ -409,4 +411,3 @@ def test_a_computation_can_be_shown_as_a_leading_slice() -> None:
     computation = pi_value.compute_pi(100)
     assert computation.format(50) == f"3.{computation.decimals[:50]}..."
     assert computation.format(100) == f"3.{computation.decimals}"
-
