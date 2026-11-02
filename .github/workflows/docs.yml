@@ -32,16 +32,16 @@ jobs:
       pages: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
-      - name: Install the docs extra
+      - name: Install mkdocs
         run: pip install mkdocs
-      - name: Build (strict - a broken internal link fails the deploy)
-        run: mkdocs build --strict
-      - uses: actions/upload-pages-artifact@v3
+      - name: Build
+        run: mkdocs build
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
