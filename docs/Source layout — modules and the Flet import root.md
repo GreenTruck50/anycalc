@@ -11,7 +11,7 @@ How `src/` is organised after the module split, and the packaging fact that deci
 | `styles.py` | The colour palette, so one hex value cannot drift between controls | colour constants |
 | `keypad.py` | Which keys each pad shows and how a key looks; the regular rows are part of the scientific pad | `REGULAR_ROWS`, `SCIENTIFIC_ROWS`, `DIALOG_KEYS`, `key_color()`, `make_key()` |
 | `clipboard.py` | The single `ft.Clipboard` behind every copy button | `ClipboardService` |
-| `history_view.py` | History card + history drawer | `build_history_card()`, `build_history_drawer()` |
+| `history_view.py` | History card + history drawer and its calculator-scope notice | `build_history_card()`, `build_history_drawer()`, `history_notice_visible()` |
 | `variable_dialogs.py` | Set Variable / Insert Variable dialogs | `open_set_variable_dialog(app)`, `open_insert_variable_dialog(app)` |
 | `conversion_view.py` | The conversion entries and the live conversion form in the main content area | `ConversionView` |
 | `ui.py` | The app object: page setup, display state (expression, result mode, DEG/RAD, named variables, history), the live preview and its morph, keypad dispatch, mode/content switching | `AnycalcApp` |

@@ -427,6 +427,9 @@ There should be a conversions.yaml file that says "There should be this tab with
   recent `config.MAX_HISTORY_ITEMS` entries are kept and shown newest first.
 - The history lives in its own drawer on the trailing edge of the window and
   carries a "Clear history" button.
+- At the top of the history drawer, show the notice "History only applies to
+  the Regular and Scientific Calculators." when the current page is not either
+  calculator; hide the notice on both calculator pages.
 - Each entry is a card as wide as the drawer, with the expression and the answer
   both being buttons: tapping the expression puts it back in the display for
   editing, tapping the answer appends it to the expression. Either closes the

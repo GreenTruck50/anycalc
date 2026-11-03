@@ -10,8 +10,17 @@ import flet as ft
 
 from styles import CARD_BACKGROUND, PANEL_BACKGROUND, TEXT_MUTED
 
+_CALCULATOR_STATUSES = frozenset({"REGULAR MODE", "SCIENTIFIC MODE"})
+
+
 # A click handler for a history card; the app closes the drawer afterwards.
 HistoryClick = Callable[[ft.Event[ft.TextButton]], object]
+
+
+def history_notice_visible(status: str) -> bool:
+    """Whether the current page is outside the two calculators."""
+
+    return status not in _CALCULATOR_STATUSES
 
 
 def build_history_card(
@@ -70,6 +79,7 @@ def build_history_card(
 
 def build_history_drawer(
     history_list: ft.Column,
+    scope_notice: ft.Text,
     on_clear: HistoryClick,
 ) -> ft.NavigationDrawer:
     """The end drawer: scrollable cards plus the button that empties them."""
@@ -85,6 +95,10 @@ def build_history_drawer(
                     weight=ft.FontWeight.BOLD,
                 ),
                 padding=16,
+            ),
+            ft.Container(
+                content=scope_notice,
+                padding=ft.Padding.symmetric(horizontal=16, vertical=4),
             ),
             ft.Divider(),
             ft.Container(

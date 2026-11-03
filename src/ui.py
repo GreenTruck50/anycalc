@@ -32,7 +32,11 @@ from config import (
 from conversion_view import ConversionView
 from conversions import load_conversion_config
 from currency_view import CurrencyConversionView
-from history_view import build_history_card, build_history_drawer
+from history_view import (
+    build_history_card,
+    build_history_drawer,
+    history_notice_visible,
+)
 from keypad import (
     DIALOG_KEYS,
     REGULAR_ROWS,
@@ -147,6 +151,13 @@ class AnycalcApp:
             scroll=ft.ScrollMode.AUTO,
             expand=True,
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+        )
+        self.history_scope_notice = ft.Text(
+            "History only applies to the Regular and Scientific Calculators.",
+            size=11,
+            color=TEXT_MUTED,
+            visible=False,
+            key="history-scope-notice",
         )
 
         self._build_header()
@@ -328,6 +339,7 @@ class AnycalcApp:
         page = self.page
         page.end_drawer = build_history_drawer(
             self.history_list,
+            self.history_scope_notice,
             self.clear_history,
         )
 
@@ -454,6 +466,9 @@ class AnycalcApp:
 
     async def open_history(self, e) -> None:
         del e
+        self.history_scope_notice.visible = history_notice_visible(
+            self.status.value
+        )
         await self.page.show_end_drawer()
 
     # ----------------------------
