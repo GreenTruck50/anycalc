@@ -274,7 +274,8 @@ async def test_settings_dialog_shows_theme_and_color_controls(
     await tester.pump_and_settle()
     assert (await tester.find_by_text("Settings")).count == 1
     assert (await tester.find_by_key("settings-theme-dropdown")).count == 1
-    assert (await tester.find_by_text("Primary color")).count == 1
+    assert (await tester.find_by_key("settings-primary-color")).count == 1
+    assert (await tester.find_by_key("settings-secondary-color")).count == 1
     await tester.tap(await tester.find_by_key("settings-apply"))
     await tester.pump_and_settle()
 

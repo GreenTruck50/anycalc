@@ -446,10 +446,12 @@ There should be a conversions.yaml file that says "There should be this tab with
   "SCIENTIFIC MODE", "UNIT CONVERSION" or "PI CALCULATION". It is the same caption
   style the drawer heading uses.
 - The settings button opens a modal popup dialog, like the Pi View Digits popup.
-  It offers a Dark/Light theme dropdown plus primary and secondary color pickers,
-  with Apply and Close actions. Applying the selections updates the current page;
-  Dark is the default theme. The primary color controls the app's primary accent,
-  and the secondary color controls operator-key accents.
+  It offers a Dark/Light theme dropdown and primary and secondary color dropdowns,
+  with Apply and Close actions. Color dropdown options have color names and a
+  matching colored icon on the left. Applying the selections updates the current
+  page; Dark is the default theme. The primary color controls the app's primary
+  accent, and the secondary color controls operator-key accents. Any saved custom
+  color not in the named list remains available as a custom dropdown option.
 
 ## Saved app data
 

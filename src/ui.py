@@ -15,7 +15,6 @@ import asyncio
 from decimal import Decimal
 
 import flet as ft
-from flet_color_pickers import ColorPicker
 
 from calculate import calculate, is_number, toggle_sign
 from clipboard import ClipboardService
@@ -487,17 +486,39 @@ class AnycalcApp:
                 for theme in styles.THEMES
             ],
         )
-        self.settings_primary_picker = ColorPicker(
+        self.settings_primary_dropdown = ft.Dropdown(
             key="settings-primary-color",
-            color=self.selected_primary_color,
-            enable_alpha=False,
-            color_picker_width=280,
+            label="Primary color",
+            value=self.selected_primary_color,
+            options=[
+                ft.DropdownOption(
+                    key=color.value,
+                    text=color.name,
+                    leading_icon=ft.Icon(
+                        ft.Icons.CIRCLE,
+                        size=16,
+                        color=color.value,
+                    ),
+                )
+                for color in styles.color_options(self.selected_primary_color)
+            ],
         )
-        self.settings_secondary_picker = ColorPicker(
+        self.settings_secondary_dropdown = ft.Dropdown(
             key="settings-secondary-color",
-            color=self.selected_secondary_color,
-            enable_alpha=False,
-            color_picker_width=280,
+            label="Secondary color",
+            value=self.selected_secondary_color,
+            options=[
+                ft.DropdownOption(
+                    key=color.value,
+                    text=color.name,
+                    leading_icon=ft.Icon(
+                        ft.Icons.CIRCLE,
+                        size=16,
+                        color=color.value,
+                    ),
+                )
+                for color in styles.color_options(self.selected_secondary_color)
+            ],
         )
         return ft.AlertDialog(
             key="settings-dialog",
@@ -506,10 +527,8 @@ class AnycalcApp:
             content=ft.Column(
                 [
                     self.settings_theme_dropdown,
-                    ft.Text("Primary color", size=12, color=styles.TEXT_MUTED),
-                    self.settings_primary_picker,
-                    ft.Text("Secondary color", size=12, color=styles.TEXT_MUTED),
-                    self.settings_secondary_picker,
+                    self.settings_primary_dropdown,
+                    self.settings_secondary_dropdown,
                 ],
                 height=400,
                 spacing=8,
@@ -544,8 +563,8 @@ class AnycalcApp:
         name = self.settings_theme_dropdown.value
         if not isinstance(name, str):
             raise ValueError("the selected theme is invalid")
-        primary_color = self.settings_primary_picker.color
-        secondary_color = self.settings_secondary_picker.color
+        primary_color = self.settings_primary_dropdown.value
+        secondary_color = self.settings_secondary_dropdown.value
         if not isinstance(primary_color, str) or not isinstance(
             secondary_color, str
         ):

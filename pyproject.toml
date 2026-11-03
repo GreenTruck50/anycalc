@@ -39,9 +39,6 @@ dependencies = [
     # Flet publishes Android wheels for PyYAML and its flet-libyaml helper on
     # https://pypi.flet.dev, which the build adds as an extra index.
     "PyYAML>=6.0.3",
-    # Flet extension with color-picker controls for the Settings dialog; its
-    # package supports desktop, mobile, and web targets.
-    "flet-color-pickers>=1.0.5",
     # pi.py computes pi with plain Python integers, so the app needs NOTHING else
     # in an artifact to run the Pi page. gmpy2 (mpz / isqrt / const_pi) only makes
     # it faster, is a C extension built against GMP/MPFR, and has no wheel on

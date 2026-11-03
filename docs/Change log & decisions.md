@@ -453,3 +453,11 @@ The Android emulator window repeatedly triggered an "is not responding" dialog w
 **What changed:** replaced the theme radio group with a dropdown and added non-transparent primary and secondary color pickers. Applying settings updates the active palette, the Flet Material color scheme, and existing controls. The selected theme and colors are saved with history in client storage; existing saved data without custom colors continues to load with the selected theme's defaults. Added the cross-platform `flet-color-pickers` runtime dependency.
 
 **Validation:** color selection, active palette, saved-state round trips, and the Settings dialog controls are covered by focused tests.
+
+## 2026-11-03 — Use named colors in Settings
+
+**Asked for:** replace color pickers with named color lists, each showing a color icon on the left, while retaining dropdowns.
+
+**What changed:** replaced the primary and secondary color picker controls with dropdowns of named colors and matching colored circle icons. Existing saved custom RGB values remain selectable as labeled custom entries. Removed the now-unused color-picker package dependency.
+
+**Validation:** tests verify named dropdown choices, their colored icons, and preservation of existing custom colors.

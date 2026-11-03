@@ -8,7 +8,7 @@ How `src/` is organised after the module split, and the packaging fact that deci
 | `config.py` | Numeric limits (`DECIMAL_PRECISION`, `MAX_*`), display + live-preview sizes and the morph timing, the error messages, `VARIABLE_OPTIONS` / `VARIABLE_NAMES`, `CONVERSION_CONFIG_PATH`; sets the process-wide `Decimal` precision | constants; no Flet import |
 | `calculate.py` | The expression engine both pads sit on: preprocessing, the two meanings of `%`, the precedence ladder, `Decimal` evaluation | `calculate(text, scientific, degrees, variables)`, `is_number`, `toggle_sign`, `apply_percent_operators` |
 | `conversions.py` | The conversion config, route finding (forward first, `MD` formulas may be inverted, `UD` never), formula application, the reported chain of hops | `load_conversion_config()`, `convert_units()`, `find_conversion_path()`, `format_conversion_value()`, `ConversionStep`, `ConversionOutcome` |
-| `styles.py` | The named Dark/Light palettes, custom primary/secondary colors, and active palette | `THEMES`, `DEFAULT_THEME`, `set_active_theme()` |
+| `styles.py` | The named Dark/Light palettes, named colors, custom primary/secondary colors, and active palette | `THEMES`, `COLOR_OPTIONS`, `DEFAULT_THEME`, `set_active_theme()` |
 | `data_storage.py` | Validated app-state snapshots (theme, colors, history, active pi) in Flet SharedPreferences client storage | `AppDataStore`, `AppState` |
 | `keypad.py` | Which keys each pad shows and how a key looks; the regular rows are part of the scientific pad | `REGULAR_ROWS`, `SCIENTIFIC_ROWS`, `DIALOG_KEYS`, `key_color()`, `make_key()` |
 | `clipboard.py` | The single `ft.Clipboard` behind every copy button | `ClipboardService` |

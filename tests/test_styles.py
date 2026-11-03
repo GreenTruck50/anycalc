@@ -95,7 +95,7 @@ def test_app_theme_selection_recolors_existing_controls() -> None:
         styles.set_active_theme("Dark")
 
 
-def test_settings_dialog_has_theme_dropdown_and_color_pickers() -> None:
+def test_settings_dialog_has_named_color_dropdowns_with_indicators() -> None:
     app = AnycalcApp.__new__(AnycalcApp)
     app.selected_theme = "Dark"
     app.selected_primary_color = styles.DEFAULT_THEME.accent
@@ -111,12 +111,39 @@ def test_settings_dialog_has_theme_dropdown_and_color_pickers() -> None:
         "Dark",
         "Light",
     ]
-    assert isinstance(app.settings_primary_picker, ft.BaseControl)
-    assert app.settings_primary_picker.color == styles.DEFAULT_THEME.accent
-    assert app.settings_primary_picker.enable_alpha is False
-    assert isinstance(app.settings_secondary_picker, ft.BaseControl)
-    assert app.settings_secondary_picker.color == styles.DEFAULT_THEME.key_operator
-    assert app.settings_secondary_picker.enable_alpha is False
+    assert app.settings_primary_dropdown.value == styles.DEFAULT_THEME.accent
+    assert app.settings_secondary_dropdown.value == styles.DEFAULT_THEME.key_operator
+    for dropdown in (
+        app.settings_primary_dropdown,
+        app.settings_secondary_dropdown,
+    ):
+        assert all(
+            isinstance(option.leading_icon, ft.Icon)
+            and option.leading_icon.color == option.key
+            and option.text is not None
+            for option in dropdown.options
+        )
+    assert any(option.text == "Blue" for option in app.settings_primary_dropdown.options)
+    assert any(
+        option.text == "Light gray"
+        for option in app.settings_secondary_dropdown.options
+    )
+
+
+def test_saved_custom_color_is_shown_as_a_named_dropdown_option() -> None:
+    app = AnycalcApp.__new__(AnycalcApp)
+    app.selected_theme = "Dark"
+    app.selected_primary_color = "#123456"
+    app.selected_secondary_color = styles.DEFAULT_THEME.key_operator
+    app.page = cast(ft.Page, SimpleNamespace(pop_dialog=lambda: None))
+
+    app.build_settings_dialog()
+
+    custom_option = app.settings_primary_dropdown.options[-1]
+    assert custom_option.key == "#123456"
+    assert custom_option.text == "Custom (#123456)"
+    assert isinstance(custom_option.leading_icon, ft.Icon)
+    assert custom_option.leading_icon.color == "#123456"
 
 
 def test_app_applies_custom_colors_with_the_selected_theme() -> None:

@@ -1,4 +1,4 @@
-"""Persistence for the app's theme, calculation history, and active pi."""
+"""Persistence for the app's theme, selected colors, calculation history, and pi."""
 
 import asyncio
 import json
@@ -92,7 +92,7 @@ def decode_state(
 
 
 def encode_state(state: AppState) -> str:
-    """Serialize theme and history as compact JSON."""
+    """Serialize theme, RGB color values, and history as compact JSON."""
 
     return json.dumps(
         {

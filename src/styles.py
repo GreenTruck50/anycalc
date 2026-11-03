@@ -47,6 +47,31 @@ class AppTheme:
         }
 
 
+@dataclass(frozen=True)
+class NamedColor:
+    name: str
+    value: str
+
+
+COLOR_OPTIONS = (
+    NamedColor("Blue", "#4F7DFF"),
+    NamedColor("Royal blue", "#3155C7"),
+    NamedColor("Indigo", "#4F46E5"),
+    NamedColor("Violet", "#8B5CF6"),
+    NamedColor("Magenta", "#D946EF"),
+    NamedColor("Pink", "#EC4899"),
+    NamedColor("Red", "#EF4444"),
+    NamedColor("Orange", "#F97316"),
+    NamedColor("Amber", "#F59E0B"),
+    NamedColor("Green", "#22C55E"),
+    NamedColor("Teal", "#14B8A6"),
+    NamedColor("Cyan", "#06B6D4"),
+    NamedColor("Slate", "#303B50"),
+    NamedColor("Gray", "#64748B"),
+    NamedColor("Light gray", "#D1D5DB"),
+)
+
+
 THEMES = (
     AppTheme(
         name="Dark",
@@ -103,6 +128,15 @@ def normalize_color(color: str) -> str:
     if not isinstance(color, str) or _HEX_COLOR_PATTERN.fullmatch(color) is None:
         raise ValueError("color must be a six-digit hexadecimal RGB value")
     return color.upper()
+
+
+def color_options(selected_color: str) -> tuple[NamedColor, ...]:
+    """Return named choices, preserving a previously saved custom color."""
+
+    normalized = normalize_color(selected_color)
+    if any(option.value == normalized for option in COLOR_OPTIONS):
+        return COLOR_OPTIONS
+    return (*COLOR_OPTIONS, NamedColor(f"Custom ({normalized})", normalized))
 
 
 def active_palette() -> dict[str, str]:

@@ -106,6 +106,23 @@ def test_state_decoder_rejects_invalid_custom_colors() -> None:
         decode_state(serialized)
 
 
+def test_state_decoder_preserves_saved_custom_colors() -> None:
+    serialized = json.dumps(
+        {
+            "version": 1,
+            "theme": "Dark",
+            "history": [],
+            "primary_color": "#123456",
+            "secondary_color": "#abcdef",
+        }
+    )
+
+    state = decode_state(serialized)
+
+    assert state.primary_color == "#123456"
+    assert state.secondary_color == "#ABCDEF"
+
+
 def test_state_decoder_rejects_malformed_json() -> None:
     with pytest.raises(ValueError, match="valid JSON"):
         decode_state("{")
