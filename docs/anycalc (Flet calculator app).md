@@ -17,6 +17,10 @@ Working rules for this project live in the repo's `AGENTS.md`; the machine-reada
 | `src/main.py` | The entire app (~1,700 lines): expression engine, conversion engine, UI; ends in `def run_app()` behind an `if __name__ == "__main__":` guard |
 | `src/__init__.py` | Makes `src` an importable package so the `anycalc` console script resolves `src.main:run_app` |
 | `src/assets/conversions.yaml` | Declarative unit-conversion groups, units, icons, formulas |
+| `src/networking.py` | Reusable standard-library `urllib` JSON client with bounded in-memory TTL caching |
+| `src/currency_api.py` / `src/currency_view.py` | Minified exchange-rate API client with host fallback and the live currency conversion form |
+| `icon.svg` / `src/assets/icon.png` | Editable calculator icon source and the 512 × 512 Flet launcher-icon asset rendered from it |
+| `generate-icons.sh` | Renders the launcher PNG from the SVG; accepts `--size PIXELS` (default 512) |
 | `calculator_spec.md` | Feature spec (must stay in sync with the app) |
 | `pyproject.toml` | Metadata, runtime deps, `anycalc` console script, setuptools config, and the `[tool.flet]` build config (entry point `src/main.py`) |
 | `README.md` | Setup / run / build commands |
@@ -102,10 +106,11 @@ Note: the From/To dropdowns have **no** `enable_search` (only the variable picke
 
 ## Navigation (`ft.NavigationDrawer`)
 
-Opened from the header; two labelled sections separated by dividers:
+Opened from the header; labelled sections separated by dividers:
 
 1.  **Calculators** — Regular Calculator (`CALCULATE` icon), Scientific Calculator (`SCIENCE` icon)
 2.  **Unit Conversions** — one destination per entry in the YAML `conversions:` list, icon resolved from the YAML `icon` field, label is the conversion's `name`
+3.  **Currency** — Currency Conversion (`CURRENCY_EXCHANGE` icon), using the daily exchange API and its Cloudflare fallback
 
 Footer text: "Calculate anything."
 
@@ -113,7 +118,7 @@ Selecting a destination swaps the **main content area** — conversions render i
 
 ## Spec status
 
-`calculator_spec.md` currently specifies: Flet app, PEMDAS/BODMAS evaluation, YAML-driven conversions with forward-route preference and `MD` inversion, unit-ID integrity checks, the inline conversion form converting **live** (no Convert button, silent while typing), the conversion chain of operations (formula behind a "View formula" toggle), a "Live result preview" section for both calculators (grey live answer, promoted into the display on `=`), the grouped drawer navigation, and copy-to-clipboard on the three result surfaces.
+`calculator_spec.md` currently specifies: Flet app, PEMDAS/BODMAS evaluation, YAML-driven conversions with forward-route preference and `MD` inversion, unit-ID integrity checks, the inline conversion form converting **live** (no Convert button, silent while typing), daily currency conversion with minified exchange API data and a Cloudflare fallback, the conversion chain of operations (formula behind a "View formula" toggle), a "Live result preview" section for both calculators (grey live answer, promoted into the display on `=`), the grouped drawer navigation, and copy-to-clipboard on the result surfaces.
 
 ## 9\. Volume & weight conversion groups (added 2026-10-23)
 

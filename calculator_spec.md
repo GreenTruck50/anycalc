@@ -41,6 +41,32 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Keep the result field read-only and put its copy button inside it as a suffix,
   so there is no separate control drifting next to it.
 
+## Currency conversion
+
+- Add a separate "Currency" section in the navigation drawer with a "Currency
+  Conversion" destination that opens inline in the main content area.
+- Load currency codes and display names from
+  `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies.min.json`.
+  Load rates from the minified per-base endpoint
+  `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/{base}.min.json`.
+- For either endpoint, if jsDelivr fails or returns unusable data, try its
+  Cloudflare fallback at
+  `https://latest.currency-api.pages.dev/v1/currencies.min.json` or
+  `https://latest.currency-api.pages.dev/v1/currencies/{base}.min.json`,
+  respectively. Do not fetch the prettified `.json` endpoints.
+- Offer live conversion between the currencies returned by the API, including
+  its supported cryptocurrencies and metals. Default to USD → EUR when
+  available; include a swap control, a read-only result with a copy button, and
+  the date of the rates used.
+- Use a reusable `src/networking.py` JSON-over-HTTP client for API requests so
+  future API integrations can share its `urllib` transport, timeout, validation
+  errors and bounded in-memory TTL cache. Cache currency API responses for 24
+  hours, and keep parsed currency data cached while the conversion view is open.
+  Fetch without blocking the UI, and show a clear error if both providers fail
+  or a requested rate is unavailable.
+- Preserve arbitrary-precision decimal arithmetic when applying API rates, and
+  clear the result without an error while the amount is empty or being typed.
+
 ## Volume and weight conversions
 
 - Offer a "Volume Conversion" group covering metric cubic units, metric liquid
@@ -665,7 +691,7 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Take this path when testing on Android has been asked for - on-device, mobile or
   APK testing named by the user - and otherwise stay on the host path above. The
   emulator never replaces the host suite and no routine verification depends on it;
-  it is the slow route (a cold boot plus an APK build), so do not reach for it
+  it is the slow route (an emulator start plus an APK build), so do not reach for it
   uninvited. When it is asked for, work in this order: confirm the AVD is
   accelerated (KVM), boot it, build the APK, install and start it, then drive and
   read the running app from outside with `adb`.
@@ -677,11 +703,16 @@ There should be a conversions.yaml file that says "There should be this tab with
   `adb shell am start -n com.github.greentruck50.anycalc/.MainActivity`; the
   emulator's Android SDK lives in `~/Android/Sdk` and its AVDs in
   `~/.android/avd`.
+- `./test-with-emulator.sh AVD_NAME` automates this path for a named AVD: it
+  builds the APK first, then reuses that AVD if already running or verifies
+  acceleration and starts it with its normal boot behavior, and installs and
+  launches the APK.
+  `ANDROID_SDK_ROOT` or `ANDROID_HOME` may select a non-default SDK directory.
 - Budget a device run honestly: `flet build apk` took about eight minutes from a
   cold cache and most of that is Gradle, so the Gradle and Kotlin compile daemons
   and the caches under `~/.gradle` are worth leaving alive between runs (`pgrep -f
   GradleDaemon` finds them) - a rebuild into warm daemons costs a few minutes
-  instead. The AVD cold boot is the cheap part.
+  instead. Starting the AVD is the cheap part.
 - To look at something transient - a ripple, an animation, an in-between frame -
   do not tap, hold the touch: `adb shell input motionevent DOWN x y` leaves the
   guest in the pressed state, `adb exec-out screencap -p > /tmp/press.png` catches
@@ -798,6 +829,17 @@ There should be a conversions.yaml file that says "There should be this tab with
 
 ## Packaging & entry point
 
+- Provide `icon.svg` as the editable, square calculator icon source: a centered,
+  square calculator body with gradient styling and a five-row keypad (including
+  `π`, `%`, parentheses, digits, arithmetic operators and `=`), with no display
+  or top glare highlight. Highlight the `=` key; keep `+` styled like the other
+  regular keys. Keep the SVG self-contained and scalable.
+- Include a 512 × 512 `src/assets/icon.png` rendered from that SVG. Flet discovers
+  this conventional asset when building the app's launcher icons. Regenerate it
+  from the SVG whenever the icon source changes with `./generate-icons.sh`; the
+  optional `--size PIXELS` argument selects a different square PNG size.
+- Use the icon for OS-level launcher/app icons only; do not display it in the
+  app's content or controls.
 - The project is configured by `pyproject.toml` at the workspace root; there is
   no `requirements.txt`. Runtime dependencies are `flet` and `PyYAML` only. The
   `cli`, `desktop` and `test` extras belong to the optional `dev` extra, because

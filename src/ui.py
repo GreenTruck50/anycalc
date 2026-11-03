@@ -31,6 +31,7 @@ from config import (
 )
 from conversion_view import ConversionView
 from conversions import load_conversion_config
+from currency_view import CurrencyConversionView
 from history_view import build_history_card, build_history_drawer
 from keypad import (
     DIALOG_KEYS,
@@ -78,6 +79,7 @@ class AnycalcApp:
 
         # The conversion form currently in the content area, if any.
         self.conversion_view: ConversionView | None = None
+        self.currency_view: CurrencyConversionView | None = None
 
         # The pi page, built the first time it is opened.
         self.pi_view: PiView | None = None
@@ -400,6 +402,21 @@ class AnycalcApp:
                 ft.Divider(),
                 ft.Container(
                     content=ft.Text(
+                        "Currency",
+                        size=12,
+                        color=TEXT_MUTED,
+                        weight=ft.FontWeight.BOLD,
+                    ),
+                    padding=ft.Padding.symmetric(horizontal=16, vertical=8),
+                ),
+                ft.NavigationDrawerDestination(
+                    key="drawer-currency-conversion",
+                    icon=ft.Icons.CURRENCY_EXCHANGE,
+                    label="Currency Conversion",
+                ),
+                ft.Divider(),
+                ft.Container(
+                    content=ft.Text(
                         "Other",
                         size=12,
                         color=TEXT_MUTED,
@@ -426,6 +443,8 @@ class AnycalcApp:
             self.set_mode(index)
         elif index - 2 < len(self.conversion_options):
             self.open_conversion(self.conversion_options[index - 2])
+        elif index - 2 == len(self.conversion_options):
+            self.open_currency_conversion()
         else:
             self.open_pi()
 
@@ -670,6 +689,7 @@ class AnycalcApp:
     # ----------------------------
 
     def set_mode(self, index) -> None:
+        self._deactivate_currency_view()
         self.scientific = index == 1
         self.content_area.controls = [self.calculator_view]
         self.expression = ""
@@ -748,6 +768,7 @@ class AnycalcApp:
     def open_conversion(self, conversion) -> None:
         """Swap the calculator for the form of one conversion menu entry."""
 
+        self._deactivate_currency_view()
         group_name = conversion["name"].removesuffix(" Conversion")
         unit_group = self.conversion_groups_by_name.get(group_name)
         if unit_group is None:
@@ -772,9 +793,28 @@ class AnycalcApp:
         self.status.value = "UNIT CONVERSION"
         self.page.update()
 
+    def open_currency_conversion(self) -> None:
+        """Swap the calculator for the live currency conversion form."""
+
+        self._deactivate_currency_view()
+        self.currency_view = CurrencyConversionView(
+            self.page,
+            self.clipboard.make_button,
+        )
+        self.content_area.controls = [self.currency_view.build()]
+        self.status.value = "CURRENCY CONVERSION"
+        self.page.update()
+        self.page.run_task(self.currency_view.load_currencies)
+
+    def _deactivate_currency_view(self) -> None:
+        if self.currency_view is not None:
+            self.currency_view.deactivate()
+            self.currency_view = None
+
     def open_pi(self) -> None:
         """Swap the calculator for the pi calculation page."""
 
+        self._deactivate_currency_view()
         # The view is kept on the app for the same reason the conversion view is:
         # the handlers its controls hold are methods of it.
         if self.pi_view is None:

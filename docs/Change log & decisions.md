@@ -399,3 +399,19 @@ The Android emulator window repeatedly triggered an "is not responding" dialog w
 **Reported:** the other Pi displays show `3.141…`, but the View digits label started at `141…`.
 
 **Fix:** the label now starts with `3.` and appends decimal batches after it. The batch limit and footline continue counting only decimals. The spec now states that the dialog shows the complete number, matching the other Pi displays.
+
+## 2026-11-03 — Add live currency conversion
+
+**Asked for:** add a currency conversion section backed by `fawazahmed0/exchange-api`, using its minified JSON endpoints and the documented fallback.
+
+**What changed:** added a Currency section to the navigation drawer and a live USD-to-EUR-by-default converter. `currency_api.py` loads the minified currency list and per-base rates from jsDelivr, falls back to `currency-api.pages.dev` on transport or data errors, validates responses, and caches data while the view is alive. Network work runs off the UI thread; the result shows the provider's rate date.
+
+**Spec:** `calculator_spec.md` now records the endpoints, fallback order, minified-only requirement, supported currencies, live conversion behavior, and error handling.
+
+## 2026-11-03 — Extract reusable networking and cache
+
+**Asked for:** move networking into a reusable module for future API integrations and add caching.
+
+**What changed:** added `src/networking.py` with standard-library `urllib` JSON fetching, a 10-second timeout, Decimal-preserving JSON parsing, and a bounded thread-safe in-memory TTL cache (128 entries by default). Currency API responses use the shared cache for 24 hours; currency-specific URL construction and data validation remain in `currency_api.py`. Cached payloads are copied on read and write so callers cannot mutate shared cache entries.
+
+**Validation:** focused networking and currency API tests cover cache hits, expiration, bypass, LRU eviction, payload isolation, `urllib` parsing, and provider fallback.
