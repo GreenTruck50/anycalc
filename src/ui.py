@@ -15,6 +15,7 @@ import asyncio
 from decimal import Decimal
 
 import flet as ft
+from flet_color_pickers import ColorPicker
 
 from calculate import calculate, is_number, toggle_sign
 from clipboard import ClipboardService
@@ -75,6 +76,8 @@ class AnycalcApp:
         self.variables: dict[str, Decimal] = {}
         self.history: list[tuple[str, str]] = []
         self.selected_theme = styles.DEFAULT_THEME.name
+        self.selected_primary_color = styles.DEFAULT_THEME.accent
+        self.selected_secondary_color = styles.DEFAULT_THEME.key_operator
 
         # The conversion form currently in the content area, if any.
         self.conversion_view: ConversionView | None = None
@@ -106,7 +109,11 @@ class AnycalcApp:
         only matters for what ends up in the tree, not for what runs later."""
 
         page = self.page
-        styles.set_active_theme(self.selected_theme)
+        styles.set_active_theme(
+            self.selected_theme,
+            self.selected_primary_color,
+            self.selected_secondary_color,
+        )
         page.title = "AnythingCalculator"
         page.theme_mode = self._theme_mode(styles.DEFAULT_THEME)
         page.bgcolor = styles.APP_BACKGROUND
@@ -202,6 +209,11 @@ class AnycalcApp:
             ft.Brightness.LIGHT if theme.mode == "dark" else ft.Brightness.DARK
         )
         return ft.Theme(
+            color_scheme_seed=styles.ACCENT,
+            color_scheme=ft.ColorScheme(
+                primary=styles.ACCENT,
+                secondary=styles.KEY_OPERATOR,
+            ),
             system_overlay_style=ft.SystemOverlayStyle(
                 status_bar_color=theme.app_background,
                 status_bar_brightness=brightness,
@@ -209,7 +221,7 @@ class AnycalcApp:
                 system_navigation_bar_color=theme.app_background,
                 system_navigation_bar_divider_color=theme.app_background,
                 system_navigation_bar_icon_brightness=icon_brightness,
-            )
+            ),
         )
 
     def _recolor_controls(
@@ -264,13 +276,31 @@ class AnycalcApp:
                 pending.append(content)
 
     def apply_theme(self, name: str) -> None:
-        old_theme, new_theme = styles.set_active_theme(name)
+        old_palette = styles.active_palette()
+        _, new_theme = styles.set_active_theme(
+            name,
+            self.selected_primary_color,
+            self.selected_secondary_color,
+        )
         self.selected_theme = new_theme.name
-        self._recolor_controls(old_theme.palette(), new_theme.palette())
+        self._recolor_controls(old_palette, styles.active_palette())
         self.page.bgcolor = new_theme.app_background
         self.page.theme_mode = self._theme_mode(new_theme)
         self.page.theme = self._make_page_theme(new_theme)
         self.page.update()
+
+    def apply_settings_selection(
+        self,
+        name: str,
+        primary_color: str,
+        secondary_color: str,
+    ) -> None:
+        styles.get_theme(name)
+        next_primary_color = styles.normalize_color(primary_color)
+        next_secondary_color = styles.normalize_color(secondary_color)
+        self.selected_primary_color = next_primary_color
+        self.selected_secondary_color = next_secondary_color
+        self.apply_theme(name)
 
     def persist_pi_change(self) -> None:
         self.page.run_task(self.save_data, True)
@@ -281,6 +311,8 @@ class AnycalcApp:
             history=tuple(self.history[-MAX_HISTORY_ITEMS:]),
             pi_text=pi.program_pi_text() if include_pi else None,
             pi_digits=pi.program_pi_digits() if include_pi else None,
+            primary_color=self.selected_primary_color,
+            secondary_color=self.selected_secondary_color,
         )
 
     async def load_saved_data(self) -> None:
@@ -297,6 +329,13 @@ class AnycalcApp:
             except ValueError as error:
                 self._show_storage_error(f"Saved theme could not be used: {error}")
             else:
+                theme = styles.get_theme(state.theme)
+                self.selected_primary_color = (
+                    state.primary_color or theme.accent
+                )
+                self.selected_secondary_color = (
+                    state.secondary_color or theme.key_operator
+                )
                 self.apply_theme(state.theme)
 
             self.history = list(state.history)
@@ -439,20 +478,26 @@ class AnycalcApp:
         )
 
     def build_settings_dialog(self) -> ft.AlertDialog:
-        self.settings_theme_group = ft.RadioGroup(
-            key="settings-theme-options",
+        self.settings_theme_dropdown = ft.Dropdown(
+            key="settings-theme-dropdown",
+            label="Theme",
             value=self.selected_theme,
-            content=ft.Column(
-                [
-                    ft.Radio(
-                        key=f"settings-theme-{theme.name.lower()}",
-                        value=theme.name,
-                        label=theme.name,
-                    )
-                    for theme in styles.THEMES
-                ],
-                tight=True,
-            ),
+            options=[
+                ft.DropdownOption(key=theme.name, text=theme.name)
+                for theme in styles.THEMES
+            ],
+        )
+        self.settings_primary_picker = ColorPicker(
+            key="settings-primary-color",
+            color=self.selected_primary_color,
+            enable_alpha=False,
+            color_picker_width=280,
+        )
+        self.settings_secondary_picker = ColorPicker(
+            key="settings-secondary-color",
+            color=self.selected_secondary_color,
+            enable_alpha=False,
+            color_picker_width=280,
         )
         return ft.AlertDialog(
             key="settings-dialog",
@@ -460,11 +505,15 @@ class AnycalcApp:
             title=ft.Text("Settings"),
             content=ft.Column(
                 [
-                    ft.Text("Theme", size=12, color=styles.TEXT_MUTED),
-                    self.settings_theme_group,
+                    self.settings_theme_dropdown,
+                    ft.Text("Primary color", size=12, color=styles.TEXT_MUTED),
+                    self.settings_primary_picker,
+                    ft.Text("Secondary color", size=12, color=styles.TEXT_MUTED),
+                    self.settings_secondary_picker,
                 ],
-                tight=True,
+                height=400,
                 spacing=8,
+                scroll=ft.ScrollMode.AUTO,
             ),
             actions=[
                 ft.TextButton(
@@ -492,11 +541,16 @@ class AnycalcApp:
 
     def apply_settings(self, event: object) -> None:
         del event
-        name = self.settings_theme_group.value
+        name = self.settings_theme_dropdown.value
         if not isinstance(name, str):
             raise ValueError("the selected theme is invalid")
-        styles.get_theme(name)
-        self.apply_theme(name)
+        primary_color = self.settings_primary_picker.color
+        secondary_color = self.settings_secondary_picker.color
+        if not isinstance(primary_color, str) or not isinstance(
+            secondary_color, str
+        ):
+            raise ValueError("the selected colors are invalid")
+        self.apply_settings_selection(name, primary_color, secondary_color)
         self.page.run_task(self.save_data)
         self.page.pop_dialog()
         self.page.update()

@@ -445,3 +445,11 @@ The Android emulator window repeatedly triggered an "is not responding" dialog w
 **What changed:** the Pi digits label now begins with `3.` and appends subsequent decimal batches to that same complete-number label. The Settings header button now opens a modal dialog with Dark/Light radio choices plus Apply/Close actions, matching the View Digits dialog interaction.
 
 **Validation:** client-storage round-trip tests, theme/menu/recolouring tests, Pi adoption callback, and the focused Flet settings interaction pass. The Flet engine suite and strict documentation build are also checked for this change.
+
+## 2026-11-03 — Add theme and color selections to Settings
+
+**Asked for:** change the theme control to a selection box and add primary and secondary color pickers.
+
+**What changed:** replaced the theme radio group with a dropdown and added non-transparent primary and secondary color pickers. Applying settings updates the active palette, the Flet Material color scheme, and existing controls. The selected theme and colors are saved with history in client storage; existing saved data without custom colors continues to load with the selected theme's defaults. Added the cross-platform `flet-color-pickers` runtime dependency.
+
+**Validation:** color selection, active palette, saved-state round trips, and the Settings dialog controls are covered by focused tests.

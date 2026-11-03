@@ -27,9 +27,33 @@ def test_active_theme_updates_palette_constants_and_can_be_restored() -> None:
         styles.set_active_theme(original_name)
 
 
+def test_active_theme_applies_custom_primary_and_secondary_colors() -> None:
+    styles.set_active_theme("Dark", "#123456", "#ABCDEF")
+    try:
+        assert styles.ACCENT == "#123456"
+        assert styles.KEY_OPERATOR == "#ABCDEF"
+        assert styles.active_palette()["ACCENT"] == "#123456"
+        assert styles.KEY_INK == styles.get_theme("Dark").key_ink
+    finally:
+        styles.set_active_theme("Dark")
+
+
 def test_unknown_theme_is_rejected() -> None:
     with pytest.raises(ValueError, match="Unknown theme"):
         styles.get_theme("Sepia")
+
+
+def test_invalid_custom_color_does_not_change_the_active_palette() -> None:
+    styles.set_active_theme("Dark", "#123456", "#ABCDEF")
+    original_palette = styles.active_palette()
+    try:
+        with pytest.raises(ValueError, match="six-digit hexadecimal"):
+            styles.set_active_theme("Light", "")
+
+        assert styles.active_palette() == original_palette
+        assert styles.APP_BACKGROUND == styles.get_theme("Dark").app_background
+    finally:
+        styles.set_active_theme("Dark")
 
 
 def test_app_theme_selection_recolors_existing_controls() -> None:
@@ -54,6 +78,8 @@ def test_app_theme_selection_recolors_existing_controls() -> None:
     app = AnycalcApp.__new__(AnycalcApp)
     app.page = page
     app.selected_theme = "Dark"
+    app.selected_primary_color = styles.get_theme("Dark").accent
+    app.selected_secondary_color = styles.get_theme("Dark").key_operator
     app.pi_view = cast(PiView, SimpleNamespace(root=detached_surface))
 
     try:
@@ -69,20 +95,59 @@ def test_app_theme_selection_recolors_existing_controls() -> None:
         styles.set_active_theme("Dark")
 
 
-def test_settings_dialog_lists_the_available_themes() -> None:
+def test_settings_dialog_has_theme_dropdown_and_color_pickers() -> None:
     app = AnycalcApp.__new__(AnycalcApp)
     app.selected_theme = "Dark"
+    app.selected_primary_color = styles.DEFAULT_THEME.accent
+    app.selected_secondary_color = styles.DEFAULT_THEME.key_operator
     app.page = cast(ft.Page, SimpleNamespace(pop_dialog=lambda: None))
 
     dialog = app.build_settings_dialog()
 
     assert dialog.key == "settings-dialog"
     assert dialog.modal is True
-    assert app.settings_theme_group.value == "Dark"
-    assert isinstance(app.settings_theme_group.content, ft.Column)
-    radios = app.settings_theme_group.content.controls
-    assert all(isinstance(radio, ft.Radio) for radio in radios)
-    assert [radio.label for radio in radios if isinstance(radio, ft.Radio)] == [
+    assert app.settings_theme_dropdown.value == "Dark"
+    assert [option.text for option in app.settings_theme_dropdown.options] == [
         "Dark",
         "Light",
     ]
+    assert isinstance(app.settings_primary_picker, ft.BaseControl)
+    assert app.settings_primary_picker.color == styles.DEFAULT_THEME.accent
+    assert app.settings_primary_picker.enable_alpha is False
+    assert isinstance(app.settings_secondary_picker, ft.BaseControl)
+    assert app.settings_secondary_picker.color == styles.DEFAULT_THEME.key_operator
+    assert app.settings_secondary_picker.enable_alpha is False
+
+
+def test_app_applies_custom_colors_with_the_selected_theme() -> None:
+    styles.set_active_theme("Dark")
+    page = cast(
+        ft.Page,
+        SimpleNamespace(
+            controls=[],
+            drawer=None,
+            end_drawer=None,
+            update=lambda: None,
+        ),
+    )
+    app = AnycalcApp.__new__(AnycalcApp)
+    app.page = page
+    app.selected_theme = "Dark"
+    app.selected_primary_color = styles.DEFAULT_THEME.accent
+    app.selected_secondary_color = styles.DEFAULT_THEME.key_operator
+    app.pi_view = None
+
+    try:
+        app.apply_settings_selection("Light", "#123456", "#ABCDEF")
+
+        assert app.selected_theme == "Light"
+        assert app.selected_primary_color == "#123456"
+        assert app.selected_secondary_color == "#ABCDEF"
+        assert styles.ACCENT == "#123456"
+        assert styles.KEY_OPERATOR == "#ABCDEF"
+        assert page.theme is not None
+        assert page.theme.color_scheme is not None
+        assert page.theme.color_scheme.primary == "#123456"
+        assert page.theme.color_scheme.secondary == "#ABCDEF"
+    finally:
+        styles.set_active_theme("Dark")

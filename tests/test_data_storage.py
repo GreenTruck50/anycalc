@@ -17,6 +17,8 @@ def test_app_state_round_trips_theme_history_and_pi() -> None:
         history=(("1+2", "3"), ("pi", "3.141592653589")),
         pi_text="3.141592653589",
         pi_digits=12,
+        primary_color="#123456",
+        secondary_color="#ABCDEF",
     )
 
     assert decode_state(encode_state(state), encode_pi(state)) == state
@@ -37,6 +39,8 @@ def test_metadata_saves_leave_the_saved_pi_untouched() -> None:
     assert restored.history == (("1+1", "2"),)
     assert restored.pi_text == initial.pi_text
     assert restored.pi_digits == initial.pi_digits
+    assert restored.primary_color is None
+    assert restored.secondary_color is None
 
 
 @pytest.mark.asyncio
@@ -85,6 +89,20 @@ def test_state_decoder_rejects_malformed_history() -> None:
     )
 
     with pytest.raises(ValueError, match="invalid entry"):
+        decode_state(serialized)
+
+
+def test_state_decoder_rejects_invalid_custom_colors() -> None:
+    serialized = json.dumps(
+        {
+            "version": 1,
+            "theme": "Dark",
+            "history": [],
+            "primary_color": "#12345",
+        }
+    )
+
+    with pytest.raises(ValueError, match="six-digit hexadecimal"):
         decode_state(serialized)
 
 

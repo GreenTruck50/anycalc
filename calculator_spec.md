@@ -446,13 +446,16 @@ There should be a conversions.yaml file that says "There should be this tab with
   "SCIENTIFIC MODE", "UNIT CONVERSION" or "PI CALCULATION". It is the same caption
   style the drawer heading uses.
 - The settings button opens a modal popup dialog, like the Pi View Digits popup.
-  It offers Dark and Light theme choices with Apply and Close actions. Applying
-  the selection updates the current page; Dark is the default theme.
+  It offers a Dark/Light theme dropdown plus primary and secondary color pickers,
+  with Apply and Close actions. Applying the selections updates the current page;
+  Dark is the default theme. The primary color controls the app's primary accent,
+  and the secondary color controls operator-key accents.
 
 ## Saved app data
 
-- Save the selected theme, up to `config.MAX_HISTORY_ITEMS` calculation-history
-  entries, and the exact pi currently used by calculations between app launches.
+- Save the selected theme, primary and secondary colors, up to
+  `config.MAX_HISTORY_ITEMS` calculation-history entries, and the exact pi
+  currently used by calculations between app launches.
 - Before enabling the app controls on startup, restore the saved history and
   theme. Restore the saved pi value and its decimal precision through the
   program-pi setter so subsequent calculations use the same pi as before

@@ -8,6 +8,7 @@ from typing import Optional
 import flet as ft
 
 from config import MAX_HISTORY_ITEMS
+import styles
 
 _STATE_STORAGE_KEY = "anycalc.app-state"
 _PI_STORAGE_KEY = "anycalc.program-pi"
@@ -20,6 +21,8 @@ class AppState:
     history: tuple[tuple[str, str], ...]
     pi_text: Optional[str] = None
     pi_digits: Optional[int] = None
+    primary_color: Optional[str] = None
+    secondary_color: Optional[str] = None
 
 
 def _decode_json(serialized: str) -> object:
@@ -45,6 +48,12 @@ def decode_state(
         raise ValueError("saved theme is missing or invalid")
     if not isinstance(history, list):
         raise ValueError("saved history is missing or invalid")
+    primary_color = payload.get("primary_color")
+    secondary_color = payload.get("secondary_color")
+    if primary_color is not None:
+        primary_color = styles.normalize_color(primary_color)
+    if secondary_color is not None:
+        secondary_color = styles.normalize_color(secondary_color)
 
     checked_history: list[tuple[str, str]] = []
     for entry in history:
@@ -77,6 +86,8 @@ def decode_state(
         history=tuple(checked_history[-MAX_HISTORY_ITEMS:]),
         pi_text=pi_text,
         pi_digits=pi_digits,
+        primary_color=primary_color,
+        secondary_color=secondary_color,
     )
 
 
@@ -88,6 +99,8 @@ def encode_state(state: AppState) -> str:
             "version": _STATE_VERSION,
             "theme": state.theme,
             "history": state.history,
+            "primary_color": state.primary_color,
+            "secondary_color": state.secondary_color,
         },
         separators=(",", ":"),
     )

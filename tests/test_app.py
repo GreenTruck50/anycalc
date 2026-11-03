@@ -264,7 +264,7 @@ async def test_pi_page_computes_and_adopts_a_value(
     ).count == 1
 
 
-async def test_settings_dialog_switches_to_the_light_theme(
+async def test_settings_dialog_shows_theme_and_color_controls(
     flet_app: ftt.FletTestApp,
 ) -> None:
     tester = flet_app.tester
@@ -273,24 +273,13 @@ async def test_settings_dialog_switches_to_the_light_theme(
     await tester.tap(await tester.find_by_key("settings-button"))
     await tester.pump_and_settle()
     assert (await tester.find_by_text("Settings")).count == 1
-    light_option = await tester.find_by_key("settings-theme-light")
-    assert light_option.count == 1
-
-    await tester.tap(light_option.first)
-    await tester.pump_and_settle()
+    assert (await tester.find_by_key("settings-theme-dropdown")).count == 1
+    assert (await tester.find_by_text("Primary color")).count == 1
     await tester.tap(await tester.find_by_key("settings-apply"))
     await tester.pump_and_settle()
 
     assert (await tester.find_by_key("display")).count == 1
     assert (await tester.find_by_text("Settings")).count == 0
-
-    await tester.tap(await tester.find_by_key("settings-button"))
-    await tester.pump_and_settle()
-    dark_option = await tester.find_by_key("settings-theme-dark")
-    assert dark_option.count == 1
-    await tester.tap(dark_option.first)
-    await tester.tap(await tester.find_by_key("settings-apply"))
-    await tester.pump_and_settle()
 
 
 async def test_editing_the_value_reconverts_and_clearing_it_stays_quiet(

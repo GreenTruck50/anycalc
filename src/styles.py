@@ -1,6 +1,9 @@
 """The app's named colour themes and the active palette."""
 
+import re
 from dataclasses import dataclass
+
+_HEX_COLOR_PATTERN = re.compile(r"#[0-9A-Fa-f]{6}")
 
 
 @dataclass(frozen=True)
@@ -20,14 +23,20 @@ class AppTheme:
     text_faint: str
     text_error: str
 
-    def palette(self) -> dict[str, str]:
+    def palette(
+        self,
+        primary_color: str | None = None,
+        secondary_color: str | None = None,
+    ) -> dict[str, str]:
+        primary = self.accent if primary_color is None else primary_color
+        secondary = self.key_operator if secondary_color is None else secondary_color
         return {
             "APP_BACKGROUND": self.app_background,
             "PANEL_BACKGROUND": self.panel_background,
             "CARD_BACKGROUND": self.card_background,
-            "ACCENT": self.accent,
+            "ACCENT": primary,
             "KEY_DANGER": self.key_danger,
-            "KEY_OPERATOR": self.key_operator,
+            "KEY_OPERATOR": secondary,
             "KEY_DEFAULT": self.card_background,
             "KEY_INK": self.key_ink,
             "TEXT_PRIMARY": self.text_primary,
@@ -75,6 +84,8 @@ THEMES = (
 
 DEFAULT_THEME = THEMES[0]
 _active_theme = DEFAULT_THEME
+_active_primary_color = DEFAULT_THEME.accent
+_active_secondary_color = DEFAULT_THEME.key_operator
 
 
 def get_theme(name: str) -> AppTheme:
@@ -86,16 +97,43 @@ def get_theme(name: str) -> AppTheme:
     raise ValueError(f"Unknown theme: {name}")
 
 
-def set_active_theme(name: str) -> tuple[AppTheme, AppTheme]:
+def normalize_color(color: str) -> str:
+    """Validate a six-digit RGB hex color and return it in uppercase."""
+
+    if not isinstance(color, str) or _HEX_COLOR_PATTERN.fullmatch(color) is None:
+        raise ValueError("color must be a six-digit hexadecimal RGB value")
+    return color.upper()
+
+
+def active_palette() -> dict[str, str]:
+    """Return the active palette, including custom accent colors."""
+
+    return _active_theme.palette(_active_primary_color, _active_secondary_color)
+
+
+def set_active_theme(
+    name: str,
+    primary_color: str | None = None,
+    secondary_color: str | None = None,
+) -> tuple[AppTheme, AppTheme]:
     """Set the palette constants and return the previous and current themes."""
 
     global _active_theme, ACCENT, APP_BACKGROUND, CARD_BACKGROUND, KEY_DANGER
     global KEY_DEFAULT, KEY_INK, KEY_OPERATOR, PANEL_BACKGROUND
     global TEXT_ERROR, TEXT_FAINT, TEXT_MUTED, TEXT_PRIMARY, TEXT_SOFT
+    global _active_primary_color, _active_secondary_color
     previous = _active_theme
     current = get_theme(name)
+    next_primary_color = normalize_color(
+        current.accent if primary_color is None else primary_color
+    )
+    next_secondary_color = normalize_color(
+        current.key_operator if secondary_color is None else secondary_color
+    )
     _active_theme = current
-    palette = current.palette()
+    _active_primary_color = next_primary_color
+    _active_secondary_color = next_secondary_color
+    palette = active_palette()
     ACCENT = palette["ACCENT"]
     APP_BACKGROUND = palette["APP_BACKGROUND"]
     CARD_BACKGROUND = palette["CARD_BACKGROUND"]
