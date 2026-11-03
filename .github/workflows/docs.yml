@@ -1,7 +1,7 @@
 # Publish docs/ to GitHub Pages: rebuild the MkDocs site whenever the docs change.
 # site/ is generated here and is gitignored - it is never committed, because it
 # mirrors every word of docs/ (and search/search_index.json flattens them), which
-# would double the blast radius of any leak.
+# would double the size of the docs and clutter the repo.
 name: docs
 
 on:
@@ -26,29 +26,35 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     permissions:
       contents: read
       pages: write
       id-token: write
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      # Commented out - python should come preinstalled on the runner
+      #- uses: actions/setup-python@v7
+      #  with:
+      #    python-version: "3.12"
+      #    cache: pip
+      - name: astral-sh/setup-uv
+        # You may pin to the exact commit or the version.
+        # uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+        uses: astral-sh/setup-uv@v10.3.3
         with:
-          python-version: "3.12"
-          cache: pip
-      - name: Install the docs extra
-        run: pip install mkdocs
-      - name: Build (strict - a broken internal link fails the deploy)
+          enable-cache: true
+      - name: Install mkdocs via uv
+        run: uv tool install mkdocs
+      - name: Build (strict)
         run: mkdocs build --strict
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
-
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -58,4 +64,4 @@ jobs:
       id-token: write
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5.0.1
