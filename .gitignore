@@ -21,6 +21,7 @@ site/
 
 # --- editor settings (per-machine, not part of the project) ---
 .vscode/
+.mcp.*
 
 # --- Cline IDE checkpoints ---
 #     These are NOT a gitignore case: they are git *refs* under
