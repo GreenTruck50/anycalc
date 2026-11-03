@@ -575,7 +575,9 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Offer a "Use this value for the program" button that makes a finished run the
   pi every calculation uses; until it is pressed the run is only shown on the
   page. Show the pi currently in force at the top of the page so the effect is
-  visible.
+  visible. Show the button only for a newly completed result that has not been
+  adopted; hide it after adoption succeeds, and show it again when a later run
+  completes.
 - Say out loud what the app's Decimal precision means for a pi the whole program
   uses: every calculation runs at `config.DECIMAL_PRECISION` significant digits,
   one of which is spent on the `3`, so a computed pi longer than that is stored and

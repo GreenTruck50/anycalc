@@ -415,3 +415,11 @@ The Android emulator window repeatedly triggered an "is not responding" dialog w
 **What changed:** added `src/networking.py` with standard-library `urllib` JSON fetching, a 10-second timeout, Decimal-preserving JSON parsing, and a bounded thread-safe in-memory TTL cache (128 entries by default). Currency API responses use the shared cache for 24 hours; currency-specific URL construction and data validation remain in `currency_api.py`. Cached payloads are copied on read and write so callers cannot mutate shared cache entries.
 
 **Validation:** focused networking and currency API tests cover cache hits, expiration, bypass, LRU eviction, payload isolation, `urllib` parsing, and provider fallback.
+
+## 2026-11-03 — Hide the pi adoption button after use
+
+**Asked for:** once a computed pi is adopted, remove its adoption button and have calculations use that value.
+
+**What changed:** the adoption button is visible only for a completed run awaiting adoption. The existing handler installs the computed value as the program's pi immediately; it now hides the button after that succeeds and refreshes the current-pi panel. Starting another run hides the old button, and a newly completed run shows it again.
+
+**Validation:** the Pi view test verifies adoption changes the pi used by the calculator, hides the button, and makes it available again after a subsequent run.

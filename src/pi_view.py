@@ -117,7 +117,7 @@ def precision_notice(available: int) -> str:
     )
 
 
-def dialog_width(page_width: int | float | None) -> int:
+def dialog_width(page_width: Optional[float]) -> int:
     """How wide the digits dialog may be on this window."""
 
     if not page_width:  # no geometry yet - the desktop default
@@ -307,6 +307,7 @@ class PiView(Generic[PageT]):
             key="pi-adopt",
             icon=ft.Icons.CHECK,
             disabled=True,
+            visible=False,
             on_click=self.adopt_value,
         )
 
@@ -481,6 +482,7 @@ class PiView(Generic[PageT]):
         self.stop_button.disabled = False
         self.view_button.disabled = True
         self.adopt_button.disabled = True
+        self.adopt_button.visible = False
 
         self.progress_bar.value = 0.0
         self.percent_text.value = "0%"
@@ -636,6 +638,7 @@ class PiView(Generic[PageT]):
         self.adopt_button.disabled = not (
             self.computation and self.computation.complete
         )
+        self.adopt_button.visible = not self.adopt_button.disabled
 
     def _paint_progress(self) -> None:
         """Push the running numbers into the progress card, at most twice a second.
@@ -690,6 +693,7 @@ class PiView(Generic[PageT]):
             self.page.update()
             return
 
+        self.adopt_button.visible = False
         self.refresh_current()
         digits = pi.program_pi_digits()
         usable = DECIMAL_PRECISION - 1
@@ -783,8 +787,8 @@ class PiView(Generic[PageT]):
                 actions=[
                     self.make_copy_button(
                         lambda: f"3.{decimals}",
-                        tooltip="Copy every digit of this pi",
-                        label=f"Copy all {len(decimals):,} digits",
+                        tooltip="Copy every decimal of this pi",
+                        label=f"Copy all {len(decimals):,} decimals",
                     ),
                     ft.TextButton(
                         content="Close", on_click=lambda: self.page.pop_dialog()
@@ -826,7 +830,7 @@ class PiView(Generic[PageT]):
 
         start, end = dialog_batch_range(self._dialog_decimals, self._dialog_loaded)
         if end > start:
-            self._dialog_label.value = f"3.{self._dialog_decimals[:end]}"
+            self._dialog_label.value = self._dialog_decimals[:end]
             self._dialog_loaded = end
         self._dialog_count.value = self._dialog_footline()
         if paint and end > start:

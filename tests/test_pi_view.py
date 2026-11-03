@@ -246,6 +246,7 @@ def test_a_finished_run_reports_itself_and_arms_the_buttons(view: PiView) -> Non
     assert "100 decimals in" in find_by_key(page, "pi-status").value
     assert "press the button below" in find_by_key(page, "pi-status").value
     assert view.adopt_button.disabled is False
+    assert view.adopt_button.visible is True
     assert view.view_button.disabled is False
     assert view.stop_button.disabled is True
     assert view.compute_button.disabled is False
@@ -354,6 +355,7 @@ def test_adopting_makes_the_run_the_pi_every_calculation_uses(view: PiView) -> N
     run_to_completion(view, "60")
     view.adopt_value()
 
+    assert view.adopt_button.visible is False
     assert pi.program_pi_digits() == 60
     assert pi.program_pi_decimals() == PI_DECIMALS[:60]
     assert "60 decimals, computed by this app" in (
@@ -366,6 +368,9 @@ def test_adopting_makes_the_run_the_pi_every_calculation_uses(view: PiView) -> N
     # The pads really do multiply by it - all 60 decimals, since 60 fit inside the
     # engine's Decimal context.
     assert calculate("pi", scientific=True) == f"3.{PI_DECIMALS[:60]}"
+
+    run_to_completion(view, "100")
+    assert view.adopt_button.visible is True
 
 
 def test_a_pi_longer_than_the_context_only_reaches_it_as_far_as_the_context_goes(
