@@ -385,8 +385,11 @@ def test_a_pi_longer_than_the_context_only_reaches_it_as_far_as_the_context_goes
     """
 
     run_to_completion(view, "600")
+    persisted: list[bool] = []
+    view.on_program_pi_changed = lambda: persisted.append(True)
     view.adopt_value()
 
+    assert persisted == [True]
     assert pi.program_pi_digits() == 600
     usable = DECIMAL_PRECISION - 1
 
@@ -936,7 +939,7 @@ def test_the_popup_offers_nothing_but_the_digits_and_two_buttons(view: PiView) -
         for control in walk(dialog)
         if isinstance(control, ft.TextButton)
     )
-    assert labels == sorted(["Close", "Copy all 25,000 digits"])
+    assert labels == sorted(["Close", "Copy all 25,000 decimals"])
 
 
 def test_a_short_run_is_all_on_screen_at_once(view: PiView) -> None:
@@ -997,6 +1000,6 @@ def test_the_copy_button_of_the_dialog_copies_all_of_the_digits(view: PiView) ->
     ]
     assert len(copies) == 1, "the dialog offers exactly one way to copy"
     # And it says what it copies, so nobody has to wonder whether it is a screenful.
-    assert copies[0].content == "Copy all 25,000 digits"
+    assert copies[0].content == "Copy all 25,000 decimals"
     assert view.page.copies[-1]() == f"3.{computed_decimals(view)}"
     assert len(view.page.copies[-1]()) == 25002, "3. plus every decimal computed"

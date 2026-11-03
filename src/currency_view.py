@@ -9,7 +9,7 @@ import flet as ft
 from config import ERROR_INVALID_NUMBER, ERROR_NUMBER_OVERFLOW
 from conversions import format_conversion_value
 from currency_api import CurrencyApi, CurrencyApiError, CurrencyRates
-from styles import ACCENT, TEXT_FAINT, TEXT_MUTED
+import styles
 
 
 class _Page(Protocol):
@@ -66,13 +66,13 @@ class CurrencyConversionView:
         self.status = ft.Text(
             "Loading available currencies…",
             size=11,
-            color=TEXT_MUTED,
+            color=styles.TEXT_MUTED,
             key="currency-status",
         )
         self.rate_date = ft.Text(
             "",
             size=11,
-            color=TEXT_FAINT,
+            color=styles.TEXT_FAINT,
             key="currency-rate-date",
             visible=False,
         )
@@ -86,7 +86,7 @@ class CurrencyConversionView:
             key="currency-swap",
             content="Swap currencies",
             icon=ft.Icons.SWAP_HORIZ,
-            icon_color=ACCENT,
+            icon_color=styles.ACCENT,
             tooltip="Swap the From and To currencies",
             on_click=self.swap_currencies,
         )
@@ -98,7 +98,7 @@ class CurrencyConversionView:
             [
                 ft.Row(
                     [
-                        ft.Icon(ft.Icons.CURRENCY_EXCHANGE, size=28, color=ACCENT),
+                        ft.Icon(ft.Icons.CURRENCY_EXCHANGE, size=28, color=styles.ACCENT),
                         ft.Text(
                             "Currency Conversion",
                             size=22,
@@ -110,7 +110,7 @@ class CurrencyConversionView:
                 ft.Text(
                     "Convert using daily exchange rates, including supported "
                     "cryptocurrencies and metals.",
-                    color=TEXT_MUTED,
+                    color=styles.TEXT_MUTED,
                 ),
                 self.input_field,
                 stretched(self.source_dropdown),
@@ -120,11 +120,11 @@ class CurrencyConversionView:
                 self.rate_date,
                 ft.Row(
                     [
-                        ft.Icon(ft.Icons.SWAP_HORIZ, size=16, color=TEXT_FAINT),
+                        ft.Icon(ft.Icons.SWAP_HORIZ, size=16, color=styles.TEXT_FAINT),
                         ft.Text(
                             "Converts as you type or change currencies",
                             size=11,
-                            color=TEXT_FAINT,
+                            color=styles.TEXT_FAINT,
                         ),
                     ],
                     spacing=6,
@@ -143,7 +143,7 @@ class CurrencyConversionView:
         if not self.active:
             return
         self.status.value = "Loading available currencies…"
-        self.status.color = TEXT_MUTED
+        self.status.color = styles.TEXT_MUTED
         self.retry_button.visible = False
         self.page.update()
         try:
@@ -181,7 +181,7 @@ class CurrencyConversionView:
             )
         )
         self.status.value = f"{len(currencies)} currencies available."
-        self.status.color = TEXT_MUTED
+        self.status.color = styles.TEXT_MUTED
         self.page.update()
         await self.run_conversion()
 
@@ -222,7 +222,7 @@ class CurrencyConversionView:
             return
 
         self.status.value = "Loading exchange rate…"
-        self.status.color = TEXT_MUTED
+        self.status.color = styles.TEXT_MUTED
         self.page.update()
         try:
             rates: CurrencyRates = await asyncio.to_thread(

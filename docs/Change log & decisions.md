@@ -431,3 +431,17 @@ The Android emulator window repeatedly triggered an "is not responding" dialog w
 **What changed:** the history drawer now displays "History only applies to the Regular and Scientific Calculators." for conversion and Pi pages, and hides it on either calculator. Visibility is refreshed whenever the history drawer opens.
 
 **Validation:** focused history-view tests cover calculator versus non-calculator visibility and confirm the notice is placed above the history entries.
+
+## 2026-11-03 — Add theme settings and saved app data
+
+**Asked for:** commit the history notice, add a settings menu beside the history button with a theme choice, and persist the active pi and calculation history.
+
+**What changed:** committed the history-scope notice as `d43d952`. Added Dark and Light themes in `styles.py`, with Dark as the default. The settings dialog applies a selection immediately and recolours existing controls. Added `data_storage.py`, using Flet `SharedPreferences` client storage on desktop, mobile and web. Theme and bounded history are saved under one key, separate from the active pi digits, so each history update does not rewrite a potentially very large pi value. Successful calculations, history clears, theme changes and Pi adoption trigger saves; startup restores the saved theme, history and active pi.
+
+## 2026-11-03 — Show the leading integer in Pi digits
+
+**Asked for:** fix the Pi-view tests by showing the `3.` prefix in the View Digits popup, and make Settings a popup like View Digits.
+
+**What changed:** the Pi digits label now begins with `3.` and appends subsequent decimal batches to that same complete-number label. The Settings header button now opens a modal dialog with Dark/Light radio choices plus Apply/Close actions, matching the View Digits dialog interaction.
+
+**Validation:** client-storage round-trip tests, theme/menu/recolouring tests, Pi adoption callback, and the focused Flet settings interaction pass. The Flet engine suite and strict documentation build are also checked for this change.

@@ -440,10 +440,31 @@ There should be a conversions.yaml file that says "There should be this tab with
 
 - The header row at the top of the window carries, left to right: a menu button
   that opens the navigation drawer, the "AnythingCalculator" title over a small
-  muted caption, and a history button that opens the history drawer.
+  muted caption, a settings button, and a history button that opens the history
+  drawer.
 - That caption names what the content area is showing: "REGULAR MODE",
   "SCIENTIFIC MODE", "UNIT CONVERSION" or "PI CALCULATION". It is the same caption
   style the drawer heading uses.
+- The settings button opens a modal popup dialog, like the Pi View Digits popup.
+  It offers Dark and Light theme choices with Apply and Close actions. Applying
+  the selection updates the current page; Dark is the default theme.
+
+## Saved app data
+
+- Save the selected theme, up to `config.MAX_HISTORY_ITEMS` calculation-history
+  entries, and the exact pi currently used by calculations between app launches.
+- Before enabling the app controls on startup, restore the saved history and
+  theme. Restore the saved pi value and its decimal precision through the
+  program-pi setter so subsequent calculations use the same pi as before
+  shutdown.
+- Store app data in Flet client storage
+  ([`ft.SharedPreferences`](https://flet.dev/docs/cookbook/client-storage/)) on
+  desktop, mobile and web.
+- Keep the frequently updated theme and history separate from the potentially
+  very long pi digits so adding a history entry does not rewrite the saved pi.
+- Report load and save errors to the user rather than silently discarding data.
+- Persist only the pi currently adopted for calculator use; a newly computed but
+  unadopted Pi-page result does not replace it.
 
 ## Copy to clipboard
 

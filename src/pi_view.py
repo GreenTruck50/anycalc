@@ -28,15 +28,7 @@ import pi
 import pi_value
 from config import DECIMAL_PRECISION
 from pi_value import PiComputation, PiProgress, format_duration
-from styles import (
-    ACCENT,
-    CARD_BACKGROUND,
-    PANEL_BACKGROUND,
-    TEXT_ERROR,
-    TEXT_FAINT,
-    TEXT_MUTED,
-    TEXT_SOFT,
-)
+import styles
 
 # How much of a finished run the result card shows; the rest is in the dialog.
 CARD_DECIMALS = 120
@@ -158,15 +150,18 @@ class PiView(Generic[PageT]):
         digits dialog.
     :param make_copy_button: the app's shared copy-button factory, which can be asked
         for a button that says out loud what it copies.
+    :param on_program_pi_changed: callback for persisting an adopted program pi.
     """
 
     def __init__(
         self,
         page: PageT,
         make_copy_button: Callable[..., ft.Control],
+        on_program_pi_changed: Optional[Callable[[], None]] = None,
     ) -> None:
         self.page = page
         self.make_copy_button = make_copy_button
+        self.on_program_pi_changed = on_program_pi_changed
 
         self.computation: Optional[PiComputation] = None
         self.progress: Optional[PiProgress] = None
@@ -216,7 +211,7 @@ class PiView(Generic[PageT]):
             return self.root
 
         self.current_text = ft.Text(size=14, selectable=True, key="pi-current")
-        self.current_note = ft.Text(size=11, color=TEXT_MUTED, key="pi-current-note")
+        self.current_note = ft.Text(size=11, color=styles.TEXT_MUTED, key="pi-current-note")
         self.view_current_button = ft.TextButton(
             "View digits",
             key="pi-view-current",
@@ -246,14 +241,14 @@ class PiView(Generic[PageT]):
             on_change=self.refresh_plan,
             expand=True,
         )
-        self.plan_text = ft.Text(size=11, color=TEXT_FAINT, key="pi-plan")
+        self.plan_text = ft.Text(size=11, color=styles.TEXT_FAINT, key="pi-plan")
         # The notice about how much of a pi the app's own precision can use. It
         # belongs with the pi the program uses, not with the digit field: the limit
         # is the engine's Decimal context, not anything the run can be talked into.
         self.precision_text = ft.Text(
             precision_notice(pi.DEFAULT_PROGRAM_DIGITS),
             size=11,
-            color=TEXT_FAINT,
+            color=styles.TEXT_FAINT,
             key="pi-precision",
         )
 
@@ -270,31 +265,31 @@ class PiView(Generic[PageT]):
         self.progress_bar = ft.ProgressBar(
             key="pi-progress",
             value=0.0,
-            color=ACCENT,
+            color=styles.ACCENT,
             # The bar sits on a card of CARD_BACKGROUND; giving the track the same
             # colour made the unfilled part invisible, so a run looked like a
             # growing blob rather than a share of a known whole.
-            bgcolor=PANEL_BACKGROUND,
+            bgcolor=styles.PANEL_BACKGROUND,
             bar_height=10,
             border_radius=5,
         )
         self.percent_text = ft.Text(
             "0%", size=13, weight=ft.FontWeight.BOLD, key="pi-percent"
         )
-        self.terms_text = ft.Text("", size=11, color=TEXT_MUTED, key="pi-terms")
+        self.terms_text = ft.Text("", size=11, color=styles.TEXT_MUTED, key="pi-terms")
         # Which of the run's phases is taking the time. The bar alone cannot say it,
         # and a bar that seems to have stopped is what makes a wait feel broken -
         # the last square root and division are a third of a long run on their own.
-        self.phase_text = ft.Text("", size=11, color=TEXT_MUTED, key="pi-phase")
-        self.speed_text = ft.Text("speed -", size=11, color=TEXT_MUTED, key="pi-speed")
+        self.phase_text = ft.Text("", size=11, color=styles.TEXT_MUTED, key="pi-phase")
+        self.speed_text = ft.Text("speed -", size=11, color=styles.TEXT_MUTED, key="pi-speed")
         self.estimate_text = ft.Text(
-            "estimate -", size=11, color=TEXT_MUTED, key="pi-estimate"
+            "estimate -", size=11, color=styles.TEXT_MUTED, key="pi-estimate"
         )
 
         self.result_text = ft.Text(
             "", key="pi-result", selectable=True, font_family="monospace", size=13
         )
-        self.status_text = ft.Text("", size=11, color=TEXT_SOFT, key="pi-status")
+        self.status_text = ft.Text("", size=11, color=styles.TEXT_SOFT, key="pi-status")
         self.view_button = ft.TextButton(
             "View digits",
             key="pi-view-digits",
@@ -318,7 +313,7 @@ class PiView(Generic[PageT]):
             [
                 ft.Row(
                     [
-                        ft.Icon(ft.Icons.SUPPORT, size=28, color=ACCENT),
+                        ft.Icon(ft.Icons.SUPPORT, size=28, color=styles.ACCENT),
                         ft.Text("Pi Calculation", size=22, weight=ft.FontWeight.BOLD),
                     ],
                     spacing=12,
@@ -326,10 +321,10 @@ class PiView(Generic[PageT]):
                 ft.Text(
                     "Compute pi with the Chudnovsky series, watch the run, and make "
                     "the result the pi every calculation in the app uses.",
-                    color=TEXT_MUTED,
+                    color=styles.TEXT_MUTED,
                 ),
                 self._card(
-                    ft.Text("PI THE PROGRAM USES NOW", size=10, color=TEXT_MUTED),
+                    ft.Text("PI THE PROGRAM USES NOW", size=10, color=styles.TEXT_MUTED),
                     self.current_text,
                     self.current_note,
                     self.precision_text,
@@ -355,7 +350,7 @@ class PiView(Generic[PageT]):
                     self.estimate_text,
                 ),
                 self._card(
-                    ft.Text("RESULT", size=10, color=TEXT_MUTED),
+                    ft.Text("RESULT", size=10, color=styles.TEXT_MUTED),
                     self.result_text,
                     self.status_text,
                     ft.Row(
@@ -383,7 +378,7 @@ class PiView(Generic[PageT]):
     def _card(self, *lines: ft.Control) -> ft.Container:
         return ft.Container(
             content=ft.Column(list(lines), spacing=6),
-            bgcolor=CARD_BACKGROUND,
+            bgcolor=styles.CARD_BACKGROUND,
             border_radius=8,
             padding=10,
         )
@@ -444,7 +439,7 @@ class PiView(Generic[PageT]):
                 f"Pick a whole number of decimals between {pi.MIN_PI_DIGITS} and "
                 f"{pi.MAX_PI_DIGITS:,}."
             )
-            self.plan_text.color = TEXT_ERROR
+            self.plan_text.color = styles.TEXT_ERROR
             if not self.running:
                 self.compute_button.disabled = True
         else:
@@ -452,7 +447,7 @@ class PiView(Generic[PageT]):
             self.plan_text.value = (
                 f"{digits:,} decimals - about {terms:,} terms of the Chudnovsky series"
             )
-            self.plan_text.color = TEXT_FAINT
+            self.plan_text.color = styles.TEXT_FAINT
             if not self.running:
                 self.compute_button.disabled = False
         if paint:
@@ -707,6 +702,8 @@ class PiView(Generic[PageT]):
             f"{reached} at the app's {DECIMAL_PRECISION}-digit precision"
         )
         self.page.update()
+        if self.on_program_pi_changed is not None:
+            self.on_program_pi_changed()
 
     def refresh_current(self) -> None:
         """Show the pi the program is calculating with right now."""
@@ -768,7 +765,7 @@ class PiView(Generic[PageT]):
             on_scroll=self._on_digits_scroll,
             key="pi-digits-list",
         )
-        self._dialog_count = ft.Text(size=11, color=TEXT_FAINT, selectable=True)
+        self._dialog_count = ft.Text(size=11, color=styles.TEXT_FAINT, selectable=True)
         self._append_digits(paint=False)
 
         self.page.show_dialog(
@@ -830,7 +827,7 @@ class PiView(Generic[PageT]):
 
         start, end = dialog_batch_range(self._dialog_decimals, self._dialog_loaded)
         if end > start:
-            self._dialog_label.value = self._dialog_decimals[:end]
+            self._dialog_label.value = f"3.{self._dialog_decimals[:end]}"
             self._dialog_loaded = end
         self._dialog_count.value = self._dialog_footline()
         if paint and end > start:

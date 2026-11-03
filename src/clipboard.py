@@ -4,7 +4,7 @@ from typing import Any, Callable, Optional
 
 import flet as ft
 
-from styles import TEXT_MUTED, TEXT_PRIMARY
+import styles
 
 # How much of a copied value the confirmation snackbar shows before truncating.
 CLIPBOARD_PREVIEW_LIMIT = 40
@@ -71,8 +71,8 @@ class ClipboardService:
         return ft.IconButton(
             icon=ft.Icons.CONTENT_COPY,
             icon_size=16,
-            icon_color=TEXT_MUTED,
-            hover_color=TEXT_PRIMARY,
+            icon_color=styles.TEXT_MUTED,
+            hover_color=styles.TEXT_PRIMARY,
             size_constraints=ft.BoxConstraints(
                 min_width=30,
                 min_height=30,

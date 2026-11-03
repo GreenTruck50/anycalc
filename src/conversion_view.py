@@ -20,7 +20,7 @@ from conversions import (
     convert_units,
     format_conversion_value,
 )
-from styles import ACCENT, CARD_BACKGROUND, TEXT_FAINT, TEXT_MUTED, TEXT_SOFT
+import styles
 
 
 class ConversionView:
@@ -180,12 +180,12 @@ class ConversionView:
             key="conversion-swap",
             content="Swap units",
             icon=ft.Icons.SWAP_HORIZ,
-            icon_color=ACCENT,
+            icon_color=styles.ACCENT,
             tooltip="Swap the From and To units",
             on_click=swap_units,
         )
 
-        self.chain_header = ft.Text("CHAIN OF OPERATIONS", size=10, color=TEXT_MUTED)
+        self.chain_header = ft.Text("CHAIN OF OPERATIONS", size=10, color=styles.TEXT_MUTED)
         self.chain_list = ft.Column(
             [],
             spacing=8,
@@ -207,7 +207,7 @@ class ConversionView:
             [
                 ft.Row(
                     [
-                        ft.Icon(icon, size=28, color=ACCENT),
+                        ft.Icon(icon, size=28, color=styles.ACCENT),
                         ft.Text(
                             self.conversion["name"],
                             size=22,
@@ -216,7 +216,7 @@ class ConversionView:
                     ],
                     spacing=12,
                 ),
-                ft.Text(self.conversion["description"], color=TEXT_MUTED),
+                ft.Text(self.conversion["description"], color=styles.TEXT_MUTED),
                 self.input_field,
                 stretched(self.source_dropdown),
                 self.swap_button,
@@ -227,12 +227,12 @@ class ConversionView:
                         ft.Icon(
                             ft.Icons.SWAP_HORIZ,
                             size=16,
-                            color=TEXT_FAINT,
+                            color=styles.TEXT_FAINT,
                         ),
                         ft.Text(
                             "Converts as you type or change units",
                             size=11,
-                            color=TEXT_FAINT,
+                            color=styles.TEXT_FAINT,
                         ),
                     ],
                     spacing=6,
@@ -273,16 +273,16 @@ class ConversionView:
                 continue
             seen.add(guidance)
             label = self.unit_labels.get(unit_id, unit_id)
-            notes.append(ft.Text(f"{label}: {guidance}", size=11, color=TEXT_SOFT))
+            notes.append(ft.Text(f"{label}: {guidance}", size=11, color=styles.TEXT_SOFT))
         if notes:
-            notes.insert(0, ft.Text("UNIT GUIDANCE", size=10, color=TEXT_MUTED))
+            notes.insert(0, ft.Text("UNIT GUIDANCE", size=10, color=styles.TEXT_MUTED))
         self.guidance_lines.controls = notes
         self.guidance_lines.visible = bool(notes)
 
     def chain_card(self, lines: list[ft.Control]) -> ft.Container:
         return ft.Container(
             content=ft.Column(lines, spacing=4),
-            bgcolor=CARD_BACKGROUND,
+            bgcolor=styles.CARD_BACKGROUND,
             border_radius=8,
             padding=10,
         )
@@ -298,7 +298,7 @@ class ConversionView:
         formula_line = ft.Text(
             step.applied_formula,
             size=12,
-            color=TEXT_SOFT,
+            color=styles.TEXT_SOFT,
             visible=False,
         )
 
@@ -336,7 +336,7 @@ class ConversionView:
                     f"{format_conversion_value(step.input_value)} → "
                     f"{format_conversion_value(step.output_value)}",
                     size=12,
-                    color=TEXT_MUTED,
+                    color=styles.TEXT_MUTED,
                 ),
                 formula_line,
             ]
@@ -351,7 +351,7 @@ class ConversionView:
                         ft.Text(
                             "Same unit - the value is passed through unchanged.",
                             size=12,
-                            color=TEXT_MUTED,
+                            color=styles.TEXT_MUTED,
                         )
                     ]
                 )

@@ -19,19 +19,18 @@ import flet as ft
 from calculate import calculate, is_number, toggle_sign
 from clipboard import ClipboardService
 from config import (
-    DISPLAY_TEXT_COLOR,
     DISPLAY_TEXT_SIZE,
     ERROR_MESSAGES,
     MAX_HISTORY_ITEMS,
     PREVIEW_MORPH_LIFT,
     PREVIEW_MORPH_MS,
-    PREVIEW_TEXT_COLOR,
     PREVIEW_TEXT_SIZE,
     VARIABLE_NAMES,
 )
 from conversion_view import ConversionView
 from conversions import load_conversion_config
 from currency_view import CurrencyConversionView
+from data_storage import AppDataStore, AppState
 from history_view import (
     build_history_card,
     build_history_drawer,
@@ -44,15 +43,10 @@ from keypad import (
     key_color,
     make_key,
 )
+import pi
 import pi_value
 from pi_view import PiView
-from styles import (
-    APP_BACKGROUND,
-    KEY_OPERATOR,
-    PANEL_BACKGROUND,
-    TEXT_MUTED,
-    TEXT_PRIMARY,
-)
+import styles
 from variable_dialogs import open_insert_variable_dialog, open_set_variable_dialog
 
 
@@ -80,6 +74,7 @@ class AnycalcApp:
         self.result_mode = False
         self.variables: dict[str, Decimal] = {}
         self.history: list[tuple[str, str]] = []
+        self.selected_theme = styles.DEFAULT_THEME.name
 
         # The conversion form currently in the content area, if any.
         self.conversion_view: ConversionView | None = None
@@ -88,11 +83,10 @@ class AnycalcApp:
         # The pi page, built the first time it is opened.
         self.pi_view: PiView | None = None
 
-        # The pi every calculation in the app multiplies by is computed here, once,
-        # before anything is on screen: the app starts on its own 12-decimal pi
-        # rather than on the 15-decimal float math.pi, and the Pi page can replace
-        # it with a longer one at any time.
+        # Install a safe computed pi immediately, then restore the last adopted
+        # value from client storage before enabling controls in the built page.
         self.program_pi_run = pi_value.install_default_pi()
+        self.data_store = AppDataStore()
 
         # The live answer grows into the display when "=" is pressed. The token
         # tells the finishing task whether it is still the promotion in flight.
@@ -112,25 +106,17 @@ class AnycalcApp:
         only matters for what ends up in the tree, not for what runs later."""
 
         page = self.page
+        styles.set_active_theme(self.selected_theme)
         page.title = "AnythingCalculator"
-        page.theme_mode = ft.ThemeMode.DARK
-        page.bgcolor = APP_BACKGROUND
+        page.theme_mode = self._theme_mode(styles.DEFAULT_THEME)
+        page.bgcolor = styles.APP_BACKGROUND
         page.padding = 16
 
         # Mobile renders edge-to-edge, so the system bars are given the page colour
         # and light icons instead of floating over the app in their own colours. The
         # bars stay visible; the content that used to sit under them is pushed clear
         # by the SafeArea the page is built inside (see the bottom of this method).
-        page.theme = ft.Theme(
-            system_overlay_style=ft.SystemOverlayStyle(
-                status_bar_color=APP_BACKGROUND,
-                status_bar_brightness=ft.Brightness.DARK,
-                status_bar_icon_brightness=ft.Brightness.LIGHT,
-                system_navigation_bar_color=APP_BACKGROUND,
-                system_navigation_bar_divider_color=APP_BACKGROUND,
-                system_navigation_bar_icon_brightness=ft.Brightness.LIGHT,
-            )
-        )
+        page.theme = self._make_page_theme(styles.DEFAULT_THEME)
 
         page.window.width = 400
         page.window.height = 780
@@ -139,11 +125,11 @@ class AnycalcApp:
 
         self._build_display()
 
-        self.status = ft.Text("REGULAR MODE", size=12, color=TEXT_MUTED)
+        self.status = ft.Text("REGULAR MODE", size=12, color=styles.TEXT_MUTED)
         self.variable_status = ft.Text(
             "",
             size=11,
-            color=TEXT_MUTED,
+            color=styles.TEXT_MUTED,
             visible=False,
         )
         self.history_list = ft.Column(
@@ -155,7 +141,7 @@ class AnycalcApp:
         self.history_scope_notice = ft.Text(
             "History only applies to the Regular and Scientific Calculators.",
             size=11,
-            color=TEXT_MUTED,
+            color=styles.TEXT_MUTED,
             visible=False,
             key="history-scope-notice",
         )
@@ -184,6 +170,8 @@ class AnycalcApp:
             [self.calculator_view],
             expand=True,
         )
+        self.header.disabled = True
+        self.content_area.disabled = True
 
         # The SafeArea insets the whole window by whatever the operating system
         # occupies - the status bar at the top, the notch, the navigation bar at the
@@ -199,6 +187,149 @@ class AnycalcApp:
                 expand=True,
             )
         )
+        page.run_task(self.load_saved_data)
+
+    @staticmethod
+    def _theme_mode(theme: styles.AppTheme) -> ft.ThemeMode:
+        return ft.ThemeMode.DARK if theme.mode == "dark" else ft.ThemeMode.LIGHT
+
+    @staticmethod
+    def _make_page_theme(theme: styles.AppTheme) -> ft.Theme:
+        brightness = (
+            ft.Brightness.DARK if theme.mode == "dark" else ft.Brightness.LIGHT
+        )
+        icon_brightness = (
+            ft.Brightness.LIGHT if theme.mode == "dark" else ft.Brightness.DARK
+        )
+        return ft.Theme(
+            system_overlay_style=ft.SystemOverlayStyle(
+                status_bar_color=theme.app_background,
+                status_bar_brightness=brightness,
+                status_bar_icon_brightness=icon_brightness,
+                system_navigation_bar_color=theme.app_background,
+                system_navigation_bar_divider_color=theme.app_background,
+                system_navigation_bar_icon_brightness=icon_brightness,
+            )
+        )
+
+    def _recolor_controls(
+        self,
+        old_palette: dict[str, str],
+        new_palette: dict[str, str],
+    ) -> None:
+        """Replace palette colours on the controls currently in the page tree."""
+
+        color_changes = {
+            old_color: new_palette[name]
+            for name, old_color in old_palette.items()
+        }
+        pending: list[ft.BaseControl] = list(self.page.controls)
+        if self.page.drawer is not None:
+            pending.append(self.page.drawer)
+        if self.page.end_drawer is not None:
+            pending.append(self.page.end_drawer)
+        if self.pi_view is not None and self.pi_view.root is not None:
+            pending.append(self.pi_view.root)
+        visited: set[int] = set()
+        color_properties = (
+            "bgcolor",
+            "color",
+            "icon_color",
+            "hover_color",
+            "ink_color",
+        )
+
+        while pending:
+            control = pending.pop()
+            identity = id(control)
+            if identity in visited:
+                continue
+            visited.add(identity)
+
+            for property_name in color_properties:
+                color = getattr(control, property_name, None)
+                replacement = (
+                    color_changes.get(color) if isinstance(color, str) else None
+                )
+                if replacement is not None:
+                    setattr(control, property_name, replacement)
+
+            children = getattr(control, "controls", None)
+            if children:
+                pending.extend(
+                    child for child in children if isinstance(child, ft.BaseControl)
+                )
+            content = getattr(control, "content", None)
+            if isinstance(content, ft.BaseControl):
+                pending.append(content)
+
+    def apply_theme(self, name: str) -> None:
+        old_theme, new_theme = styles.set_active_theme(name)
+        self.selected_theme = new_theme.name
+        self._recolor_controls(old_theme.palette(), new_theme.palette())
+        self.page.bgcolor = new_theme.app_background
+        self.page.theme_mode = self._theme_mode(new_theme)
+        self.page.theme = self._make_page_theme(new_theme)
+        self.page.update()
+
+    def persist_pi_change(self) -> None:
+        self.page.run_task(self.save_data, True)
+
+    def _state_snapshot(self, include_pi: bool = False) -> AppState:
+        return AppState(
+            theme=self.selected_theme,
+            history=tuple(self.history[-MAX_HISTORY_ITEMS:]),
+            pi_text=pi.program_pi_text() if include_pi else None,
+            pi_digits=pi.program_pi_digits() if include_pi else None,
+        )
+
+    async def load_saved_data(self) -> None:
+        """Restore saved state once the page and its storage service are ready."""
+
+        try:
+            state = await self.data_store.load()
+            if state is None:
+                await self.save_data(include_pi=True)
+                return
+
+            try:
+                styles.get_theme(state.theme)
+            except ValueError as error:
+                self._show_storage_error(f"Saved theme could not be used: {error}")
+            else:
+                self.apply_theme(state.theme)
+
+            self.history = list(state.history)
+            self.refresh_history()
+            if state.pi_text is not None and state.pi_digits is not None:
+                whole, separator, decimals = state.pi_text.partition(".")
+                if whole != "3" or not separator or len(decimals) != state.pi_digits:
+                    raise ValueError("saved pi digits do not match their precision")
+                pi.set_program_pi(
+                    Decimal(state.pi_text),
+                    state.pi_digits,
+                    decimals,
+                )
+                if self.pi_view is not None:
+                    self.pi_view.refresh_current()
+            self.page.update()
+        except (OSError, ValueError) as error:
+            self._show_storage_error(f"Saved data could not be loaded: {error}")
+        finally:
+            self.header.disabled = False
+            self.content_area.disabled = False
+            self.page.update()
+
+    async def save_data(self, include_pi: bool = False) -> None:
+        """Persist current app state and report client-storage failures."""
+
+        try:
+            await self.data_store.save(self._state_snapshot(include_pi))
+        except (OSError, ValueError) as error:
+            self._show_storage_error(f"App data could not be saved: {error}")
+
+    def _show_storage_error(self, message: str) -> None:
+        self.page.show_dialog(ft.SnackBar(ft.Text(message)))
 
     def _build_display(self) -> None:
         """The caption above the display, the display field, its copy button and
@@ -207,7 +338,7 @@ class AnycalcApp:
         self.expression_label = ft.Text(
             "EXPRESSION",
             size=11,
-            color=TEXT_MUTED,
+            color=styles.TEXT_MUTED,
         )
 
         self.display = ft.TextField(
@@ -216,7 +347,7 @@ class AnycalcApp:
             key="display",
             value="0",
             text_size=DISPLAY_TEXT_SIZE,
-            color=TEXT_PRIMARY,
+            color=styles.TEXT_PRIMARY,
             text_align=ft.TextAlign.RIGHT,
             border=ft.NoInputBorder(),
             content_padding=0,
@@ -236,7 +367,7 @@ class AnycalcApp:
         self.preview_value = ft.Text(
             "",
             size=PREVIEW_TEXT_SIZE,
-            color=PREVIEW_TEXT_COLOR,
+            color=styles.TEXT_MUTED,
             text_align=ft.TextAlign.RIGHT,
             animate_size=ft.Animation(
                 duration=PREVIEW_MORPH_MS,
@@ -262,14 +393,14 @@ class AnycalcApp:
         )
 
     def _build_header(self) -> None:
-        """Menu button, the title with its mode caption, and the history button."""
+        """Menu button, title and caption, plus history and settings."""
 
         self.header = ft.Row(
             [
                 ft.IconButton(
                     key="menu-button",
                     icon=ft.Icons.MENU,
-                    icon_color=TEXT_PRIMARY,
+                    icon_color=styles.TEXT_PRIMARY,
                     tooltip="Calculator menu",
                     on_click=self.open_menu,
                 ),
@@ -286,8 +417,15 @@ class AnycalcApp:
                     expand=True,
                 ),
                 ft.IconButton(
+                    key="settings-button",
+                    icon=ft.Icons.SETTINGS,
+                    icon_color=styles.TEXT_PRIMARY,
+                    tooltip="Settings",
+                    on_click=self.open_settings,
+                ),
+                ft.IconButton(
                     icon=ft.Icons.HISTORY,
-                    icon_color=TEXT_PRIMARY,
+                    icon_color=styles.TEXT_PRIMARY,
                     tooltip="Calculation history",
                     on_click=self.open_history,
                 ),
@@ -299,6 +437,69 @@ class AnycalcApp:
             content=self.angle_label,
             on_click=self.toggle_angle,
         )
+
+    def build_settings_dialog(self) -> ft.AlertDialog:
+        self.settings_theme_group = ft.RadioGroup(
+            key="settings-theme-options",
+            value=self.selected_theme,
+            content=ft.Column(
+                [
+                    ft.Radio(
+                        key=f"settings-theme-{theme.name.lower()}",
+                        value=theme.name,
+                        label=theme.name,
+                    )
+                    for theme in styles.THEMES
+                ],
+                tight=True,
+            ),
+        )
+        return ft.AlertDialog(
+            key="settings-dialog",
+            modal=True,
+            title=ft.Text("Settings"),
+            content=ft.Column(
+                [
+                    ft.Text("Theme", size=12, color=styles.TEXT_MUTED),
+                    self.settings_theme_group,
+                ],
+                tight=True,
+                spacing=8,
+            ),
+            actions=[
+                ft.TextButton(
+                    content="Close",
+                    on_click=self.close_settings,
+                ),
+                ft.FilledButton(
+                    content="Apply",
+                    key="settings-apply",
+                    on_click=self.apply_settings,
+                ),
+            ],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+
+    async def open_settings(self, event: object) -> None:
+        del event
+        self.page.show_dialog(self.build_settings_dialog())
+        self.page.update()
+
+    def close_settings(self, event: object) -> None:
+        del event
+        self.page.pop_dialog()
+        self.page.update()
+
+    def apply_settings(self, event: object) -> None:
+        del event
+        name = self.settings_theme_group.value
+        if not isinstance(name, str):
+            raise ValueError("the selected theme is invalid")
+        styles.get_theme(name)
+        self.apply_theme(name)
+        self.page.run_task(self.save_data)
+        self.page.pop_dialog()
+        self.page.update()
 
     def _build_display_panel(self) -> None:
         """The panel that holds the caption row, the display and the preview."""
@@ -327,7 +528,7 @@ class AnycalcApp:
                 spacing=8,
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             ),
-            bgcolor=PANEL_BACKGROUND,
+            bgcolor=styles.PANEL_BACKGROUND,
             border_radius=18,
             padding=16,
             height=168,
@@ -361,7 +562,7 @@ class AnycalcApp:
                             ft.Text(
                                 "Calculate anything.",
                                 size=12,
-                                color=TEXT_MUTED,
+                                color=styles.TEXT_MUTED,
                             ),
                         ],
                         spacing=2,
@@ -376,7 +577,7 @@ class AnycalcApp:
                     content=ft.Text(
                         "Calculators",
                         size=12,
-                        color=TEXT_MUTED,
+                        color=styles.TEXT_MUTED,
                         weight=ft.FontWeight.BOLD,
                     ),
                     padding=ft.Padding.symmetric(horizontal=16, vertical=8),
@@ -396,7 +597,7 @@ class AnycalcApp:
                     content=ft.Text(
                         "Unit Conversions",
                         size=12,
-                        color=TEXT_MUTED,
+                        color=styles.TEXT_MUTED,
                         weight=ft.FontWeight.BOLD,
                     ),
                     padding=ft.Padding.symmetric(horizontal=16, vertical=8),
@@ -416,7 +617,7 @@ class AnycalcApp:
                     content=ft.Text(
                         "Currency",
                         size=12,
-                        color=TEXT_MUTED,
+                        color=styles.TEXT_MUTED,
                         weight=ft.FontWeight.BOLD,
                     ),
                     padding=ft.Padding.symmetric(horizontal=16, vertical=8),
@@ -431,7 +632,7 @@ class AnycalcApp:
                     content=ft.Text(
                         "Other",
                         size=12,
-                        color=TEXT_MUTED,
+                        color=styles.TEXT_MUTED,
                         weight=ft.FontWeight.BOLD,
                     ),
                     padding=ft.Padding.symmetric(horizontal=16, vertical=8),
@@ -508,7 +709,7 @@ class AnycalcApp:
         """Put the preview back at its small resting state, hidden."""
         self.preview_morphing = False
         self.preview_value.size = PREVIEW_TEXT_SIZE
-        self.preview_value.color = PREVIEW_TEXT_COLOR
+        self.preview_value.color = styles.TEXT_MUTED
         self.preview_value.value = ""
         self.preview_slot.offset = ft.Offset(0, 0)
         self.preview_slot.opacity = 1
@@ -540,7 +741,7 @@ class AnycalcApp:
         self.preview_morphing = True
         self.preview_morph_token += 1
         self.preview_value.size = DISPLAY_TEXT_SIZE
-        self.preview_value.color = DISPLAY_TEXT_COLOR
+        self.preview_value.color = styles.TEXT_PRIMARY
         self.preview_slot.offset = ft.Offset(0, -PREVIEW_MORPH_LIFT)
         self.preview_slot.opacity = 0
         self.page.run_task(self.finish_preview_morph, self.preview_morph_token)
@@ -586,7 +787,7 @@ class AnycalcApp:
                 self.keypad.controls.append(
                     ft.Row(
                         [
-                            make_key(key, self.handle_key, KEY_OPERATOR)
+                            make_key(key, self.handle_key, styles.KEY_OPERATOR)
                             for key in row
                         ],
                         spacing=8,
@@ -663,6 +864,7 @@ class AnycalcApp:
                 )
                 self.history.append((original, result))
                 self.refresh_history()
+                self.page.run_task(self.save_data)
                 self.expression = result
                 self.result_mode = True
                 # The live answer is already on screen at this point, so let it
@@ -741,6 +943,7 @@ class AnycalcApp:
         self.history.clear()
         self.refresh_history()
         self.page.update()
+        self.page.run_task(self.save_data)
 
     def refresh_history(self) -> None:
         """Rebuild the history cards, newest first, capped at the kept items."""
@@ -833,7 +1036,11 @@ class AnycalcApp:
         # The view is kept on the app for the same reason the conversion view is:
         # the handlers its controls hold are methods of it.
         if self.pi_view is None:
-            self.pi_view = PiView(self.page, self.clipboard.make_button)
+            self.pi_view = PiView(
+                self.page,
+                self.clipboard.make_button,
+                on_program_pi_changed=self.persist_pi_change,
+            )
         self.conversion_view = None
         self.content_area.controls = [self.pi_view.build()]
         self.status.value = "PI CALCULATION"

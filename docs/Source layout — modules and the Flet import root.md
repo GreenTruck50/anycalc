@@ -1,6 +1,6 @@
 How `src/` is organised after the module split, and the packaging fact that decides how the modules are allowed to import each other. Updated 2026-10-24 for the switch to the stock Flet import convention.
 
-## Module map (`src/`, 11 modules — there is no `__init__.py`)
+## Module map (`src/`, 18 modules — there is no `__init__.py`)
 
 | Module | Owns | Entrypoints other modules use |
 | --- | --- | --- |
@@ -8,20 +8,28 @@ How `src/` is organised after the module split, and the packaging fact that deci
 | `config.py` | Numeric limits (`DECIMAL_PRECISION`, `MAX_*`), display + live-preview sizes and the morph timing, the error messages, `VARIABLE_OPTIONS` / `VARIABLE_NAMES`, `CONVERSION_CONFIG_PATH`; sets the process-wide `Decimal` precision | constants; no Flet import |
 | `calculate.py` | The expression engine both pads sit on: preprocessing, the two meanings of `%`, the precedence ladder, `Decimal` evaluation | `calculate(text, scientific, degrees, variables)`, `is_number`, `toggle_sign`, `apply_percent_operators` |
 | `conversions.py` | The conversion config, route finding (forward first, `MD` formulas may be inverted, `UD` never), formula application, the reported chain of hops | `load_conversion_config()`, `convert_units()`, `find_conversion_path()`, `format_conversion_value()`, `ConversionStep`, `ConversionOutcome` |
-| `styles.py` | The colour palette, so one hex value cannot drift between controls | colour constants |
+| `styles.py` | The named Dark/Light palettes and default theme; active palette colours | `THEMES`, `DEFAULT_THEME`, `set_active_theme()` |
+| `data_storage.py` | Validated app-state snapshots in Flet SharedPreferences client storage | `AppDataStore`, `AppState` |
 | `keypad.py` | Which keys each pad shows and how a key looks; the regular rows are part of the scientific pad | `REGULAR_ROWS`, `SCIENTIFIC_ROWS`, `DIALOG_KEYS`, `key_color()`, `make_key()` |
 | `clipboard.py` | The single `ft.Clipboard` behind every copy button | `ClipboardService` |
 | `history_view.py` | History card + history drawer and its calculator-scope notice | `build_history_card()`, `build_history_drawer()`, `history_notice_visible()` |
 | `variable_dialogs.py` | Set Variable / Insert Variable dialogs | `open_set_variable_dialog(app)`, `open_insert_variable_dialog(app)` |
 | `conversion_view.py` | The conversion entries and the live conversion form in the main content area | `ConversionView` |
-| `ui.py` | The app object: page setup, display state (expression, result mode, DEG/RAD, named variables, history), the live preview and its morph, keypad dispatch, mode/content switching | `AnycalcApp` |
+| `networking.py` | Reusable `urllib` JSON requests and the bounded in-memory TTL cache | JSON fetch and cache helpers |
+| `currency_api.py` | Exchange-API endpoints, fallback, currencies, and response validation | `CurrencyApi`, `CurrencyRates` |
+| `currency_view.py` | The live currency conversion form and its API loading state | `CurrencyConversionView` |
+| `pi.py` | Chudnovsky/binary-splitting pi calculation and the program's active pi | pi calculation and program-pi functions |
+| `pi_value.py` | Timed pi runs, progress reporting, cancellation, and adoption | `PiComputation`, `compute_pi()`, `adopt()` |
+| `pi_view.py` | Pi digit-count form, progress, result, adoption, and digits dialog | `PiView` |
+| `ui.py` | The app object: page setup, display state, theme switching and persistence, keypad dispatch, mode/content switching | `AnycalcApp` |
 
 Names in this table were corrected on 2026-10-24 against the actual source: the app class is `**AnycalcApp**` (earlier notes said `CalculatorApp`), the conversion call is `**convert_units()**` (not `convert()`), and the dialog functions are `**open_set_variable_dialog()**` **/** `**open_insert_variable_dialog()**` (not `prompt_variable()` / `insert_variable()`).
 
 ## Dependency direction (one-way, so the engines stay testable)
 
-*   `config` ← `calculate`, `conversions` (the engines import nothing else, and **no Flet**, so they import and test without an app host).
-*   engines + `styles`, `keypad`, `clipboard`, `history_view`, `variable_dialogs`, `conversion_view` ← `ui`.
+*   `config` ← `calculate`, `conversions`, and `data_storage`; `calculate` ← `conversions`.
+*   `networking` ← `currency_api` ← `currency_view`; `pi` ← `pi_value` ← `pi_view`.
+*   engines + `styles`, `data_storage`, `keypad`, `clipboard`, `history_view`, `variable_dialogs`, `conversion_view`, `currency_view`, and `pi_view` ← `ui`.
 *   `main` ← `ui` only. Views and dialogs receive what they need (page, controls, callbacks, or the app object) instead of reaching into an app closure, which is what let the closure-based single file become a class plus plain functions.
 
 ## The Flet import root — the rule that matters (stock convention since 2026-10-24)

@@ -13,14 +13,7 @@ from typing import Callable
 
 import flet as ft
 
-from styles import (
-    ACCENT,
-    KEY_DANGER,
-    KEY_DEFAULT,
-    KEY_INK,
-    KEY_OPERATOR,
-    TEXT_PRIMARY,
-)
+import styles
 
 # The utility keys share one row rather than adding a row of their own, so the
 # pad stays as tall as it was in either mode.
@@ -50,19 +43,19 @@ def key_color(label: str) -> str:
     """The background a regular-pad key gets for its label."""
 
     if label == "=":
-        return ACCENT
+        return styles.ACCENT
     if label in ("AC", "⌫"):
-        return KEY_DANGER
+        return styles.KEY_DANGER
     if label in ("÷", "×", "−", "+", "%", "±"):
-        return KEY_OPERATOR
-    return KEY_DEFAULT
+        return styles.KEY_OPERATOR
+    return styles.KEY_DEFAULT
 
 
 def make_key(
     label: str,
     on_key: Callable[[str], None],
-    color: str = KEY_DEFAULT,
-    text_color: str = TEXT_PRIMARY,
+    color: str | None = None,
+    text_color: str | None = None,
 ) -> ft.Container:
     """One key of the pad: a fixed-size tappable tile labelled ``label``.
 
@@ -84,15 +77,15 @@ def make_key(
         content=ft.Text(
             label,
             size=14 if len(label) > 8 else 19,
-            color=text_color,
+            color=text_color or styles.TEXT_PRIMARY,
             text_align=ft.TextAlign.CENTER,
         ),
-        bgcolor=color,
+        bgcolor=color or styles.KEY_DEFAULT,
         border_radius=14,
         alignment=ft.Alignment.CENTER,
         expand=True,
         height=54,
         ink=True,
-        ink_color=KEY_INK,
+        ink_color=styles.KEY_INK,
         on_click=handle_click,
     )

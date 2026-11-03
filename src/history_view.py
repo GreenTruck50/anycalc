@@ -8,7 +8,7 @@ from typing import Callable
 
 import flet as ft
 
-from styles import CARD_BACKGROUND, PANEL_BACKGROUND, TEXT_MUTED
+import styles
 
 _CALCULATOR_STATUSES = frozenset({"REGULAR MODE", "SCIENTIFIC MODE"})
 
@@ -45,7 +45,7 @@ def build_history_card(
         ft.Text(
             "EXPRESSION",
             size=10,
-            color=TEXT_MUTED,
+            color=styles.TEXT_MUTED,
         ),
         ft.TextButton(
             content=equation,
@@ -56,7 +56,7 @@ def build_history_card(
         ft.Text(
             "RESULT",
             size=10,
-            color=TEXT_MUTED,
+            color=styles.TEXT_MUTED,
         ),
         ft.Row(
             answer_controls,
@@ -70,7 +70,7 @@ def build_history_card(
             spacing=0,
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
         ),
-        bgcolor=CARD_BACKGROUND,
+        bgcolor=styles.CARD_BACKGROUND,
         border_radius=10,
         padding=6,
         width=320,
@@ -86,7 +86,7 @@ def build_history_drawer(
 
     return ft.NavigationDrawer(
         width=320,
-        bgcolor=PANEL_BACKGROUND,
+        bgcolor=styles.PANEL_BACKGROUND,
         controls=[
             ft.Container(
                 content=ft.Text(
