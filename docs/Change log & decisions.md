@@ -461,3 +461,21 @@ The Android emulator window repeatedly triggered an "is not responding" dialog w
 **What changed:** replaced the primary and secondary color picker controls with dropdowns of named colors and matching colored circle icons. Existing saved custom RGB values remain selectable as labeled custom entries. Removed the now-unused color-picker package dependency.
 
 **Validation:** tests verify named dropdown choices, their colored icons, and preservation of existing custom colors.
+
+## 2026-11-03 — Settings apply instantly; added "Reset to defaults"
+
+**Asked for:** add a Reset to defaults in the settings and make the settings instant, removing the Apply button.
+
+**What changed:** all three settings dropdowns now carry `on_select=update_settings`, so picking a theme or color recolors the running app and saves it immediately while the dialog stays open. The Apply button is gone; the dialog's actions are Close (`settings-close`) and "Reset to defaults" (`settings-reset`). `reset_settings` writes `styles.DEFAULT_THEME`'s theme and accent colors back into the still-open dropdowns, applies and saves them through the same path a hand-picked choice uses, and leaves the history and the active pi alone. `apply_settings` became `update_settings` plus `_apply_settings_from_dialog`, and the open dialog is kept as `settings_dialog` because values set in code are only visible after `page.update(self.settings_dialog)`.
+
+**Validation:** unit tests cover the dialog wiring (no Apply, every dropdown wired), that a choice applies and saves without popping the dialog, and that reset restores the defaults while a saved custom color stays selectable. The drive-through test opens Settings in the built app, switches the theme, reads the new value back out of the dialog's own dropdown, resets, and closes - all pass under `flet test`.
+
+## 2026-11-03 — Wider named color list in Settings
+
+**Asked for:** add more color variants, like dark green and forest green.
+
+**What changed:** `styles.COLOR_OPTIONS` went from 15 entries to 31, grouped by hue with several shades per family - blues (added Sky blue, Navy), purples and pinks (Purple, Lavender, Rose), reds/oranges/browns (Crimson, Maroon, Gold, Brown), greens (Dark green, Forest green, Olive, Lime, Emerald, Turquoise) and neutrals (Charcoal). The four values the two themes default to - `#4F7DFF`, `#3155C7`, `#303B50`, `#D1D5DB` - are called out in a comment as entries that must stay, because "Reset to defaults" selects the theme defaults by name; a test now fails if any theme default stops being a named option.
+
+**Validation:** palette tests (the requested green shades and per-family shades present, unique names, unique validator-acceptable values, theme defaults named) plus the existing dialog, custom-color, instant-apply and reset tests pass; the drive-through settings test still passes against the rebuilt app.
+
+**A testing trap this surfaced:** the drive-through settings test reads dropdown contents out of the tree, and those counts encode what each dropdown currently displays - so the test was quietly assuming it started on the defaults. It does not: `flet test` runs the real app against the real app-data file (`…/.local/share/com.github.greentruck50.anycalc/shared_preferences.json`, the same one `flet run` writes), and a run that failed part-way through had left `theme: Light` and a violet primary saved there. The test now taps "Reset to defaults" before it asserts anything about the dropdowns, which both makes it deterministic and exercises the reset path first. The `tests/test_app.py` header records this along with the corrected `Dropdown` counting rules (one match per dropdown offering an option, one more for whatever is displayed, exact rather than substring matching, and long menus painting only the items around the selected one).

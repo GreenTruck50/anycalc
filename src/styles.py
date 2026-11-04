@@ -53,20 +53,46 @@ class NamedColor:
     value: str
 
 
+# The named colors the settings dropdowns offer, grouped by hue and carrying
+# several shades per family. Both themes' default accents - Dark's accent
+# "Blue" and operator key "Slate", Light's "Royal blue" and "Light gray" - are
+# entries here, which is what lets "Reset to defaults" put them back by name, so
+# never drop those four values from this list.
 COLOR_OPTIONS = (
+    # Blues
     NamedColor("Blue", "#4F7DFF"),
     NamedColor("Royal blue", "#3155C7"),
+    NamedColor("Sky blue", "#0EA5E9"),
+    NamedColor("Navy", "#1E3A8A"),
     NamedColor("Indigo", "#4F46E5"),
+    # Purples and pinks
     NamedColor("Violet", "#8B5CF6"),
+    NamedColor("Purple", "#7E22CE"),
+    NamedColor("Lavender", "#A78BFA"),
     NamedColor("Magenta", "#D946EF"),
     NamedColor("Pink", "#EC4899"),
+    NamedColor("Rose", "#F43F5E"),
+    # Reds, oranges and browns
     NamedColor("Red", "#EF4444"),
+    NamedColor("Crimson", "#DC143C"),
+    NamedColor("Maroon", "#7B1E27"),
     NamedColor("Orange", "#F97316"),
     NamedColor("Amber", "#F59E0B"),
+    NamedColor("Gold", "#EAB308"),
+    NamedColor("Brown", "#8B5A2B"),
+    # Greens
     NamedColor("Green", "#22C55E"),
+    NamedColor("Dark green", "#166534"),
+    NamedColor("Forest green", "#228B22"),
+    NamedColor("Olive", "#808000"),
+    NamedColor("Lime", "#84CC16"),
+    NamedColor("Emerald", "#10B981"),
     NamedColor("Teal", "#14B8A6"),
+    NamedColor("Turquoise", "#2DD4BF"),
     NamedColor("Cyan", "#06B6D4"),
+    # Neutrals
     NamedColor("Slate", "#303B50"),
+    NamedColor("Charcoal", "#1F2937"),
     NamedColor("Gray", "#64748B"),
     NamedColor("Light gray", "#D1D5DB"),
 )

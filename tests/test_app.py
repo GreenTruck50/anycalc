@@ -18,6 +18,25 @@ knowing before adding a test here:
   instead by the exhaustive route tests in ``tests/test_conversion_engine.py``.
   Reversing the pair that the page already opens on is reachable, through the
   form's swap button (``conversion-swap``).
+* A ``Dropdown``'s option texts *are* findable with ``find_by_text`` even while
+  its menu is closed, which inflates those counts: an option matches once per
+  dropdown that offers it, plus one more time for the option a dropdown is
+  currently displaying (the settings test reads the selected theme back that way,
+  and a color name matching twice proves both color pickers list it). Matching is
+  exact, never substring - ``find_by_text("MODE")`` finds nothing while the
+  "REGULAR MODE" caption is on screen; ``find_by_text_containing`` is for that.
+  The menu has to be opened by tapping the dropdown first, and the item that is
+  actually on screen is the ``.last`` match - index 0 is the offstage one, and
+  tapping it only dismisses the menu. A long option list paints only the items
+  around the *selected* one, so an option well above that window is not tappable
+  at all: tapping it hits nothing and the selection never changes.
+* ``flet test`` runs the real app against the real app-data directory
+  (``…/.local/share/com.github.greentruck50.anycalc``, the same one ``flet run``
+  uses), and the app saves its theme, colors and history there. A test therefore
+  must never assume it opens on the defaults - an earlier run, or the developer's
+  own session, may have left other settings in that file - it has to put the
+  state it goes on to assert into place first, which is why the settings test
+  taps "Reset to defaults" before it reads any dropdown.
 * A keypad key that exists in both the scientific rows and the regular rows is
   found *twice*, because scientific mode renders the regular rows underneath its
   own. The pad keeps every key exactly once (``(`` and ``)`` used to be
@@ -264,23 +283,80 @@ async def test_pi_page_computes_and_adopts_a_value(
     ).count == 1
 
 
-async def test_settings_dialog_shows_theme_and_color_controls(
+async def test_settings_applies_as_it_is_picked_and_resets_to_defaults(
     flet_app: ftt.FletTestApp,
 ) -> None:
+    """A settings choice lands the moment it is picked, and "Reset to defaults"
+    puts the defaults back - both while the dialog stays open, since there is no
+    Apply button left to press."""
+
     tester = flet_app.tester
     await tester.pump_and_settle()
 
+    async def shown(label: str) -> int:
+        """Times an exact label is in the tree, once the screen has stopped moving.
+
+        A closed Dropdown keeps one copy of every option's text per dropdown that
+        offers it, plus one extra copy of the option it is currently displaying.
+        So a theme name matching twice means that dropdown shows it. The settings
+        dialog builds 31 options per color picker, so pump until the count stops
+        changing before reading it.
+        """
+
+        previous = -1
+        for _ in range(6):
+            await tester.pump_and_settle()
+            count = (await tester.find_by_text(label)).count
+            if count == previous:
+                break
+            previous = count
+        return previous
+
     await tester.tap(await tester.find_by_key("settings-button"))
     await tester.pump_and_settle()
-    assert (await tester.find_by_text("Settings")).count == 1
     assert (await tester.find_by_key("settings-theme-dropdown")).count == 1
     assert (await tester.find_by_key("settings-primary-color")).count == 1
     assert (await tester.find_by_key("settings-secondary-color")).count == 1
-    await tester.tap(await tester.find_by_key("settings-apply"))
-    await tester.pump_and_settle()
 
-    assert (await tester.find_by_key("display")).count == 1
+    # Nothing waits for an Apply button any more: the dialog only offers Close and
+    # "Reset to defaults".
+    assert (await tester.find_by_text("Apply")).count == 0
+    assert (await tester.find_by_text("Reset to defaults")).count == 1
+
+    # The wide named color list reaches the built dialog, in both color pickers.
+    assert await shown("Forest green") >= 2
+    assert await shown("Dark green") >= 2
+
+    # The app remembers what an earlier run left in its data file, so the test
+    # starts from reset - which doubles as proof that reset lands the defaults
+    # immediately: they show up in the dropdowns of the dialog that stays open.
+    await tester.tap(await tester.find_by_key("settings-reset"))
+    await tester.pump_and_settle()
+    assert (await tester.find_by_text("Settings")).count == 1
+    assert await shown("Dark") == 2
+    assert await shown("Light") == 1
+
+    # Picking another theme applies just as immediately.
+    await tester.tap(await tester.find_by_key("settings-theme-dropdown"))
+    await tester.pump_and_settle()
+    await tester.tap((await tester.find_by_text("Light")).last)
+    await tester.pump_and_settle()
+    assert (await tester.find_by_text("Settings")).count == 1
+    assert await shown("Light") == 2
+    assert await shown("Dark") == 1
+
+    # And reset puts the default theme back in that same open dialog.
+    await tester.tap(await tester.find_by_key("settings-reset"))
+    await tester.pump_and_settle()
+    assert (await tester.find_by_text("Settings")).count == 1
+    assert await shown("Dark") == 2
+    assert await shown("Light") == 1
+
+    # Close is the only way out, and it only closes.
+    await tester.tap(await tester.find_by_key("settings-close"))
+    await tester.pump_and_settle()
     assert (await tester.find_by_text("Settings")).count == 0
+    assert (await tester.find_by_key("display")).count == 1
 
 
 async def test_editing_the_value_reconverts_and_clearing_it_stays_quiet(

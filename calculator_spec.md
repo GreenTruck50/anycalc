@@ -447,11 +447,26 @@ There should be a conversions.yaml file that says "There should be this tab with
   style the drawer heading uses.
 - The settings button opens a modal popup dialog, like the Pi View Digits popup.
   It offers a Dark/Light theme dropdown and primary and secondary color dropdowns,
-  with Apply and Close actions. Color dropdown options have color names and a
-  matching colored icon on the left. Applying the selections updates the current
-  page; Dark is the default theme. The primary color controls the app's primary
-  accent, and the secondary color controls operator-key accents. Any saved custom
-  color not in the named list remains available as a custom dropdown option.
+  with "Reset to defaults" and Close actions. Color dropdown options have color
+  names and a matching colored icon on the left. Dark is the default theme. The
+  primary color controls the app's primary accent, and the secondary color controls
+  operator-key accents. Any saved custom color not in the named list remains
+  available as a custom dropdown option.
+- Offer that named list grouped by hue with several shades per family: blues
+  (Blue, Royal blue, Sky blue, Navy, Indigo), purples and pinks (Violet, Purple,
+  Lavender, Magenta, Pink, Rose), reds, oranges and browns (Red, Crimson, Maroon,
+  Orange, Amber, Gold, Brown), greens (Green, Dark green, Forest green, Olive,
+  Lime, Emerald, Teal, Turquoise, Cyan) and neutrals (Slate, Charcoal, Gray,
+  Light gray). Each theme's own default accent and operator-key color is itself
+  one of those named entries, which is what "Reset to defaults" selects.
+- Apply every settings choice the instant it is picked: the chosen theme or color
+  recolors the running app - existing controls included - and is saved at once,
+  while the dialog stays open for the next choice. There is no Apply button; Close
+  only closes, and it never discards what has already been applied.
+- Make "Reset to defaults" work the same instant way: it puts the default theme and
+  that theme's default primary and secondary colors back into the still-open
+  dropdowns, applies and saves them, and leaves everything the dialog does not
+  offer - the history and the active pi - untouched.
 
 ## Saved app data
 

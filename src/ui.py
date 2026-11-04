@@ -477,6 +477,10 @@ class AnycalcApp:
         )
 
     def build_settings_dialog(self) -> ft.AlertDialog:
+        """The settings popup. Every dropdown applies what it changed straight
+        away, which is why the dialog has no Apply button - the Close action only
+        closes, and "Reset to defaults" puts the app's own defaults back."""
+
         self.settings_theme_dropdown = ft.Dropdown(
             key="settings-theme-dropdown",
             label="Theme",
@@ -485,6 +489,7 @@ class AnycalcApp:
                 ft.DropdownOption(key=theme.name, text=theme.name)
                 for theme in styles.THEMES
             ],
+            on_select=self.update_settings,
         )
         self.settings_primary_dropdown = ft.Dropdown(
             key="settings-primary-color",
@@ -502,6 +507,7 @@ class AnycalcApp:
                 )
                 for color in styles.color_options(self.selected_primary_color)
             ],
+            on_select=self.update_settings,
         )
         self.settings_secondary_dropdown = ft.Dropdown(
             key="settings-secondary-color",
@@ -519,8 +525,9 @@ class AnycalcApp:
                 )
                 for color in styles.color_options(self.selected_secondary_color)
             ],
+            on_select=self.update_settings,
         )
-        return ft.AlertDialog(
+        self.settings_dialog = ft.AlertDialog(
             key="settings-dialog",
             modal=True,
             title=ft.Text("Settings"),
@@ -537,16 +544,18 @@ class AnycalcApp:
             actions=[
                 ft.TextButton(
                     content="Close",
+                    key="settings-close",
                     on_click=self.close_settings,
                 ),
-                ft.FilledButton(
-                    content="Apply",
-                    key="settings-apply",
-                    on_click=self.apply_settings,
+                ft.TextButton(
+                    content="Reset to defaults",
+                    key="settings-reset",
+                    on_click=self.reset_settings,
                 ),
             ],
             actions_alignment=ft.MainAxisAlignment.END,
         )
+        return self.settings_dialog
 
     async def open_settings(self, event: object) -> None:
         del event
@@ -558,8 +567,33 @@ class AnycalcApp:
         self.page.pop_dialog()
         self.page.update()
 
-    def apply_settings(self, event: object) -> None:
+    def update_settings(self, event: object) -> None:
+        """Apply the dropdown that just changed, while the dialog stays open.
+
+        Nothing waits for an Apply button: picking a theme or a color recolors
+        the app the moment it is picked and is saved straight away.
+        """
+
         del event
+        self._apply_settings_from_dialog()
+
+    def reset_settings(self, event: object) -> None:
+        """Put the app's default theme and default accent colors back in the
+        dropdowns, and apply them exactly like a hand-picked choice."""
+
+        del event
+        defaults = styles.DEFAULT_THEME
+        self.settings_theme_dropdown.value = defaults.name
+        self.settings_primary_dropdown.value = defaults.accent
+        self.settings_secondary_dropdown.value = defaults.key_operator
+        self._apply_settings_from_dialog()
+        # The values were set in code rather than tapped, so the open dialog has
+        # to be pushed again for its dropdowns to show them.
+        self.page.update(self.settings_dialog)
+
+    def _apply_settings_from_dialog(self) -> None:
+        """Apply and save what the three settings dropdowns currently hold."""
+
         name = self.settings_theme_dropdown.value
         if not isinstance(name, str):
             raise ValueError("the selected theme is invalid")
@@ -571,8 +605,6 @@ class AnycalcApp:
             raise ValueError("the selected colors are invalid")
         self.apply_settings_selection(name, primary_color, secondary_color)
         self.page.run_task(self.save_data)
-        self.page.pop_dialog()
-        self.page.update()
 
     def _build_display_panel(self) -> None:
         """The panel that holds the caption row, the display and the preview."""
