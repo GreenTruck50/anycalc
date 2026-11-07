@@ -29,7 +29,10 @@ knowing before adding a test here:
   actually on screen is the ``.last`` match - index 0 is the offstage one, and
   tapping it only dismisses the menu. A long option list paints only the items
   around the *selected* one, so an option well above that window is not tappable
-  at all: tapping it hits nothing and the selection never changes.
+  at all: tapping it hits nothing and the selection never changes. A dropdown
+  hidden with ``visible=False`` paints nothing, so none of its option texts are
+  findable either - that is how the settings test reads the color dropdowns being
+  hidden until the Custom theme is picked.
 * ``flet test`` runs the real app against the real app-data directory
   (``…/.local/share/com.github.greentruck50.anycalc``, the same one ``flet run``
   uses), and the app saves its theme, colors and history there. A test therefore
@@ -288,19 +291,21 @@ async def test_settings_applies_as_it_is_picked_and_resets_to_defaults(
 ) -> None:
     """A settings choice lands the moment it is picked, and "Reset to defaults"
     puts the defaults back - both while the dialog stays open, since there is no
-    Apply button left to press."""
+    Apply button left to press. The color dropdowns belong to the Custom theme,
+    so they only appear once that theme is picked."""
 
     tester = flet_app.tester
     await tester.pump_and_settle()
 
     async def shown(label: str) -> int:
-        """Times an exact label is in the tree, once the screen has stopped moving.
+        """Times an exact label is painted, once the screen has stopped moving.
 
         A closed Dropdown keeps one copy of every option's text per dropdown that
         offers it, plus one extra copy of the option it is currently displaying.
-        So a theme name matching twice means that dropdown shows it. The settings
-        dialog builds 31 options per color picker, so pump until the count stops
-        changing before reading it.
+        So a theme name matching twice means that dropdown shows it. A dropdown
+        hidden with visible=False paints nothing at all, which is how the hidden
+        color settings are read here. The settings dialog builds 32 options per
+        color dropdown, so pump until the count stops changing before reading it.
         """
 
         previous = -1
@@ -315,17 +320,11 @@ async def test_settings_applies_as_it_is_picked_and_resets_to_defaults(
     await tester.tap(await tester.find_by_key("settings-button"))
     await tester.pump_and_settle()
     assert (await tester.find_by_key("settings-theme-dropdown")).count == 1
-    assert (await tester.find_by_key("settings-primary-color")).count == 1
-    assert (await tester.find_by_key("settings-secondary-color")).count == 1
 
     # Nothing waits for an Apply button any more: the dialog only offers Close and
     # "Reset to defaults".
     assert (await tester.find_by_text("Apply")).count == 0
     assert (await tester.find_by_text("Reset to defaults")).count == 1
-
-    # The wide named color list reaches the built dialog, in both color pickers.
-    assert await shown("Forest green") >= 2
-    assert await shown("Dark green") >= 2
 
     # The app remembers what an earlier run left in its data file, so the test
     # starts from reset - which doubles as proof that reset lands the defaults
@@ -335,22 +334,43 @@ async def test_settings_applies_as_it_is_picked_and_resets_to_defaults(
     assert (await tester.find_by_text("Settings")).count == 1
     assert await shown("Dark") == 2
     assert await shown("Light") == 1
+    assert await shown("High contrast") == 1
 
-    # Picking another theme applies just as immediately.
+    # The color dropdowns - "Forest green" and "Dark green" are only ever listed
+    # by those two - are hidden while a built-in theme is picked.
+    assert await shown("Forest green") == 0
+
+    # Picking the Custom theme brings them back, named palette and all.
     await tester.tap(await tester.find_by_key("settings-theme-dropdown"))
     await tester.pump_and_settle()
-    await tester.tap((await tester.find_by_text("Light")).last)
+    await tester.tap((await tester.find_by_text("Custom")).last)
     await tester.pump_and_settle()
     assert (await tester.find_by_text("Settings")).count == 1
-    assert await shown("Light") == 2
-    assert await shown("Dark") == 1
+    assert await shown("Custom") == 2
+    assert await shown("Forest green") == 2
+    assert await shown("Dark green") == 2
 
-    # And reset puts the default theme back in that same open dialog.
+    # The "Custom color" entry that opens a color picker leads every color
+    # dropdown. Picking it in the primary dropdown leaves the dialog open and
+    # brings out the picker - proof is the caption that only ever gets painted
+    # while a picker is out, naming the color that is live.
+    assert await shown("Custom color") == 2
+    assert await shown("Custom color: #4F7DFF") == 0
+    await tester.tap(await tester.find_by_key("settings-primary-color"))
+    await tester.pump_and_settle()
+    await tester.tap((await tester.find_by_text("Custom color")).last)
+    await tester.pump_and_settle()
+    assert (await tester.find_by_text("Settings")).count == 1
+    assert await shown("Custom color: #4F7DFF") == 1
+
+    # And reset puts the default theme back in that same open dialog, hiding the
+    # color settings on the way.
     await tester.tap(await tester.find_by_key("settings-reset"))
     await tester.pump_and_settle()
     assert (await tester.find_by_text("Settings")).count == 1
     assert await shown("Dark") == 2
-    assert await shown("Light") == 1
+    assert await shown("Forest green") == 0
+    assert await shown("Custom color: #4F7DFF") == 0
 
     # Close is the only way out, and it only closes.
     await tester.tap(await tester.find_by_key("settings-close"))

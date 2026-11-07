@@ -25,7 +25,7 @@ description = "Calculate anything - a Flet calculator for desktop and mobile: ex
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-    # UI framework - the only Flet distribution the app itself imports.
+    # UI framework - what every widget in the app sits on.
     # Keep this BARE (no extras): `flet build <target>` pip-installs
     # project.dependencies INTO the artifact for that platform, so everything
     # listed here must be packageable for it. The [cli] extra pulls flet-cli ->
@@ -35,6 +35,10 @@ dependencies = [
     # live in the dev extra below. A flet build linux|macos|windows ships its own
     # runner from the Flutter app shell, so it needs neither in the bundle.
     "flet>=1.0.4",
+    # The only other Flet distribution src/ imports: ColorPicker, which the
+    # Settings dialog reveals under a color dropdown. Pure Python on top of flet
+    # (it requires nothing else), so it packages for Android like flet itself.
+    "flet-color-pickers>=1.0.5",
     # Parses src/assets/conversions.yaml (imported as `yaml`). Fine for mobile:
     # Flet publishes Android wheels for PyYAML and its flet-libyaml helper on
     # https://pypi.flet.dev, which the build adds as an extra index.

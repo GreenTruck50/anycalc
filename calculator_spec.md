@@ -446,12 +446,27 @@ There should be a conversions.yaml file that says "There should be this tab with
   "SCIENTIFIC MODE", "UNIT CONVERSION" or "PI CALCULATION". It is the same caption
   style the drawer heading uses.
 - The settings button opens a modal popup dialog, like the Pi View Digits popup.
-  It offers a Dark/Light theme dropdown and primary and secondary color dropdowns,
-  with "Reset to defaults" and Close actions. Color dropdown options have color
-  names and a matching colored icon on the left. Dark is the default theme. The
-  primary color controls the app's primary accent, and the secondary color controls
-  operator-key accents. Any saved custom color not in the named list remains
-  available as a custom dropdown option.
+  It offers a theme dropdown and primary and secondary color dropdowns, with
+  "Reset to defaults" and Close actions. Dark is the default theme. The primary
+  color controls the app's primary accent, and the secondary color controls
+  operator-key accents.
+- Offer these themes: Dark, Light, Midnight, Forest, Sepia, High contrast and
+  Custom. Every built-in theme carries its own accent and operator-key colors;
+  Custom is the theme whose colors the user picks, and it starts out on Dark's
+  surfaces.
+- Hide both color dropdowns, and any color picker under them, unless the Custom
+  theme is selected. A built-in theme never borrows the picked colors and never
+  spends them either: switching to one leaves the colors saved for the Custom
+  theme in place, ready when Custom is picked again.
+- Color dropdown options have color names and a matching colored icon on the
+  left. Each dropdown leads with a "Custom color" entry that is not itself a
+  color: picking it reveals a color picker under that dropdown, and whatever
+  that picker holds is the color that gets applied. The picker arrives with a
+  small caption under the dropdown naming the hex in use ("Custom color:
+  #4F7DFF"), and both that caption and the entry's label follow the picker as it
+  moves. A custom color saved by an earlier session opens with that entry
+  selected, its picker already showing, and the entry's label naming the hex it
+  holds ("Custom color (#123456)").
 - Offer that named list grouped by hue with several shades per family: blues
   (Blue, Royal blue, Sky blue, Navy, Indigo), purples and pinks (Violet, Purple,
   Lavender, Magenta, Pink, Rose), reds, oranges and browns (Red, Crimson, Maroon,
@@ -461,12 +476,14 @@ There should be a conversions.yaml file that says "There should be this tab with
   one of those named entries, which is what "Reset to defaults" selects.
 - Apply every settings choice the instant it is picked: the chosen theme or color
   recolors the running app - existing controls included - and is saved at once,
-  while the dialog stays open for the next choice. There is no Apply button; Close
-  only closes, and it never discards what has already been applied.
+  while the dialog stays open for the next choice. Dragging in a color picker is
+  a choice like any other, so it applies as it moves. There is no Apply button;
+  Close only closes, and it never discards what has already been applied.
 - Make "Reset to defaults" work the same instant way: it puts the default theme and
   that theme's default primary and secondary colors back into the still-open
-  dropdowns, applies and saves them, and leaves everything the dialog does not
-  offer - the history and the active pi - untouched.
+  dropdowns, drops any saved custom color, applies and saves the result, and
+  leaves everything the dialog does not offer - the history and the active pi -
+  untouched.
 
 ## Saved app data
 
@@ -669,19 +686,24 @@ There should be a conversions.yaml file that says "There should be this tab with
 
 ### The host path: the default for every change
 
-- Verify a change with the Flet tooling on the host and stop there: `flet run`
-  starts the app to look at it, `flet test` runs the whole suite, and
-  `flet test -k engine` the pure engine files (the fast check - 270 tests in
-  about four seconds). The full suite is 342 tests and takes about eight minutes
-  (340 pass and 2 are skipped; each UI test boots its own app host), so a
-  `flet test` that runs for minutes is working, not hung. No emulator, device or
-  APK is involved in this path, and it is what a change is judged by unless
-  Android testing is asked for; the device route is the separate, opt-in path
-  under "The Android emulator path: only when it is asked for".
-- Run the suite with `flet test` (pytest flags only, no file paths - select with
-  `-k`); the pure engine tests and the pi page tests (`test_pi_view.py`, which
-  drives the page against a stub page) additionally run under plain `pytest`
-  because they need no app host.
+- Verify a change with the Flet tooling on the host and stop there, and run only
+  the tests that change touches: `flet run` starts the app to look at it, and
+  `flet test -k <keyword>` runs the matching tests - `-k settings` for the
+  settings dialog, `-k app` for the whole integration file, `-k engine` for the
+  pure engine files (the fast check - 270 tests in about four seconds). That
+  targeted run is what a change is judged by.
+- Reaching for the whole suite - a bare `flet test` - is the exception, not the
+  default after every change: it is some 380 tests over about eight minutes
+  (2 of them skipped; each UI test boots its own app host), so run it for a
+  cross-cutting change or when it is asked for. A `flet test` that runs for
+  minutes is working, not hung. No emulator, device or APK is involved in this
+  path, and it is what a change is judged by unless Android testing is asked for;
+  the device route is the separate, opt-in path under "The Android emulator path:
+  only when it is asked for".
+- `flet test` takes pytest flags only, no file paths - select with `-k`; the pure
+  engine tests and the pi page tests (`test_pi_view.py`, which drives the page
+  against a stub page) additionally run under plain `pytest` because they need no
+  app host.
 - Keep tests in a `tests/` folder at the workspace root, a sibling of `src/`:
   `src/` is what gets packaged into the app, test code stays on the host and
   drives the app from outside.

@@ -12,9 +12,11 @@ this, and the arithmetic itself never lives here - it is asked for from
 """
 
 import asyncio
+from collections.abc import Callable
 from decimal import Decimal
 
 import flet as ft
+from flet_color_pickers import ColorPicker
 
 from calculate import calculate, is_number, toggle_sign
 from clipboard import ClipboardService
@@ -275,12 +277,22 @@ class AnycalcApp:
                 pending.append(content)
 
     def apply_theme(self, name: str) -> None:
+        """Make one theme live, recoloring the controls already on screen.
+
+        Only the Custom theme takes hand-picked accent colors. Every built-in
+        theme ships its own, and the Custom theme's saved colors survive a trip
+        through them untouched.
+        """
+
         old_palette = styles.active_palette()
-        _, new_theme = styles.set_active_theme(
-            name,
-            self.selected_primary_color,
-            self.selected_secondary_color,
-        )
+        if name == styles.CUSTOM_THEME_NAME:
+            overrides: tuple[str | None, str | None] = (
+                self.selected_primary_color,
+                self.selected_secondary_color,
+            )
+        else:
+            overrides = (None, None)
+        _, new_theme = styles.set_active_theme(name, *overrides)
         self.selected_theme = new_theme.name
         self._recolor_controls(old_palette, styles.active_palette())
         self.page.bgcolor = new_theme.app_background
@@ -294,11 +306,17 @@ class AnycalcApp:
         primary_color: str,
         secondary_color: str,
     ) -> None:
+        """Apply one settings choice.
+
+        The two colors are only kept for the Custom theme - a built-in theme
+        always comes with its own accents, and switching to one leaves the
+        colors saved for the Custom theme alone.
+        """
+
         styles.get_theme(name)
-        next_primary_color = styles.normalize_color(primary_color)
-        next_secondary_color = styles.normalize_color(secondary_color)
-        self.selected_primary_color = next_primary_color
-        self.selected_secondary_color = next_secondary_color
+        if name == styles.CUSTOM_THEME_NAME:
+            self.selected_primary_color = styles.normalize_color(primary_color)
+            self.selected_secondary_color = styles.normalize_color(secondary_color)
         self.apply_theme(name)
 
     def persist_pi_change(self) -> None:
@@ -479,7 +497,13 @@ class AnycalcApp:
     def build_settings_dialog(self) -> ft.AlertDialog:
         """The settings popup. Every dropdown applies what it changed straight
         away, which is why the dialog has no Apply button - the Close action only
-        closes, and "Reset to defaults" puts the app's own defaults back."""
+        closes, and "Reset to defaults" puts the app's own defaults back.
+
+        The two color settings belong to the Custom theme and are hidden for
+        every built-in theme, which ships its own accents. Under each color
+        dropdown the leading "Custom color" entry keeps a color picker hidden
+        until that entry is picked.
+        """
 
         self.settings_theme_dropdown = ft.Dropdown(
             key="settings-theme-dropdown",
@@ -491,41 +515,27 @@ class AnycalcApp:
             ],
             on_select=self.update_settings,
         )
-        self.settings_primary_dropdown = ft.Dropdown(
+        (
+            self.settings_primary_group,
+            self.settings_primary_dropdown,
+            self.settings_primary_value,
+            self.settings_primary_picker,
+        ) = self._build_color_setting(
             key="settings-primary-color",
             label="Primary color",
-            value=self.selected_primary_color,
-            options=[
-                ft.DropdownOption(
-                    key=color.value,
-                    text=color.name,
-                    leading_icon=ft.Icon(
-                        ft.Icons.CIRCLE,
-                        size=16,
-                        color=color.value,
-                    ),
-                )
-                for color in styles.color_options(self.selected_primary_color)
-            ],
-            on_select=self.update_settings,
+            color=self._seed_color(self.selected_primary_color),
+            on_color_change=self.pick_primary_color,
         )
-        self.settings_secondary_dropdown = ft.Dropdown(
+        (
+            self.settings_secondary_group,
+            self.settings_secondary_dropdown,
+            self.settings_secondary_value,
+            self.settings_secondary_picker,
+        ) = self._build_color_setting(
             key="settings-secondary-color",
             label="Secondary color",
-            value=self.selected_secondary_color,
-            options=[
-                ft.DropdownOption(
-                    key=color.value,
-                    text=color.name,
-                    leading_icon=ft.Icon(
-                        ft.Icons.CIRCLE,
-                        size=16,
-                        color=color.value,
-                    ),
-                )
-                for color in styles.color_options(self.selected_secondary_color)
-            ],
-            on_select=self.update_settings,
+            color=self._seed_color(self.selected_secondary_color),
+            on_color_change=self.pick_secondary_color,
         )
         self.settings_dialog = ft.AlertDialog(
             key="settings-dialog",
@@ -534,10 +544,10 @@ class AnycalcApp:
             content=ft.Column(
                 [
                     self.settings_theme_dropdown,
-                    self.settings_primary_dropdown,
-                    self.settings_secondary_dropdown,
+                    self.settings_primary_group,
+                    self.settings_secondary_group,
                 ],
-                height=400,
+                height=460,
                 spacing=8,
                 scroll=ft.ScrollMode.AUTO,
             ),
@@ -557,6 +567,86 @@ class AnycalcApp:
         )
         return self.settings_dialog
 
+    def _build_color_setting(
+        self,
+        key: str,
+        label: str,
+        color: str,
+        on_color_change: Callable[[ft.Event[ColorPicker]], None],
+    ) -> tuple[ft.Container, ft.Dropdown, ft.Text, ColorPicker]:
+        """One color setting: dropdown, the hex it stands for, and a picker.
+
+        The dropdown leads with "Custom color" and then lists the named palette;
+        picking that entry reveals the picker and the caption naming the live
+        hex, and the picker's own value is what gets applied. The three travel in
+        one container so a built-in theme can hide all of them at once.
+        """
+
+        uses_custom = not styles.is_named_color(color)
+        options = [
+            self._color_dropdown_option(option, color)
+            for option in styles.color_options()
+        ]
+        dropdown = ft.Dropdown(
+            key=key,
+            label=label,
+            value=styles.CUSTOM_COLOR_KEY if uses_custom else color,
+            options=options,
+            on_select=self.update_settings,
+        )
+        value_label = ft.Text(
+            key=f"{key}-value",
+            value=styles.custom_color_value_label(color),
+            size=12,
+            color=styles.TEXT_MUTED,
+            visible=uses_custom,
+        )
+        picker = ColorPicker(
+            key=f"{key}-picker",
+            color=color,
+            enable_alpha=False,
+            color_picker_width=260,
+            visible=uses_custom,
+            on_color_change=on_color_change,
+        )
+        group = ft.Container(
+            key=f"{key}-group",
+            visible=self.selected_theme == styles.CUSTOM_THEME_NAME,
+            content=ft.Column([dropdown, value_label, picker], spacing=6),
+        )
+        return group, dropdown, value_label, picker
+
+    @staticmethod
+    def _color_dropdown_option(
+        option: styles.NamedColor,
+        selected_color: str,
+    ) -> ft.DropdownOption:
+        """One entry of a color dropdown: a named color, or the picker entry.
+
+        The "Custom color" entry carries the picked hex in its label and a
+        swatch of it, so the choice is readable from the list itself.
+        """
+
+        if option.value != styles.CUSTOM_COLOR_KEY:
+            return ft.DropdownOption(
+                key=option.value,
+                text=option.name,
+                leading_icon=ft.Icon(ft.Icons.CIRCLE, size=16, color=option.value),
+            )
+        return ft.DropdownOption(
+            key=styles.CUSTOM_COLOR_KEY,
+            text=styles.custom_color_label(selected_color),
+            leading_icon=ft.Icon(
+                ft.Icons.BRUSH,
+                size=16,
+                color=(
+                    selected_color
+                    if not styles.is_named_color(selected_color)
+                    else None
+                ),
+            ),
+        )
+
     async def open_settings(self, event: object) -> None:
         del event
         self.page.show_dialog(self.build_settings_dialog())
@@ -571,11 +661,57 @@ class AnycalcApp:
         """Apply the dropdown that just changed, while the dialog stays open.
 
         Nothing waits for an Apply button: picking a theme or a color recolors
-        the app the moment it is picked and is saved straight away.
+        the app the moment it is picked and is saved straight away. Moving to the
+        Custom theme also reveals the color settings that belong to it.
         """
 
         del event
         self._apply_settings_from_dialog()
+
+    def pick_primary_color(self, event: ft.Event[ColorPicker]) -> None:
+        """The primary color's picker changed - apply it the same instant way."""
+
+        self._apply_picked_color(self.settings_primary_dropdown, event)
+
+    def pick_secondary_color(self, event: ft.Event[ColorPicker]) -> None:
+        """The secondary color's picker changed - apply it the same instant way."""
+
+        self._apply_picked_color(self.settings_secondary_dropdown, event)
+
+    def _apply_picked_color(
+        self,
+        dropdown: ft.Dropdown,
+        event: ft.Event[ColorPicker],
+    ) -> None:
+        """Apply and save the color a picker under a color dropdown reported.
+
+        The dropdown stays on "Custom color", and both the entry's label and the
+        caption under it start naming the picked hex.
+        """
+
+        try:
+            color = styles.picker_color(event.data or event.control.color)
+        except ValueError:
+            return
+        option = self._custom_option(dropdown)
+        if option is not None:
+            option.text = styles.custom_color_label(color)
+            if isinstance(option.leading_icon, ft.Icon):
+                option.leading_icon.color = color
+        self._color_value_label(dropdown).value = (
+            styles.custom_color_value_label(color)
+        )
+        if dropdown is self.settings_primary_dropdown:
+            primary_color, secondary_color = color, self.selected_secondary_color
+        else:
+            primary_color, secondary_color = self.selected_primary_color, color
+        self.apply_settings_selection(
+            styles.CUSTOM_THEME_NAME,
+            primary_color,
+            secondary_color,
+        )
+        self._update_settings_dialog()
+        self.page.run_task(self.save_data)
 
     def reset_settings(self, event: object) -> None:
         """Put the app's default theme and default accent colors back in the
@@ -583,28 +719,161 @@ class AnycalcApp:
 
         del event
         defaults = styles.DEFAULT_THEME
+        self.selected_primary_color = defaults.accent
+        self.selected_secondary_color = defaults.key_operator
         self.settings_theme_dropdown.value = defaults.name
-        self.settings_primary_dropdown.value = defaults.accent
-        self.settings_secondary_dropdown.value = defaults.key_operator
+        self._sync_color_settings()
+        # The values were set in code rather than tapped, so it is the pushed
+        # update inside this that shows them in the dialog that stays open.
         self._apply_settings_from_dialog()
-        # The values were set in code rather than tapped, so the open dialog has
-        # to be pushed again for its dropdowns to show them.
-        self.page.update(self.settings_dialog)
 
     def _apply_settings_from_dialog(self) -> None:
-        """Apply and save what the three settings dropdowns currently hold."""
+        """Apply and save what the settings dialog currently holds."""
 
         name = self.settings_theme_dropdown.value
         if not isinstance(name, str):
             raise ValueError("the selected theme is invalid")
-        primary_color = self.settings_primary_dropdown.value
-        secondary_color = self.settings_secondary_dropdown.value
-        if not isinstance(primary_color, str) or not isinstance(
-            secondary_color, str
-        ):
-            raise ValueError("the selected colors are invalid")
+        if name == styles.CUSTOM_THEME_NAME:
+            if self.selected_theme != styles.CUSTOM_THEME_NAME:
+                # The Custom theme owns the color settings, so switching to it
+                # hands its saved colors back to the dropdowns that appear.
+                self._sync_color_settings()
+            primary_color = self._dialog_color(
+                self.settings_primary_dropdown,
+                self.settings_primary_picker,
+            )
+            secondary_color = self._dialog_color(
+                self.settings_secondary_dropdown,
+                self.settings_secondary_picker,
+            )
+        else:
+            theme = styles.get_theme(name)
+            primary_color, secondary_color = theme.accent, theme.key_operator
         self.apply_settings_selection(name, primary_color, secondary_color)
+        self._sync_color_visibility()
+        self._update_settings_dialog()
         self.page.run_task(self.save_data)
+
+    @staticmethod
+    def _seed_color(color: str) -> str:
+        """A color the pickers and captions can name, or Custom's own default.
+
+        Saved colors arrive as hex strings, but a value left by an older version
+        still has to land on something the dialog can show.
+        """
+
+        try:
+            return styles.normalize_color(color)
+        except (TypeError, ValueError):
+            return styles.get_theme(styles.CUSTOM_THEME_NAME).accent
+
+    def _dialog_color(self, dropdown: ft.Dropdown, picker: ColorPicker) -> str:
+        """The color one setting stands for: a named entry, or the picker.
+
+        A picker that has not reported a usable color yet keeps this setting on
+        the color it already had rather than failing the whole update.
+        """
+
+        value = dropdown.value
+        if value != styles.CUSTOM_COLOR_KEY and isinstance(value, str):
+            return value
+        try:
+            return styles.picker_color(picker.color)
+        except ValueError:
+            if dropdown is self.settings_primary_dropdown:
+                return self.selected_primary_color
+            return self.selected_secondary_color
+
+    def _custom_option(self, dropdown: ft.Dropdown) -> ft.DropdownOption | None:
+        """The "Custom color" entry of a color dropdown."""
+
+        for option in dropdown.options or []:
+            if option.key == styles.CUSTOM_COLOR_KEY:
+                return option
+        return None
+
+    def _color_value_label(self, dropdown: ft.Dropdown) -> ft.Text:
+        """The caption naming the color one color dropdown's setting stands for."""
+
+        if dropdown is self.settings_primary_dropdown:
+            return self.settings_primary_value
+        return self.settings_secondary_value
+
+    def _sync_color_settings(self) -> None:
+        """Point both color dropdowns, captions and pickers at the Custom
+        theme's colors."""
+
+        for dropdown, value_label, picker, color in (
+            (
+                self.settings_primary_dropdown,
+                self.settings_primary_value,
+                self.settings_primary_picker,
+                self.selected_primary_color,
+            ),
+            (
+                self.settings_secondary_dropdown,
+                self.settings_secondary_value,
+                self.settings_secondary_picker,
+                self.selected_secondary_color,
+            ),
+        ):
+            color = self._seed_color(color)
+            named = styles.is_named_color(color)
+            dropdown.value = color if named else styles.CUSTOM_COLOR_KEY
+            picker.color = color
+            value_label.value = styles.custom_color_value_label(color)
+            option = self._custom_option(dropdown)
+            if option is not None:
+                option.text = styles.custom_color_label(color)
+                if isinstance(option.leading_icon, ft.Icon):
+                    option.leading_icon.color = None if named else color
+
+    def _sync_color_visibility(self) -> None:
+        """Show color settings only for the Custom theme, and a picker - with the
+        caption naming its color - only while its dropdown is on "Custom color"."""
+
+        show_colors = self.selected_theme == styles.CUSTOM_THEME_NAME
+        for group, dropdown, value_label, picker in (
+            (
+                self.settings_primary_group,
+                self.settings_primary_dropdown,
+                self.settings_primary_value,
+                self.settings_primary_picker,
+            ),
+            (
+                self.settings_secondary_group,
+                self.settings_secondary_dropdown,
+                self.settings_secondary_value,
+                self.settings_secondary_picker,
+            ),
+        ):
+            group.visible = show_colors
+            use_picker = show_colors and dropdown.value == styles.CUSTOM_COLOR_KEY
+            picker.visible = use_picker
+            value_label.visible = use_picker
+
+    def _update_settings_dialog(self) -> None:
+        """Push the open dialog together with everything a setting reveals.
+
+        A control that has only just become visible is not repainted by an update
+        that names its parent alone, so the color groups, their captions and their
+        pickers go into the same update as the dialog. The "Custom color" entry -
+        whose label and swatch a picker renames as it is used - lives on the
+        dropdowns, so they are named too.
+        """
+
+        self.page.update(
+            self.settings_dialog,
+            self.settings_theme_dropdown,
+            self.settings_primary_group,
+            self.settings_secondary_group,
+            self.settings_primary_dropdown,
+            self.settings_secondary_dropdown,
+            self.settings_primary_value,
+            self.settings_secondary_value,
+            self.settings_primary_picker,
+            self.settings_secondary_picker,
+        )
 
     def _build_display_panel(self) -> None:
         """The panel that holds the caption row, the display and the preview."""

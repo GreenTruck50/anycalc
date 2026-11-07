@@ -53,11 +53,21 @@ class NamedColor:
     value: str
 
 
+# The theme that takes its accent colors from the user instead of shipping its
+# own. It is the only one whose color dropdowns are shown.
+CUSTOM_THEME_NAME = "Custom"
+
+# The dropdown entry that opens a color picker instead of picking a named color.
+# It is not a color itself, so it is kept out of COLOR_OPTIONS.
+CUSTOM_COLOR_KEY = "custom"
+
+
 # The named colors the settings dropdowns offer, grouped by hue and carrying
-# several shades per family. Both themes' default accents - Dark's accent
-# "Blue" and operator key "Slate", Light's "Royal blue" and "Light gray" - are
-# entries here, which is what lets "Reset to defaults" put them back by name, so
-# never drop those four values from this list.
+# several shades per family. Every theme's default accents - Dark's "Blue" and
+# operator key "Slate", Light's "Royal blue" and "Light gray", and the same for
+# Midnight, Forest, Sepia and High contrast - are entries here, which is what
+# lets "Reset to defaults" put them back by name, so never drop those values
+# from this list.
 COLOR_OPTIONS = (
     # Blues
     NamedColor("Blue", "#4F7DFF"),
@@ -131,6 +141,88 @@ THEMES = (
         text_faint="#667085",
         text_error="#B42318",
     ),
+    AppTheme(
+        name="Midnight",
+        mode="dark",
+        app_background="#070C18",
+        panel_background="#111827",
+        card_background="#1B2334",
+        accent="#0EA5E9",
+        key_danger="#7B3340",
+        key_operator="#303B50",
+        key_ink="#40FFFFFF",
+        text_primary="#F2F6FF",
+        text_muted="#A8B3C7",
+        text_soft="#C9D3E5",
+        text_faint="#5D6A82",
+        text_error="#F97066",
+    ),
+    AppTheme(
+        name="Forest",
+        mode="dark",
+        app_background="#0C1710",
+        panel_background="#14231A",
+        card_background="#1D3125",
+        accent="#10B981",
+        key_danger="#7B3340",
+        key_operator="#166534",
+        key_ink="#40FFFFFF",
+        text_primary="#EAF3EC",
+        text_muted="#A3B8A8",
+        text_soft="#CFE0D2",
+        text_faint="#5C7264",
+        text_error="#F97066",
+    ),
+    AppTheme(
+        name="Sepia",
+        mode="light",
+        app_background="#F3EBDA",
+        panel_background="#FCF6E8",
+        card_background="#E9DFC9",
+        accent="#8B5A2B",
+        key_danger="#EFD3CC",
+        key_operator="#EAB308",
+        key_ink="#408B5A2B",
+        text_primary="#3A2E22",
+        text_muted="#6B5A48",
+        text_soft="#4C3D2E",
+        text_faint="#8A7863",
+        text_error="#B42318",
+    ),
+    AppTheme(
+        name="High contrast",
+        mode="dark",
+        app_background="#000000",
+        panel_background="#0B0B0B",
+        card_background="#1A1A1A",
+        accent="#EAB308",
+        key_danger="#E5484D",
+        key_operator="#D1D5DB",
+        key_ink="#40FFFFFF",
+        text_primary="#FFFFFF",
+        text_muted="#E6E6E6",
+        text_soft="#FFFFFF",
+        text_faint="#A3A3A3",
+        text_error="#FF6B6B",
+    ),
+    # The user's own palette. It starts on Dark's surfaces and accents, and the
+    # two color settings then replace the accent and the operator-key color.
+    AppTheme(
+        name=CUSTOM_THEME_NAME,
+        mode="dark",
+        app_background="#10131A",
+        panel_background="#1B202B",
+        card_background="#252B38",
+        accent="#4F7DFF",
+        key_danger="#7B3340",
+        key_operator="#303B50",
+        key_ink="#40FFFFFF",
+        text_primary="#FFFFFF",
+        text_muted="#9CA3AF",
+        text_soft="#D1D5DB",
+        text_faint="#6B7280",
+        text_error="#F28B82",
+    ),
 )
 
 DEFAULT_THEME = THEMES[0]
@@ -156,13 +248,60 @@ def normalize_color(color: str) -> str:
     return color.upper()
 
 
-def color_options(selected_color: str) -> tuple[NamedColor, ...]:
-    """Return named choices, preserving a previously saved custom color."""
+def is_named_color(color: str) -> bool:
+    """Whether a color is one of the named palette entries."""
 
-    normalized = normalize_color(selected_color)
-    if any(option.value == normalized for option in COLOR_OPTIONS):
-        return COLOR_OPTIONS
-    return (*COLOR_OPTIONS, NamedColor(f"Custom ({normalized})", normalized))
+    try:
+        normalized = normalize_color(color)
+    except ValueError:
+        return False
+    return any(option.value == normalized for option in COLOR_OPTIONS)
+
+
+def color_options() -> tuple[NamedColor, ...]:
+    """The entry that opens a color picker, then the named colors.
+
+    "Custom color" leads the list rather than trailing it: it is a mode rather
+    than another color, and keeping it apart from the named palette also keeps it
+    on screen when a dropdown opens on a named color. The picker that entry
+    reveals holds the color that actually gets applied.
+    """
+
+    return (NamedColor("Custom color", CUSTOM_COLOR_KEY), *COLOR_OPTIONS)
+
+
+def custom_color_label(color: str) -> str:
+    """The "Custom color" entry's label, naming the hex it currently holds."""
+
+    if is_named_color(color):
+        return "Custom color"
+    try:
+        return f"Custom color ({normalize_color(color)})"
+    except ValueError:
+        return "Custom color"
+
+
+def custom_color_value_label(color: str) -> str:
+    """The caption that names the custom color currently in use."""
+
+    try:
+        return f"Custom color: {normalize_color(color)}"
+    except ValueError:
+        return "Custom color"
+
+
+def picker_color(color: object) -> str:
+    """Read a color back from a color picker as a validated hex color.
+
+    A picker reports "#RRGGBB", or "#AARRGGBB" while alpha is enabled, in
+    whichever case it feels like; both fold into the six-digit uppercase form
+    the rest of the app stores.
+    """
+
+    text = str(color or "").strip().upper()
+    if text.startswith("#") and len(text) == 9:
+        text = f"#{text[3:]}"
+    return normalize_color(text)
 
 
 def active_palette() -> dict[str, str]:
