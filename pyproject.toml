@@ -34,7 +34,7 @@ dependencies = [
     # desktop run client and is meaningless on a phone. Both are host-only and
     # live in the dev extra below. A flet build linux|macos|windows ships its own
     # runner from the Flutter app shell, so it needs neither in the bundle.
-    "flet>=1.0.4",
+    "flet>=1.0.5",
     # The only other Flet distribution src/ imports: ColorPicker, which the
     # Settings dialog reveals under a color dropdown. Pure Python on top of flet
     # (it requires nothing else), so it packages for Android like flet itself.
