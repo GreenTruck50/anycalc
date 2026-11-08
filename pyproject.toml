@@ -6,10 +6,15 @@
 #   run:           flet run                           (or python src/main.py)
 #   test:          flet test                          (pytest flags only; -k engine
 #                  skips the app host and runs just the conversion-engine tests)
-#   package:       flet build linux|macos|windows|apk|aab|ipa|ios-simulator|web
+#   package:       ./build.sh <target> [--debug|--profile]   (preferred - see below)
+#                  or flet build linux|macos|windows|apk|aab|ipa|ios-simulator|web
 #                  - run from THIS directory (the workspace root), not from src/;
 #                  [tool.flet.app] below tells Flet that the app itself lives in
-#                  src/ and main.py is its entry point.
+#                  src/ and main.py is its entry point. `flet build` has NO
+#                  --debug flag (the build MODE belongs to Flutter, so it must be
+#                  forwarded: `--flutter-build-args=--debug`, or put it after a
+#                  `--` separator); build.sh does that, plus release/debug/profile
+#                  and the Android apk/aab split.
 #   docs:          mkdocs build          (from the [docs] extra; writes site/,
 #                  which is gitignored - .github/workflows/docs.yml rebuilds and
 #                  publishes it to GitHub Pages whenever docs/ changes)
@@ -34,11 +39,11 @@ dependencies = [
     # desktop run client and is meaningless on a phone. Both are host-only and
     # live in the dev extra below. A flet build linux|macos|windows ships its own
     # runner from the Flutter app shell, so it needs neither in the bundle.
-    "flet>=1.0.5",
+    "flet>=1.1.2",
     # The only other Flet distribution src/ imports: ColorPicker, which the
     # Settings dialog reveals under a color dropdown. Pure Python on top of flet
     # (it requires nothing else), so it packages for Android like flet itself.
-    "flet-color-pickers>=1.0.5",
+    "flet-color-pickers>=1.1.2",
     # Parses src/assets/conversions.yaml (imported as `yaml`). Fine for mobile:
     # Flet publishes Android wheels for PyYAML and its flet-libyaml helper on
     # https://pypi.flet.dev, which the build adds as an extra index.
@@ -74,7 +79,7 @@ dev = [
     # pytest-asyncio and the screenshot-comparison libraries (numpy, pillow,
     # scikit-image). The app under test is the real built app, so the Flet
     # version in the extra must track the runtime version above.
-    "flet[cli,desktop,test]>=1.0.4",
+    "flet[cli,desktop,test]>=1.1.2",
     # Pinned explicitly because the tests import them directly.
     "pytest>=8.3",
     "pytest-asyncio>=1.1",
@@ -114,8 +119,7 @@ py-modules = []
 org = "com.github.greentruck50"   # reverse-domain prefix of the app id: on Android
                                   # this becomes the applicationId
                                   # com.github.greentruck50.anycalc, on iOS the
-                                  # bundle id. Derived from the GitHub handle, not
-                                  # from a personal name.
+                                  # bundle id. Derived from the GitHub handle.
 product = "anycalc"               # name shown to the user (window title, .desktop
                                   # entry, Android / iOS app label)
 

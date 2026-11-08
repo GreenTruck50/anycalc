@@ -248,7 +248,7 @@ def test_color_settings_are_hidden_until_the_custom_theme_is_picked() -> None:
         # A built-in theme ships its own accents, so there is nothing to pick.
         assert app.settings_primary_group.visible is False
         assert app.settings_secondary_group.visible is False
-        assert app.settings_primary_picker.visible is False
+        assert not revealed(app, app.settings_primary_picker)
 
         app.settings_theme_dropdown.value = "Midnight"
         app.update_settings(None)
@@ -260,19 +260,19 @@ def test_color_settings_are_hidden_until_the_custom_theme_is_picked() -> None:
         assert app.settings_primary_group.visible is True
         assert app.settings_secondary_group.visible is True
         # The pickers wait for their own dropdown entry.
-        assert app.settings_primary_picker.visible is False
+        assert not revealed(app, app.settings_primary_picker)
 
         app.settings_primary_dropdown.value = styles.CUSTOM_COLOR_KEY
         app.update_settings(None)
 
-        assert app.settings_primary_picker.visible is True
-        assert app.settings_secondary_picker.visible is False
+        assert revealed(app, app.settings_primary_picker)
+        assert not revealed(app, app.settings_secondary_picker)
         # The picker arrives with the caption naming the color that is live.
-        assert app.settings_primary_value.visible is True
+        assert revealed(app, app.settings_primary_value)
         assert app.settings_primary_value.value == (
             f"Custom color: {styles.DEFAULT_THEME.accent}"
         )
-        assert app.settings_secondary_value.visible is False
+        assert not revealed(app, app.settings_secondary_value)
         # Revealing a picker changes nothing about the colors in use.
         assert styles.ACCENT == styles.DEFAULT_THEME.accent
         assert page.saved == 3
@@ -312,6 +312,26 @@ def settings_app(page: SimpleNamespace) -> AnycalcApp:
     app.selected_secondary_color = styles.DEFAULT_THEME.key_operator
     app.pi_view = None
     return app
+
+
+def revealed(app: AnycalcApp, control: ft.Control) -> bool:
+    """Whether a color caption or picker is currently in the column that lays its
+    setting out.
+
+    Those two are revealed by being put into that column - and taken back out of
+    it - rather than by a `visible` flag, because on Flet 1.1 flipping only that
+    flag on a control whose parent still has the same child list never repaints
+    it. The whole color group still hides behind a flag.
+    """
+
+    return any(
+        child is control
+        for column in (
+            app.settings_primary_content,
+            app.settings_secondary_content,
+        )
+        for child in column.controls
+    )
 
 
 def test_settings_dialog_applies_its_own_choices_without_an_apply_button() -> None:

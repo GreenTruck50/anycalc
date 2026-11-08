@@ -517,6 +517,7 @@ class AnycalcApp:
         )
         (
             self.settings_primary_group,
+            self.settings_primary_content,
             self.settings_primary_dropdown,
             self.settings_primary_value,
             self.settings_primary_picker,
@@ -528,6 +529,7 @@ class AnycalcApp:
         )
         (
             self.settings_secondary_group,
+            self.settings_secondary_content,
             self.settings_secondary_dropdown,
             self.settings_secondary_value,
             self.settings_secondary_picker,
@@ -537,20 +539,21 @@ class AnycalcApp:
             color=self._seed_color(self.selected_secondary_color),
             on_color_change=self.pick_secondary_color,
         )
+        self.settings_content = ft.Column(
+            [
+                self.settings_theme_dropdown,
+                self.settings_primary_group,
+                self.settings_secondary_group,
+            ],
+            height=460,
+            spacing=8,
+            scroll=ft.ScrollMode.AUTO,
+        )
         self.settings_dialog = ft.AlertDialog(
             key="settings-dialog",
             modal=True,
             title=ft.Text("Settings"),
-            content=ft.Column(
-                [
-                    self.settings_theme_dropdown,
-                    self.settings_primary_group,
-                    self.settings_secondary_group,
-                ],
-                height=460,
-                spacing=8,
-                scroll=ft.ScrollMode.AUTO,
-            ),
+            content=self.settings_content,
             actions=[
                 ft.TextButton(
                     content="Close",
@@ -573,13 +576,17 @@ class AnycalcApp:
         label: str,
         color: str,
         on_color_change: Callable[[ft.Event[ColorPicker]], None],
-    ) -> tuple[ft.Container, ft.Dropdown, ft.Text, ColorPicker]:
+    ) -> tuple[ft.Container, ft.Column, ft.Dropdown, ft.Text, ColorPicker]:
         """One color setting: dropdown, the hex it stands for, and a picker.
 
         The dropdown leads with "Custom color" and then lists the named palette;
         picking that entry reveals the picker and the caption naming the live
         hex, and the picker's own value is what gets applied. The three travel in
-        one container so a built-in theme can hide all of them at once.
+        one container so a built-in theme can hide all of them at once, and the
+        column that lays them out is handed back as well - the caption and the
+        picker are revealed by being in that column's child list or not in it (see
+        ``_sync_color_visibility``), and that column is what carries the change
+        into an update (see ``_update_settings_dialog``).
         """
 
         uses_custom = not styles.is_named_color(color)
@@ -599,22 +606,27 @@ class AnycalcApp:
             value=styles.custom_color_value_label(color),
             size=12,
             color=styles.TEXT_MUTED,
-            visible=uses_custom,
         )
         picker = ColorPicker(
             key=f"{key}-picker",
             color=color,
             enable_alpha=False,
             color_picker_width=260,
-            visible=uses_custom,
             on_color_change=on_color_change,
         )
+        # The caption and the picker are only in the column's child list while
+        # they are wanted - see _sync_color_visibility for why they are revealed
+        # that way rather than by hiding them.
+        children: list[ft.Control] = [dropdown]
+        if uses_custom:
+            children += [value_label, picker]
+        content = ft.Column(children, spacing=6)
         group = ft.Container(
             key=f"{key}-group",
             visible=self.selected_theme == styles.CUSTOM_THEME_NAME,
-            content=ft.Column([dropdown, value_label, picker], spacing=6),
+            content=content,
         )
-        return group, dropdown, value_label, picker
+        return group, content, dropdown, value_label, picker
 
     @staticmethod
     def _color_dropdown_option(
@@ -749,8 +761,11 @@ class AnycalcApp:
         else:
             theme = styles.get_theme(name)
             primary_color, secondary_color = theme.accent, theme.key_operator
+        # Reveal first: the page update inside apply_settings_selection is the one
+        # that paints what switching to the Custom theme shows, so the child lists
+        # have to be in place before it runs.
+        self._sync_color_visibility(name)
         self.apply_settings_selection(name, primary_color, secondary_color)
-        self._sync_color_visibility()
         self._update_settings_dialog()
         self.page.run_task(self.save_data)
 
@@ -828,51 +843,89 @@ class AnycalcApp:
                 if isinstance(option.leading_icon, ft.Icon):
                     option.leading_icon.color = None if named else color
 
-    def _sync_color_visibility(self) -> None:
+    def _sync_color_visibility(self, theme_name: str | None = None) -> None:
         """Show color settings only for the Custom theme, and a picker - with the
-        caption naming its color - only while its dropdown is on "Custom color"."""
+        caption naming its color - only while its dropdown is on "Custom color".
 
-        show_colors = self.selected_theme == styles.CUSTOM_THEME_NAME
-        for group, dropdown, value_label, picker in (
-            (
-                self.settings_primary_group,
-                self.settings_primary_dropdown,
-                self.settings_primary_value,
-                self.settings_primary_picker,
-            ),
-            (
-                self.settings_secondary_group,
-                self.settings_secondary_dropdown,
-                self.settings_secondary_value,
-                self.settings_secondary_picker,
-            ),
-        ):
-            group.visible = show_colors
-            use_picker = show_colors and dropdown.value == styles.CUSTOM_COLOR_KEY
-            picker.visible = use_picker
-            value_label.visible = use_picker
+        ``theme_name`` is the theme being applied. The reveal has to be in place
+        *before* that theme is pushed, because the page update inside
+        ``apply_theme`` is what actually paints it - so this cannot just read the
+        theme that is still live.
+
+        Hiding a whole color setting is a ``visible`` flag on its container, which
+        travels with the repaint a theme switch already causes. Revealing a picker
+        inside a group that is already on screen is different: on Flet 1.1 a lone
+        ``visible`` flip on a control whose parent still has the same child list
+        never reaches the screen (measured - the flags were set and the update
+        pushed without error, yet the caption stayed unpainted). What does reach it
+        is changing that child list, so the caption and the picker are put into the
+        group's column when they are wanted and taken out when they are not.
+        """
+
+        applied = self.selected_theme if theme_name is None else theme_name
+        show_colors = applied == styles.CUSTOM_THEME_NAME
+        self._sync_color_group(
+            self.settings_primary_group,
+            self.settings_primary_content,
+            self.settings_primary_dropdown,
+            self.settings_primary_value,
+            self.settings_primary_picker,
+            show_colors,
+        )
+        self._sync_color_group(
+            self.settings_secondary_group,
+            self.settings_secondary_content,
+            self.settings_secondary_dropdown,
+            self.settings_secondary_value,
+            self.settings_secondary_picker,
+            show_colors,
+        )
+
+    @staticmethod
+    def _sync_color_group(
+        group: ft.Container,
+        content: ft.Column,
+        dropdown: ft.Dropdown,
+        value_label: ft.Text,
+        picker: ColorPicker,
+        show_colors: bool,
+    ) -> None:
+        """Put one color setting's picker and caption in or out of its column."""
+
+        group.visible = show_colors
+        use_picker = show_colors and dropdown.value == styles.CUSTOM_COLOR_KEY
+        picker_is_shown = any(child is picker for child in content.controls)
+        if use_picker == picker_is_shown:
+            return
+        content.controls = (
+            [dropdown, value_label, picker] if use_picker else [dropdown]
+        )
 
     def _update_settings_dialog(self) -> None:
         """Push the open dialog together with everything a setting reveals.
 
         A control that has only just become visible is not repainted by an update
-        that names its parent alone, so the color groups, their captions and their
-        pickers go into the same update as the dialog. The "Custom color" entry -
-        whose label and swatch a picker renames as it is used - lives on the
-        dropdowns, so they are named too.
+        that names its parent alone, so the dialog, the columns that hold the
+        settings, the color groups and their inner columns all go into the same
+        update - and the inner column is what carries a caption or a picker that
+        has just been added to it. The "Custom color" entry - whose label and
+        swatch a picker renames as it is used - lives on the dropdowns, so they are
+        named too. The captions and pickers themselves are not named: while their
+        setting is on a built-in theme or a named color they are not in the tree at
+        all (see ``_sync_color_visibility``), and updating a control that is out of
+        the tree is what this keeps clear of.
         """
 
         self.page.update(
             self.settings_dialog,
+            self.settings_content,
             self.settings_theme_dropdown,
             self.settings_primary_group,
+            self.settings_primary_content,
             self.settings_secondary_group,
+            self.settings_secondary_content,
             self.settings_primary_dropdown,
             self.settings_secondary_dropdown,
-            self.settings_primary_value,
-            self.settings_secondary_value,
-            self.settings_primary_picker,
-            self.settings_secondary_picker,
         )
 
     def _build_display_panel(self) -> None:

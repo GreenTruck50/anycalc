@@ -176,15 +176,33 @@ The same `src/` ships to desktop and to phone. Run from the workspace root —
 `cd src` is needed:
 
 ```bash
-flet build linux           # desktop bundle -> build/linux/
-flet build macos           # macOS bundle - build it on macOS
-flet build windows         # Windows bundle - build it on Windows
-flet build apk             # Android .apk
-flet build aab             # Android .aab (Play Store)
-flet build ipa             # iOS - needs macOS with Xcode
-flet build ios-simulator   # iOS simulator build
-flet build web             # static web bundle
+./build.sh linux           # desktop bundle -> build/linux/
+./build.sh macos           # macOS bundle - build it on macOS
+./build.sh windows         # Windows bundle - build it on Windows
+./build.sh apk             # Android .apk
+./build.sh aab             # Android .aab (Play Store)
+./build.sh ipa             # iOS - needs macOS with Xcode
+./build.sh ios-simulator   # iOS simulator build
+./build.sh web             # static web bundle
 ```
+
+`build.sh` is a thin wrapper around `flet build`: it always runs from the
+workspace root and always prefers this project's `.venv/bin/flet`, so the Flet
+that packages the app is the Flet the dependencies are pinned to. It also owns
+the build **mode**, which `flet build` has no flag for — the mode belongs to
+Flutter, so it has to be forwarded as `--flutter-build-args=--debug`, and that
+is easy to forget:
+
+```bash
+./build.sh apk                 # release (default): AOT, smallest, production
+./build.sh apk --debug         # debug: quick, debuggable, `adb install -r`
+./build.sh aab --split-per-abi # one bundle per ABI
+./build.sh linux --clean       # wipe build/ first, then build
+```
+
+`--out <dir>`, `--arch arm64-v8a`, `--python-version 3.14` and `--plain` round it
+out; anything after `--` goes straight to `flutter build`. Plain
+`flet build <target>` still works if you want to drive it yourself.
 
 Desktop: the artifact is the relocatable bundle `build/linux/` (executable
 `anycalc`, `app/`, `site-packages/`, `python3.14/`, `data/`, `share/`); pass
@@ -196,9 +214,16 @@ with Xcode. `org` / `product` in `[tool.flet]` set the application id and the
 app label, and `src/` contains no platform-specific code — every target packages
 the same source.
 
+Naming: a **release** Android artifact is renamed to `build/apk/anycalc.apk` —
+the exact file `./test-with-emulator.sh` installs — while a **debug** artifact is
+left as `build/apk/app-debug.apk`. So an emulator run after a debug build needs
+`adb install -r build/apk/app-debug.apk` (or just build in the default release
+mode).
+
 Every target needs the Flutter SDK at the version Flet pins (managed copy in
 `~/flutter/<version>`); `flet build` installs it there on demand. Of the targets
-above, only the Linux one has been built from this workspace so far.
+above, Linux and Android have been built from this workspace; the others are
+documented but unbuilt here.
 
 ## Documentation
 

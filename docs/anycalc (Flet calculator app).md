@@ -5,7 +5,7 @@ Working rules for this project live in the repo's `AGENTS.md`; the machine-reada
 ## Stack
 
 *   Python 3.14 (venv at `.venv`); `requires-python = ">=3.11"`
-*   Declared in `**pyproject.toml**` at the workspace root — there is no `requirements.txt` anymore: `dependencies = ["flet[cli,desktop]>=1.0.4", "PyYAML>=6.0.3"]`, dev tooling in the optional `dev` extra. `flet-desktop` is an Flet **extra**, not a dependency: without it `ft.run()` pip-installs it silently on first launch. `[cli]` gives the `flet run` / `flet build` commands. `[web]` and `[test]` extras are deliberately excluded.
+*   Declared in `**pyproject.toml**` at the workspace root — there is no `requirements.txt` anymore: `dependencies = ["flet>=1.1.2", "flet-color-pickers>=1.1.2", "PyYAML>=6.0.3"]`, every Flet **extra** (`cli`, `desktop`, `test`) living in the optional `dev` extra instead. That split is load-bearing: `flet build apk|aab` pip-installs `dependencies` verbatim into the artifact, so an extra with a host-only wheel (flet-cli → watchdog, which has no Android wheel) kills the mobile build. `flet-desktop` is an Flet extra too — without it `ft.run()` pip-installs it silently on first launch.
 *   `PyYAML>=6.0.3` — parses the conversions config (imported as `yaml`)
 *   Everything else the app imports is stdlib (`ast`, `asyncio`, `math`, `operator`, `collections`, `dataclasses`, `decimal`, `pathlib`, `typing`)
 *   Verified running on Flet 1.0.4 (the project venv), 1.0.5 (a clean install), and inside a Linux bundle that resolved 1.0.5 at build time

@@ -766,11 +766,14 @@ There should be a conversions.yaml file that says "There should be this tab with
 - On-device smoke testing runs against an Android emulator, not a second desktop
   window: `flet emulators` lists and starts the virtual devices and
   `flet devices android` lists what is attached, which is what `flet build apk`
-  and `flet run --android` then target. The installed debug APK is pushed with
-  `adb install -r build/apk/anycalc.apk` and started with
+  and `flet run --android` then target. The debug APK is installed with
+  `adb install -r` and started with
   `adb shell am start -n com.github.greentruck50.anycalc/.MainActivity`; the
   emulator's Android SDK lives in `~/Android/Sdk` and its AVDs in
-  `~/.android/avd`.
+  `~/.android/avd`. Which file to install depends on the mode: `./build.sh apk`
+  renames its release artifact to `build/apk/anycalc.apk`, while
+  `./build.sh apk --debug` leaves `build/apk/app-debug.apk` (so a debug build
+  never satisfies `test-with-emulator.sh`, which looks for `anycalc.apk`).
 - `./test-with-emulator.sh AVD_NAME` automates this path for a named AVD: it
   builds the APK first, then reuses that AVD if already running or verifies
   acceleration and starts it with its normal boot behavior, and installs and
@@ -936,6 +939,17 @@ There should be a conversions.yaml file that says "There should be this tab with
   `.apk` / Play Store `.aab`), `flet build ipa|ios-simulator` (iOS - needs a
   macOS host with Xcode) and `flet build web`. Every target is run from the
   workspace root - not from `src/`.
+- `./build.sh TARGET [MODE] [OPTIONS]` is the standing wrapper for all of that:
+  it runs from the workspace root, prefers the project's own `.venv/bin/flet`,
+  and takes the build mode as `--release` (the default, and the production
+  artifact), `--debug` or `--profile`. `flet build` itself has **no** `--debug`
+  flag - the mode belongs to Flutter, so it has to be forwarded as
+  `--flutter-build-args=--debug` (or left after a `--` separator); the wrapper is
+  what keeps that from being forgotten. It also carries `--output <dir>`,
+  `--split-per-abi`, `--arch <abi>...`, `--python-version <v>`, `--clean` (wipe
+  `build/` first) and `--plain` logging. A debug artifact is the one to install
+  under an emulator (`adb install -r`): it builds faster and is debuggable, but
+  it ships Dart JIT, so it is much larger and slower than a release build.
 - The artifact must contain the app, `src/assets/conversions.yaml` and the
   declared dependencies. `org` and `product` in `[tool.flet]` are what become the
   application/bundle id (`com.github.greentruck50.anycalc`) and the name the

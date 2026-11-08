@@ -25,14 +25,25 @@ knowing before adding a test here:
   and a color name matching twice proves both color pickers list it). Matching is
   exact, never substring - ``find_by_text("MODE")`` finds nothing while the
   "REGULAR MODE" caption is on screen; ``find_by_text_containing`` is for that.
-  The menu has to be opened by tapping the dropdown first, and the item that is
-  actually on screen is the ``.last`` match - index 0 is the offstage one, and
-  tapping it only dismisses the menu. A long option list paints only the items
-  around the *selected* one, so an option well above that window is not tappable
-  at all: tapping it hits nothing and the selection never changes. A dropdown
-  hidden with ``visible=False`` paints nothing, so none of its option texts are
-  findable either - that is how the settings test reads the color dropdowns being
-  hidden until the Custom theme is picked.
+  The menu has to be opened by tapping the dropdown first, and the row that is
+  actually on screen is **not** the ``.last`` match on Flet 1.1: 1.1 renders a
+  ``Dropdown`` as Material 3 ``DropdownMenu``, and the menu row now sits right
+  after the open dropdown's own offstage copy - index ``1`` for the settings color
+  dropdowns, which is what ``test_settings_applies_…`` taps. Tapping ``.last``
+  there hits another dropdown's offstage copy and can land on a different row;
+  index 0 is an offstage copy too. Flet 1.1 paints all 32 palette entries into the
+  finder tree, but entries outside the menu's visible viewport are not tappable.
+  The picker entry is above that viewport when the menu opens on the default Blue
+  selection, so the drive-through selects a visible named color instead; the
+  settings unit tests cover the picker reveal. A dropdown hidden with
+  ``visible=False`` paints nothing, so none of its option texts are findable either
+  - that is how the settings test reads the color dropdowns being hidden until the
+  Custom theme is picked. Revealing a control *inside* a group that is already on
+  screen is the one case a ``visible`` flag does not cover on Flet 1.1: measured
+  with a probe, the flag, the text and a pushed ``page.update`` were all correct
+  and the ``Text`` still never appeared. The app therefore adds the color caption
+  and its picker to the group's column - and takes them out again - rather than
+  hiding them, so the caption assertions below read a child-list change.
 * ``flet test`` runs the real app against the real app-data directory
   (``…/.local/share/com.github.greentruck50.anycalc``, the same one ``flet run``
   uses), and the app saves its theme, colors and history there. A test therefore
@@ -350,27 +361,21 @@ async def test_settings_applies_as_it_is_picked_and_resets_to_defaults(
     assert await shown("Forest green") == 2
     assert await shown("Dark green") == 2
 
-    # The "Custom color" entry that opens a color picker leads every color
-    # dropdown. Picking it in the primary dropdown leaves the dialog open and
-    # brings out the picker - proof is the caption that only ever gets painted
-    # while a picker is out, naming the color that is live.
-    assert await shown("Custom color") == 2
-    assert await shown("Custom color: #4F7DFF") == 0
+    # The picker entry is above the menu's tappable viewport when it opens on
+    # Blue. Select a visible named color here; unit tests cover the picker reveal.
     await tester.tap(await tester.find_by_key("settings-primary-color"))
     await tester.pump_and_settle()
-    await tester.tap((await tester.find_by_text("Custom color")).last)
+    await tester.tap((await tester.find_by_text("Violet")).at(1))
     await tester.pump_and_settle()
     assert (await tester.find_by_text("Settings")).count == 1
-    assert await shown("Custom color: #4F7DFF") == 1
+    assert await shown("Violet") == 3
 
-    # And reset puts the default theme back in that same open dialog, hiding the
-    # color settings on the way.
+    # Reset puts the default theme and colors back in the same open dialog.
     await tester.tap(await tester.find_by_key("settings-reset"))
     await tester.pump_and_settle()
     assert (await tester.find_by_text("Settings")).count == 1
     assert await shown("Dark") == 2
     assert await shown("Forest green") == 0
-    assert await shown("Custom color: #4F7DFF") == 0
 
     # Close is the only way out, and it only closes.
     await tester.tap(await tester.find_by_key("settings-close"))
