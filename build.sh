@@ -16,6 +16,7 @@ set -euo pipefail
 #                                  slower than the release artifact
 #   ./build.sh aab                 Play Store bundle
 #   ./build.sh linux               desktop artifact for this host
+#   ./build.sh appimage            Linux bundle packaged as an AppImage
 #
 # It always runs from the workspace root - [tool.flet.app] in pyproject.toml is
 # what makes that legal instead of having to build from src/ - and always prefers
@@ -26,15 +27,16 @@ usage() {
     cat <<'EOF'
 Usage: ./build.sh TARGET [MODE] [OPTIONS] [-- FLUTTER-ARG...]
 
-TARGET (what `flet build` accepts):
+TARGET (what this wrapper supports):
+  appimage       Build the Linux bundle, then package it as an AppImage
   apk            Android APK - side-loadable; test-with-emulator.sh installs
                  build/apk/anycalc.apk
   aab            Android App Bundle - the upload format for Google Play
   ipa            iOS app bundle (needs signing settings; see `flet build --help`)
   ios-simulator  iOS simulator build
-  linux          Linux artifact (AppImage by default)
+  linux          Linux relocatable bundle in build/linux/
   macos          macOS artifact
-  windows        Windows artifact
+  windows        Windows artifact (can only run on windows)
   web            web bundle
 
 MODE (exactly one; the default is the production build):
@@ -84,7 +86,7 @@ while (($#)); do
             usage
             exit 0
             ;;
-        apk | aab | ipa | ios-simulator | linux | macos | windows | web)
+        appimage | apk | aab | ipa | ios-simulator | linux | macos | windows | web)
             [[ -z $target ]] || die "one TARGET at a time (got '$target' and '$1')"
             target=$1
             ;;
@@ -134,6 +136,26 @@ done
     exit 2
 }
 
+if [[ $target == appimage ]]; then
+    [[ $(uname -s) == Linux ]] || die "the appimage target must be built on Linux"
+    [[ $split_per_abi == false ]] || die "--split-per-abi is not supported for appimage"
+    ((${#arch[@]} == 0)) || die "--arch is not supported for appimage; it uses the host architecture"
+    if [[ -n ${APPIMAGETOOL:-} ]]; then
+        if [[ $APPIMAGETOOL == */* ]]; then
+            [[ -x $APPIMAGETOOL ]] || die "APPIMAGETOOL must name an executable appimagetool"
+            appimagetool=$(cd -- "$(dirname -- "$APPIMAGETOOL")" && pwd)/$(basename -- "$APPIMAGETOOL")
+        elif command -v "$APPIMAGETOOL" >/dev/null 2>&1; then
+            appimagetool=$(command -v "$APPIMAGETOOL")
+        else
+            die "APPIMAGETOOL must name an executable appimagetool"
+        fi
+    elif command -v appimagetool >/dev/null 2>&1; then
+        appimagetool=$(command -v appimagetool)
+    else
+        die 'appimagetool is required for the appimage target; install it and ensure it is on PATH, or set APPIMAGETOOL to its executable path.'
+    fi
+fi
+
 if [[ -x "$script_dir/.venv/bin/flet" ]]; then
     flet="$script_dir/.venv/bin/flet"
 elif command -v flet >/dev/null 2>&1; then
@@ -147,9 +169,16 @@ fi
 # src/main.py.
 cd -- "$script_dir"
 
-flet_args=(build "$target" --log-format "$log_format" --yes)
+flet_target=$target
+if [[ $target == appimage ]]; then
+    flet_target=linux
+fi
+
+flet_args=(build "$flet_target" --log-format "$log_format" --yes)
 (($verbosity > 0)) && flet_args+=(-v)
-[[ -n $out_dir ]] && flet_args+=(--output "$out_dir")
+if [[ -n $out_dir && $target != appimage ]]; then
+    flet_args+=(--output "$out_dir")
+fi
 [[ $split_per_abi == true ]] && flet_args+=(--split-per-abi)
 [[ ${#arch[@]} -gt 0 ]] && flet_args+=(--arch "${arch[@]}")
 [[ -n $python_version ]] && flet_args+=(--python-version "$python_version")
@@ -166,14 +195,52 @@ if [[ $clean_first == true ]]; then
     "$flet" clean
 fi
 
-printf 'Building %s (%s) with %s\n' "$target" "$mode" "$flet"
+printf 'Building %s (%s) with %s\n' "$flet_target" "$mode" "$flet"
 "$flet" "${flet_args[@]}" ${extra_flutter_args[@]+"${extra_flutter_args[@]}"}
 
 out_path=${out_dir:-build/$target}
+if [[ $target == appimage ]]; then
+    linux_bundle=build/linux
+    [[ -x $linux_bundle/anycalc ]] || die "Linux bundle executable not found: $linux_bundle/anycalc"
+    [[ -f src/assets/icon.png ]] || die 'AppImage icon not found: src/assets/icon.png'
+
+    appdir=build/appimage/.AppDir
+    output_dir=${out_dir:-build/appimage}
+    appimage_arch=$(uname -m)
+    output_file=$output_dir/anycalc-$appimage_arch.AppImage
+
+    rm -rf -- "$appdir"
+    mkdir -p "$appdir/usr/lib/anycalc" "$output_dir"
+    cp -a "$linux_bundle/." "$appdir/usr/lib/anycalc/"
+    cp src/assets/icon.png "$appdir/anycalc.png"
+    cat >"$appdir/anycalc.desktop" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=anycalc
+Comment=Calculate anything
+Exec=AppRun
+Icon=anycalc
+Categories=Utility;Calculator;
+Terminal=false
+EOF
+    cat >"$appdir/AppRun" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+appdir=${APPDIR:-$(cd -- "$(dirname -- "$0")" && pwd)}
+cd "$appdir/usr/lib/anycalc"
+exec ./anycalc "$@"
+EOF
+    chmod +x "$appdir/AppRun"
+
+    printf 'Packaging Linux bundle as %s\n' "$output_file"
+    ARCH="$appimage_arch" APPIMAGE_EXTRACT_AND_RUN="${APPIMAGE_EXTRACT_AND_RUN:-1}" \
+        "$appimagetool" "$appdir" "$output_file"
+    out_path=$output_dir
+fi
+
 printf '\nArtifacts in %s:\n' "$out_path"
 if [[ -d $out_path ]]; then
     find "$out_path" -maxdepth 1 -type f -exec ls -lh {} +
 else
     printf '  %s does not exist\n' "$out_path"
 fi
-

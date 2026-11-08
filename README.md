@@ -176,6 +176,7 @@ The same `src/` ships to desktop and to phone. Run from the workspace root —
 `cd src` is needed:
 
 ```bash
+./build.sh appimage       # Linux AppImage -> build/appimage/anycalc-x86_64.AppImage
 ./build.sh linux           # desktop bundle -> build/linux/
 ./build.sh macos           # macOS bundle - build it on macOS
 ./build.sh windows         # Windows bundle - build it on Windows
@@ -205,8 +206,16 @@ out; anything after `--` goes straight to `flutter build`. Plain
 `flet build <target>` still works if you want to drive it yourself.
 
 Desktop: the artifact is the relocatable bundle `build/linux/` (executable
-`anycalc`, `app/`, `site-packages/`, `python3.14/`, `data/`, `share/`); pass
-`-o <dir>` to put it somewhere else.
+`anycalc`, `app/`, `site-packages/`, `python3.14/`, `data/`, `share/`).
+`./build.sh appimage` first makes that same Linux bundle, then wraps it in an
+AppDir and runs `appimagetool`; the resulting file is
+`build/appimage/anycalc-<host-architecture>.AppImage`. Install `appimagetool`
+and make it available on `PATH` first, or set `APPIMAGETOOL` to its executable
+path. The `--out <dir>` option selects the AppImage output directory for this
+target; the intermediate Linux bundle remains in `build/linux/`. This packages
+the app bundle and icon, but does not vendor GTK or other host system libraries,
+so those Linux runtime libraries must be present on the machine running it.
+For `./build.sh linux`, `--out <dir>` still selects the bundle output directory.
 
 Mobile: `apk` / `aab` go through the Flutter SDK and need an Android SDK plus a
 JDK (here: `~/Android/Sdk`, `java`, `adb` on PATH); `ipa` builds only on macOS

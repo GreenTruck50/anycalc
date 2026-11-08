@@ -941,6 +941,15 @@ There should be a conversions.yaml file that says "There should be this tab with
   `.apk` / Play Store `.aab`), `flet build ipa|ios-simulator` (iOS - needs a
   macOS host with Xcode) and `flet build web`. Every target is run from the
   workspace root - not from `src/`.
+- `./build.sh linux` produces the relocatable Flet Linux bundle in `build/linux/`.
+  `./build.sh appimage` must first perform that same Linux build, then package the
+  bundle and `src/assets/icon.png` into an AppDir and invoke `appimagetool` to
+  produce `build/appimage/anycalc-<host-architecture>.AppImage`. This target is
+  Linux-host-only and requires `appimagetool` on `PATH` or an executable path in
+  `APPIMAGETOOL`; `--out <dir>` selects the final AppImage directory, leaving
+  the intermediate bundle at `build/linux/`. It packages the app bundle but does
+  not vendor GTK or other host system libraries, so those runtime libraries
+  remain host requirements.
 - `./build.sh TARGET [MODE] [OPTIONS]` is the standing wrapper for all of that:
   it runs from the workspace root, prefers the project's own `.venv/bin/flet`,
   and takes the build mode as `--release` (the default, and the production
