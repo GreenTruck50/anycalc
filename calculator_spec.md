@@ -950,6 +950,12 @@ There should be a conversions.yaml file that says "There should be this tab with
   the intermediate bundle at `build/linux/`. It packages the app bundle but does
   not vendor GTK or other host system libraries, so those runtime libraries
   remain host requirements.
+- `./build.sh deb` and `./build.sh rpm` must also build the Linux bundle first,
+  then package it with an installed launcher, desktop entry, and icon. The deb
+  target requires `dpkg-deb`; the rpm target requires `rpmbuild`. Both are
+  Linux-host-only, produce packages for the host architecture, and use `--out
+  <dir>` for the final package directory. They declare a dependency on the
+  system GTK 3 runtime and do not bundle GTK or other host libraries.
 - `./build.sh TARGET [MODE] [OPTIONS]` is the standing wrapper for all of that:
   it runs from the workspace root, prefers the project's own `.venv/bin/flet`,
   and takes the build mode as `--release` (the default, and the production

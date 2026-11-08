@@ -17,6 +17,8 @@ set -euo pipefail
 #   ./build.sh aab                 Play Store bundle
 #   ./build.sh linux               desktop artifact for this host
 #   ./build.sh appimage            Linux bundle packaged as an AppImage
+#   ./build.sh deb                 Debian/Ubuntu package
+#   ./build.sh rpm                 RPM package (requires rpmbuild)
 #
 # It always runs from the workspace root - [tool.flet.app] in pyproject.toml is
 # what makes that legal instead of having to build from src/ - and always prefers
@@ -29,6 +31,8 @@ Usage: ./build.sh TARGET [MODE] [OPTIONS] [-- FLUTTER-ARG...]
 
 TARGET (what this wrapper supports):
   appimage       Build the Linux bundle, then package it as an AppImage
+  deb            Build the Linux bundle, then package it as a .deb
+  rpm            Build the Linux bundle, then package it as an .rpm
   apk            Android APK - side-loadable; test-with-emulator.sh installs
                  build/apk/anycalc.apk
   aab            Android App Bundle - the upload format for Google Play
@@ -86,7 +90,7 @@ while (($#)); do
             usage
             exit 0
             ;;
-        appimage | apk | aab | ipa | ios-simulator | linux | macos | windows | web)
+        appimage | deb | rpm | apk | aab | ipa | ios-simulator | linux | macos | windows | web)
             [[ -z $target ]] || die "one TARGET at a time (got '$target' and '$1')"
             target=$1
             ;;
@@ -136,23 +140,36 @@ done
     exit 2
 }
 
-if [[ $target == appimage ]]; then
-    [[ $(uname -s) == Linux ]] || die "the appimage target must be built on Linux"
-    [[ $split_per_abi == false ]] || die "--split-per-abi is not supported for appimage"
-    ((${#arch[@]} == 0)) || die "--arch is not supported for appimage; it uses the host architecture"
-    if [[ -n ${APPIMAGETOOL:-} ]]; then
-        if [[ $APPIMAGETOOL == */* ]]; then
-            [[ -x $APPIMAGETOOL ]] || die "APPIMAGETOOL must name an executable appimagetool"
-            appimagetool=$(cd -- "$(dirname -- "$APPIMAGETOOL")" && pwd)/$(basename -- "$APPIMAGETOOL")
-        elif command -v "$APPIMAGETOOL" >/dev/null 2>&1; then
-            appimagetool=$(command -v "$APPIMAGETOOL")
+if [[ $target == appimage || $target == deb || $target == rpm ]]; then
+    [[ $(uname -s) == Linux ]] || die "the $target target must be built on Linux"
+    [[ $split_per_abi == false ]] || die "--split-per-abi is not supported for $target"
+    ((${#arch[@]} == 0)) || die "--arch is not supported for $target; it uses the host architecture"
+    if [[ $target == appimage ]]; then
+        if [[ -n ${APPIMAGETOOL:-} ]]; then
+            if [[ $APPIMAGETOOL == */* ]]; then
+                [[ -x $APPIMAGETOOL ]] || die "APPIMAGETOOL must name an executable appimagetool"
+                appimagetool=$(cd -- "$(dirname -- "$APPIMAGETOOL")" && pwd)/$(basename -- "$APPIMAGETOOL")
+            elif command -v "$APPIMAGETOOL" >/dev/null 2>&1; then
+                appimagetool=$(command -v "$APPIMAGETOOL")
+            else
+                die "APPIMAGETOOL must name an executable appimagetool"
+            fi
+        elif command -v appimagetool >/dev/null 2>&1; then
+            appimagetool=$(command -v appimagetool)
         else
-            die "APPIMAGETOOL must name an executable appimagetool"
+            die 'appimagetool is required for the appimage target; install it and ensure it is on PATH, or set APPIMAGETOOL to its executable path.'
         fi
-    elif command -v appimagetool >/dev/null 2>&1; then
-        appimagetool=$(command -v appimagetool)
+    elif [[ $target == deb ]]; then
+        command -v dpkg-deb >/dev/null 2>&1 || die 'dpkg-deb is required for the deb target.'
+        command -v dpkg >/dev/null 2>&1 || die 'dpkg is required to determine the Debian package architecture.'
     else
-        die 'appimagetool is required for the appimage target; install it and ensure it is on PATH, or set APPIMAGETOOL to its executable path.'
+        if command -v rpmbuild >/dev/null 2>&1; then
+            rpmbuild=$(command -v rpmbuild)
+        elif [[ -x ${HOME:-}/.local/bin/rpmbuild ]]; then
+            rpmbuild=$HOME/.local/bin/rpmbuild
+        else
+            die 'rpmbuild is required for the rpm target; install RPM build tools first.'
+        fi
     fi
 fi
 
@@ -170,13 +187,13 @@ fi
 cd -- "$script_dir"
 
 flet_target=$target
-if [[ $target == appimage ]]; then
+if [[ $target == appimage || $target == deb || $target == rpm ]]; then
     flet_target=linux
 fi
 
 flet_args=(build "$flet_target" --log-format "$log_format" --yes)
 (($verbosity > 0)) && flet_args+=(-v)
-if [[ -n $out_dir && $target != appimage ]]; then
+if [[ -n $out_dir && $target != appimage && $target != deb && $target != rpm ]]; then
     flet_args+=(--output "$out_dir")
 fi
 [[ $split_per_abi == true ]] && flet_args+=(--split-per-abi)
@@ -213,6 +230,7 @@ if [[ $target == appimage ]]; then
     mkdir -p "$appdir/usr/lib/anycalc" "$output_dir"
     cp -a "$linux_bundle/." "$appdir/usr/lib/anycalc/"
     cp src/assets/icon.png "$appdir/anycalc.png"
+    chmod 644 "$appdir/anycalc.png"
     cat >"$appdir/anycalc.desktop" <<'EOF'
 [Desktop Entry]
 Type=Application
@@ -231,10 +249,120 @@ cd "$appdir/usr/lib/anycalc"
 exec ./anycalc "$@"
 EOF
     chmod +x "$appdir/AppRun"
+    chmod -R go-w "$appdir"
 
     printf 'Packaging Linux bundle as %s\n' "$output_file"
     ARCH="$appimage_arch" APPIMAGE_EXTRACT_AND_RUN="${APPIMAGE_EXTRACT_AND_RUN:-1}" \
         "$appimagetool" "$appdir" "$output_file"
+    out_path=$output_dir
+elif [[ $target == deb || $target == rpm ]]; then
+    linux_bundle=build/linux
+    [[ -x $linux_bundle/anycalc ]] || die "Linux bundle executable not found: $linux_bundle/anycalc"
+    [[ -f src/assets/icon.png ]] || die 'Package icon not found: src/assets/icon.png'
+
+    package_root=build/packages/$target/root
+    output_dir=${out_dir:-build/$target}
+    package_version=$(sed -n '/^\[project\]/,/^\[/s/^version = "\([^"]*\)".*/\1/p' pyproject.toml | head -n 1)
+    [[ -n $package_version ]] || die 'Could not read the project version from pyproject.toml.'
+    package_arch=$(uname -m)
+    desktop_file=com.github.greentruck50.anycalc.desktop
+    icon_file=com.github.greentruck50.anycalc.png
+
+    rm -rf -- "$package_root"
+    mkdir -p "$package_root/usr/lib/anycalc" \
+        "$package_root/usr/bin" \
+        "$package_root/usr/share/applications" \
+        "$package_root/usr/share/doc/anycalc" \
+        "$package_root/usr/share/icons/hicolor/512x512/apps" \
+        "$package_root/usr/share/licenses/anycalc" \
+        "$output_dir"
+    cp -a "$linux_bundle/." "$package_root/usr/lib/anycalc/"
+    cp src/assets/icon.png "$package_root/usr/share/icons/hicolor/512x512/apps/$icon_file"
+    cp LICENSE "$package_root/usr/share/doc/anycalc/copyright"
+    cp LICENSE "$package_root/usr/share/licenses/anycalc/LICENSE"
+    chmod 644 \
+        "$package_root/usr/share/icons/hicolor/512x512/apps/$icon_file" \
+        "$package_root/usr/share/doc/anycalc/copyright" \
+        "$package_root/usr/share/licenses/anycalc/LICENSE"
+    cat >"$package_root/usr/bin/anycalc" <<'EOF'
+#!/bin/sh
+cd /usr/lib/anycalc
+exec ./anycalc "$@"
+EOF
+    chmod 755 "$package_root/usr/bin/anycalc"
+    cat >"$package_root/usr/share/applications/$desktop_file" <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=anycalc
+Comment=Calculate anything
+Exec=anycalc %U
+Icon=com.github.greentruck50.anycalc
+Terminal=false
+Categories=Utility;Calculator;
+StartupWMClass=com.github.greentruck50.anycalc
+EOF
+    chmod -R go-w "$package_root"
+
+    if [[ $target == deb ]]; then
+        deb_arch=$(dpkg --print-architecture)
+        mkdir -p "$package_root/DEBIAN"
+        cat >"$package_root/DEBIAN/control" <<EOF
+Package: anycalc
+Version: $package_version
+Section: utils
+Priority: optional
+Architecture: $deb_arch
+Maintainer: GreenTruck50 <271768285+GreenTruck50@users.noreply.github.com>
+Depends: libc6, libstdc++6, libgcc-s1, libgtk-3-0 | libgtk-3-0t64, libglib2.0-0 | libglib2.0-0t64
+Description: Calculate anything
+ A Flet calculator for desktop and mobile.
+EOF
+        output_file=$output_dir/anycalc_${package_version}_${deb_arch}.deb
+        printf 'Packaging Linux bundle as %s\n' "$output_file"
+        dpkg-deb --build --root-owner-group "$package_root" "$output_file"
+    else
+        rpm_work=$script_dir/build/packages/rpm/rpmbuild
+        rpm_sources=$rpm_work/SOURCES
+        mkdir -p "$rpm_sources" "$rpm_work/SPECS" "$rpm_work/RPMDB"
+        tar -C "$package_root" -czf "$rpm_sources/anycalc-payload.tar.gz" usr
+        cat >"$rpm_work/SPECS/anycalc.spec" <<EOF
+Name: anycalc
+Version: $package_version
+Release: 1%{?dist}
+Summary: A Flet calculator for desktop and mobile
+License: GPL-3.0-only
+Source0: anycalc-payload.tar.gz
+AutoReqProv: no
+Requires: gtk3, glibc, libstdc++, libgcc
+
+%description
+Calculate anything with expressions, scientific mode, variables, history, and
+live unit conversions.
+
+%prep
+
+%install
+mkdir -p %{buildroot}
+tar -xzf %{SOURCE0} -C %{buildroot}
+
+%files
+%license /usr/share/licenses/anycalc/LICENSE
+/usr/bin/anycalc
+/usr/lib/anycalc
+/usr/share/doc/anycalc/copyright
+/usr/share/applications/$desktop_file
+/usr/share/icons/hicolor/512x512/apps/$icon_file
+EOF
+        printf 'Packaging Linux bundle as an RPM\n'
+        "$rpmbuild" -bb \
+            --define "_dbpath $rpm_work/RPMDB" \
+            --define "_topdir $rpm_work" \
+            "$rpm_work/SPECS/anycalc.spec"
+        rpm_files=("$rpm_work"/RPMS/*/anycalc-"$package_version"-1*.rpm)
+        ((${#rpm_files[@]} == 1)) || die "Expected one RPM package in $rpm_work/RPMS."
+        output_file=$output_dir/$(basename -- "${rpm_files[0]}")
+        cp -- "${rpm_files[0]}" "$output_file"
+    fi
     out_path=$output_dir
 fi
 

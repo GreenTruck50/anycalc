@@ -7,7 +7,8 @@
 #   test:          flet test                          (pytest flags only; -k engine
 #                  skips the app host and runs just the conversion-engine tests)
 #   package:       ./build.sh <target> [--debug|--profile]   (preferred - see below;
-#                  appimage first builds linux, then requires appimagetool)
+#                  appimage/deb/rpm first build linux, then require appimagetool,
+#                  dpkg-deb, or rpmbuild respectively)
 #                  or flet build linux|macos|windows|apk|aab|ipa|ios-simulator|web
 #                  - run from THIS directory (the workspace root), not from src/;
 #                  [tool.flet.app] below tells Flet that the app itself lives in

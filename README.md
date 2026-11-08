@@ -177,6 +177,8 @@ The same `src/` ships to desktop and to phone. Run from the workspace root —
 
 ```bash
 ./build.sh appimage       # Linux AppImage -> build/appimage/anycalc-x86_64.AppImage
+./build.sh deb            # Debian/Ubuntu package -> build/deb/
+./build.sh rpm            # RPM package -> build/rpm/
 ./build.sh linux           # desktop bundle -> build/linux/
 ./build.sh macos           # macOS bundle - build it on macOS
 ./build.sh windows         # Windows bundle - build it on Windows
@@ -215,7 +217,13 @@ path. The `--out <dir>` option selects the AppImage output directory for this
 target; the intermediate Linux bundle remains in `build/linux/`. This packages
 the app bundle and icon, but does not vendor GTK or other host system libraries,
 so those Linux runtime libraries must be present on the machine running it.
-For `./build.sh linux`, `--out <dir>` still selects the bundle output directory.
+`./build.sh deb` and `./build.sh rpm` also build the Linux bundle first, then
+create a native package with an installed launcher, desktop entry and icon. The
+`.deb` uses `dpkg-deb`; `.rpm` requires `rpmbuild`. Both targets must run on
+Linux and produce packages for the host architecture. `--out <dir>` selects
+the final package output directory. Packages require the system GTK 3 runtime
+and do not bundle GTK or other host libraries. For `./build.sh linux`,
+`--out <dir>` still selects the bundle output directory.
 
 Mobile: `apk` / `aab` go through the Flutter SDK and need an Android SDK plus a
 JDK (here: `~/Android/Sdk`, `java`, `adb` on PATH); `ipa` builds only on macOS
