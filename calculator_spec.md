@@ -775,11 +775,13 @@ There should be a conversions.yaml file that says "There should be this tab with
   `./build.sh apk --debug` leaves `build/apk/app-debug.apk` (so a debug build
   never satisfies `test-with-emulator.sh`, which looks for `anycalc.apk`).
 - `./test-with-emulator.sh AVD_NAME` automates this path for a named AVD: it
-  builds the APK first, then reuses that AVD if already running or verifies
-  acceleration and starts it with its normal boot behavior, and installs and
-  launches the APK.
+  builds the release APK by calling `./build.sh apk`, then reuses that AVD if
+  already running or verifies acceleration and starts it with its normal boot
+  behavior, and installs and launches the APK. Keeping the build in `build.sh`
+  ensures emulator testing uses the same Flet CLI selection and artifact
+  handling as other package builds.
   `ANDROID_SDK_ROOT` or `ANDROID_HOME` may select a non-default SDK directory.
-- Budget a device run honestly: `flet build apk` took about eight minutes from a
+- Budget a device run honestly: `./build.sh apk` took about eight minutes from a
   cold cache and most of that is Gradle, so the Gradle and Kotlin compile daemons
   and the caches under `~/.gradle` are worth leaving alive between runs (`pgrep -f
   GradleDaemon` finds them) - a rebuild into warm daemons costs a few minutes

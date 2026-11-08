@@ -33,15 +33,6 @@ if [[ ! -x $adb || ! -x $emulator ]]; then
     exit 1
 fi
 
-if [[ -x "$script_dir/.venv/bin/flet" ]]; then
-    flet="$script_dir/.venv/bin/flet"
-elif command -v flet >/dev/null 2>&1; then
-    flet=$(command -v flet)
-else
-    printf 'Error: Flet CLI not found; install the project dev dependencies first.\n' >&2
-    exit 1
-fi
-
 avd_found=false
 while IFS= read -r listed_avd; do
     if [[ $listed_avd == "$avd_name" ]]; then
@@ -58,10 +49,7 @@ if [[ $avd_found != true ]]; then
 fi
 
 printf 'Building Android APK...\n'
-(
-    cd -- "$script_dir"
-    "$flet" build apk
-)
+"$script_dir/build.sh" apk
 
 if [[ ! -f $apk ]]; then
     printf 'Error: Flet build completed without producing %s.\n' "$apk" >&2
