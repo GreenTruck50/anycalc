@@ -770,18 +770,18 @@ There should be a conversions.yaml file that says "There should be this tab with
   `adb install -r` and started with
   `adb shell am start -n com.github.greentruck50.anycalc/.MainActivity`; the
   emulator's Android SDK lives in `~/Android/Sdk` and its AVDs in
-  `~/.android/avd`. Which file to install depends on the mode: `./build.sh apk`
+  `~/.android/avd`. Which file to install depends on the mode: `./build.py apk`
   renames its release artifact to `build/apk/anycalc.apk`, while
-  `./build.sh apk --debug` leaves `build/apk/app-debug.apk` (so a debug build
+  `./build.py apk --debug` leaves `build/apk/app-debug.apk` (so a debug build
   never satisfies `test-with-emulator.sh`, which looks for `anycalc.apk`).
 - `./test-with-emulator.sh AVD_NAME` automates this path for a named AVD: it
-  builds the release APK by calling `./build.sh apk`, then reuses that AVD if
+  builds the release APK by calling `./build.py apk`, then reuses that AVD if
   already running or verifies acceleration and starts it with its normal boot
-  behavior, and installs and launches the APK. Keeping the build in `build.sh`
+  behavior, and installs and launches the APK. Keeping the build in `build.py`
   ensures emulator testing uses the same Flet CLI selection and artifact
   handling as other package builds.
   `ANDROID_SDK_ROOT` or `ANDROID_HOME` may select a non-default SDK directory.
-- Budget a device run honestly: `./build.sh apk` took about eight minutes from a
+- Budget a device run honestly: `./build.py apk` took about eight minutes from a
   cold cache and most of that is Gradle, so the Gradle and Kotlin compile daemons
   and the caches under `~/.gradle` are worth leaving alive between runs (`pgrep -f
   GradleDaemon` finds them) - a rebuild into warm daemons costs a few minutes
@@ -941,8 +941,8 @@ There should be a conversions.yaml file that says "There should be this tab with
   `.apk` / Play Store `.aab`), `flet build ipa|ios-simulator` (iOS - needs a
   macOS host with Xcode) and `flet build web`. Every target is run from the
   workspace root - not from `src/`.
-- `./build.sh linux` produces the relocatable Flet Linux bundle in `build/linux/`.
-  `./build.sh appimage` must first perform that same Linux build, then package the
+- `./build.py linux` produces the relocatable Flet Linux bundle in `build/linux/`.
+  `./build.py appimage` must first perform that same Linux build, then package the
   bundle and `src/assets/icon.png` into an AppDir and invoke `appimagetool` to
   produce `build/appimage/anycalc-<host-architecture>.AppImage`. This target is
   Linux-host-only and requires `appimagetool` on `PATH` or an executable path in
@@ -950,13 +950,13 @@ There should be a conversions.yaml file that says "There should be this tab with
   the intermediate bundle at `build/linux/`. It packages the app bundle but does
   not vendor GTK or other host system libraries, so those runtime libraries
   remain host requirements.
-- `./build.sh deb` and `./build.sh rpm` must also build the Linux bundle first,
+- `./build.py deb` and `./build.py rpm` must also build the Linux bundle first,
   then package it with an installed launcher, desktop entry, and icon. The deb
   target requires `dpkg-deb`; the rpm target requires `rpmbuild`. Both are
   Linux-host-only, produce packages for the host architecture, and use `--out
   <dir>` for the final package directory. They declare a dependency on the
   system GTK 3 runtime and do not bundle GTK or other host libraries.
-- `./build.sh TARGET [MODE] [OPTIONS]` is the standing wrapper for all of that:
+- `./build.py TARGET [MODE] [OPTIONS]` is the standing builder for all of that:
   it runs from the workspace root, prefers the project's own `.venv/bin/flet`,
   and takes the build mode as `--release` (the default, and the production
   artifact), `--debug` or `--profile`. `flet build` itself has **no** `--debug`
@@ -967,6 +967,12 @@ There should be a conversions.yaml file that says "There should be this tab with
   `build/` first) and `--plain` logging. A debug artifact is the one to install
   under an emulator (`adb install -r`): it builds faster and is debuggable, but
   it ships Dart JIT, so it is much larger and slower than a release build.
+- The builder reads package name, version, description, authors and license from
+  `[project]` in `pyproject.toml`; product name, organization and Linux desktop
+  categories come from `[tool.flet]` and `[tool.flet.linux]`. App IDs, desktop
+  entry values, launchers, and native package metadata must be generated from
+  those values rather than duplicated in the builder. `build.py` is the sole
+  packaging entry point; do not retain a parallel `build.sh`.
 - The artifact must contain the app, `src/assets/conversions.yaml` and the
   declared dependencies. `org` and `product` in `[tool.flet]` are what become the
   application/bundle id (`com.github.greentruck50.anycalc`) and the name the

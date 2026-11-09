@@ -3,7 +3,7 @@ set -euo pipefail
 
 usage() {
     printf 'Usage: %s AVD_NAME\n' "${0##*/}"
-    printf 'Build the APK, boot the named Android emulator if needed, install it, and launch anycalc.\n'
+    printf 'Build the APK, boot the named Android emulator if needed, install it, and launch the app.\n'
 }
 
 if (($# != 1)); then
@@ -20,12 +20,31 @@ case "$avd_name" in
 esac
 
 script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+python="$script_dir/.venv/bin/python"
+if [[ ! -x $python ]]; then
+    python=$(command -v python3) || {
+        printf 'Error: Python 3.11+ is required to read pyproject.toml.\n' >&2
+        exit 1
+    }
+fi
+project_metadata=$(
+    "$python" -c '
+import sys, tomllib
+with open(sys.argv[1], "rb") as project_file:
+    config = tomllib.load(project_file)
+flet = config["tool"]["flet"]
+print(flet["org"] + "." + flet["product"])
+print(flet["product"])
+' "$script_dir/pyproject.toml"
+)
+mapfile -t project_metadata_lines <<<"$project_metadata"
+application_id=${project_metadata_lines[0]}
+app_name=${project_metadata_lines[1]}
 sdk_dir=${ANDROID_SDK_ROOT:-${ANDROID_HOME:-"$HOME/Android/Sdk"}}
 adb="$sdk_dir/platform-tools/adb"
 emulator="$sdk_dir/emulator/emulator"
 emulator_check="$sdk_dir/emulator/emulator-check"
-apk="$script_dir/build/apk/anycalc.apk"
-application_id=com.github.greentruck50.anycalc
+apk="$script_dir/build/apk/$app_name.apk"
 
 if [[ ! -x $adb || ! -x $emulator ]]; then
     printf 'Error: Android SDK tools not found under %s.\n' "$sdk_dir" >&2
@@ -49,7 +68,7 @@ if [[ $avd_found != true ]]; then
 fi
 
 printf 'Building Android APK...\n'
-"$script_dir/build.sh" apk
+"$python" "$script_dir/build.py" apk
 
 if [[ ! -f $apk ]]; then
     printf 'Error: Flet build completed without producing %s.\n' "$apk" >&2
@@ -124,5 +143,5 @@ fi
 printf 'Installing APK on %s...\n' "$serial"
 "$adb" -s "$serial" install -r "$apk"
 
-printf 'Launching anycalc...\n'
+printf 'Launching %s...\n' "$app_name"
 "$adb" -s "$serial" shell am start -n "$application_id/.MainActivity"

@@ -6,7 +6,7 @@
 #   run:           flet run                           (or python src/main.py)
 #   test:          flet test                          (pytest flags only; -k engine
 #                  skips the app host and runs just the conversion-engine tests)
-#   package:       ./build.sh <target> [--debug|--profile]   (preferred - see below;
+#   package:       ./build.py <target> [--debug|--profile]   (preferred - see below;
 #                  appimage/deb/rpm first build linux, then require appimagetool,
 #                  dpkg-deb, or rpmbuild respectively)
 #                  or flet build linux|macos|windows|apk|aab|ipa|ios-simulator|web
@@ -15,7 +15,7 @@
 #                  src/ and main.py is its entry point. `flet build` has NO
 #                  --debug flag (the build MODE belongs to Flutter, so it must be
 #                  forwarded: `--flutter-build-args=--debug`, or put it after a
-#                  `--` separator); build.sh does that, plus release/debug/profile
+#                  `--` separator); build.py does that, plus release/debug/profile
 #                  and the Android apk/aab split.
 #   docs:          mkdocs build          (from the [docs] extra; writes site/,
 #                  which is gitignored - .github/workflows/docs.yml rebuilds and
@@ -30,6 +30,10 @@ name = "anycalc"
 version = "0.1.0"
 description = "Calculate anything - a Flet calculator for desktop and mobile: expressions, scientific mode, named variables, history and live unit conversions."
 readme = "README.md"
+authors = [
+    { name = "GreenTruck50", email = "271768285+GreenTruck50@users.noreply.github.com" },
+]
+license = "GPL-3.0-only"
 requires-python = ">=3.11"
 dependencies = [
     # UI framework - what every widget in the app sits on.

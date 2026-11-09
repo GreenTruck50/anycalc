@@ -176,31 +176,33 @@ The same `src/` ships to desktop and to phone. Run from the workspace root —
 `cd src` is needed:
 
 ```bash
-./build.sh appimage       # Linux AppImage -> build/appimage/anycalc-x86_64.AppImage
-./build.sh deb            # Debian/Ubuntu package -> build/deb/
-./build.sh rpm            # RPM package -> build/rpm/
-./build.sh linux           # desktop bundle -> build/linux/
-./build.sh macos           # macOS bundle - build it on macOS
-./build.sh windows         # Windows bundle - build it on Windows
-./build.sh apk             # Android .apk
-./build.sh aab             # Android .aab (Play Store)
-./build.sh ipa             # iOS - needs macOS with Xcode
-./build.sh ios-simulator   # iOS simulator build
-./build.sh web             # static web bundle
+./build.py appimage       # Linux AppImage -> build/appimage/anycalc-x86_64.AppImage
+./build.py deb            # Debian/Ubuntu package -> build/deb/
+./build.py rpm            # RPM package -> build/rpm/
+./build.py linux           # desktop bundle -> build/linux/
+./build.py macos           # macOS bundle - build it on macOS
+./build.py windows         # Windows bundle - build it on Windows
+./build.py apk             # Android .apk
+./build.py aab             # Android .aab (Play Store)
+./build.py ipa             # iOS - needs macOS with Xcode
+./build.py ios-simulator   # iOS simulator build
+./build.py web             # static web bundle
 ```
 
-`build.sh` is a thin wrapper around `flet build`: it always runs from the
-workspace root and always prefers this project's `.venv/bin/flet`, so the Flet
-that packages the app is the Flet the dependencies are pinned to. It also owns
+`build.py` wraps `flet build`: it always runs from the workspace root and
+prefers this project's `.venv/bin/flet`, so the Flet that packages the app is
+the Flet the dependencies are pinned to. The app ID, product name, description,
+version, license, author, and Linux categories are read from `pyproject.toml`.
+The builder also owns
 the build **mode**, which `flet build` has no flag for — the mode belongs to
 Flutter, so it has to be forwarded as `--flutter-build-args=--debug`, and that
 is easy to forget:
 
 ```bash
-./build.sh apk                 # release (default): AOT, smallest, production
-./build.sh apk --debug         # debug: quick, debuggable, `adb install -r`
-./build.sh aab --split-per-abi # one bundle per ABI
-./build.sh linux --clean       # wipe build/ first, then build
+./build.py apk                 # release (default): AOT, smallest, production
+./build.py apk --debug         # debug: quick, debuggable, `adb install -r`
+./build.py aab --split-per-abi # one bundle per ABI
+./build.py linux --clean       # wipe build/ first, then build
 ```
 
 `--out <dir>`, `--arch arm64-v8a`, `--python-version 3.14` and `--plain` round it
@@ -209,7 +211,7 @@ out; anything after `--` goes straight to `flutter build`. Plain
 
 Desktop: the artifact is the relocatable bundle `build/linux/` (executable
 `anycalc`, `app/`, `site-packages/`, `python3.14/`, `data/`, `share/`).
-`./build.sh appimage` first makes that same Linux bundle, then wraps it in an
+`./build.py appimage` first makes that same Linux bundle, then wraps it in an
 AppDir and runs `appimagetool`; the resulting file is
 `build/appimage/anycalc-<host-architecture>.AppImage`. Install `appimagetool`
 and make it available on `PATH` first, or set `APPIMAGETOOL` to its executable
@@ -217,12 +219,12 @@ path. The `--out <dir>` option selects the AppImage output directory for this
 target; the intermediate Linux bundle remains in `build/linux/`. This packages
 the app bundle and icon, but does not vendor GTK or other host system libraries,
 so those Linux runtime libraries must be present on the machine running it.
-`./build.sh deb` and `./build.sh rpm` also build the Linux bundle first, then
+`./build.py deb` and `./build.py rpm` also build the Linux bundle first, then
 create a native package with an installed launcher, desktop entry and icon. The
 `.deb` uses `dpkg-deb`; `.rpm` requires `rpmbuild`. Both targets must run on
 Linux and produce packages for the host architecture. `--out <dir>` selects
 the final package output directory. Packages require the system GTK 3 runtime
-and do not bundle GTK or other host libraries. For `./build.sh linux`,
+and do not bundle GTK or other host libraries. For `./build.py linux`,
 `--out <dir>` still selects the bundle output directory.
 
 Mobile: `apk` / `aab` go through the Flutter SDK and need an Android SDK plus a
