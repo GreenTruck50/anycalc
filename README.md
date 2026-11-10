@@ -38,6 +38,10 @@ computes for itself.
   it back into an expression from the Insert Variable dialog.
 - **History.** Every finished calculation becomes a card in the history drawer: tap
   its equation or its answer to put it back in the display, or copy it from the card.
+- **Your data, on your terms.** Settings chooses how many calculations the history
+  keeps (10 to 100), clears it in one action, and offers "Reset all app data" —
+  history, variables, memory, the adopted π and every setting — behind a prompt that
+  asks before anything goes.
 - **A physical keyboard.** The real keys press the same pad a tap presses: digits,
   `+ - * / ( ) %`, `.` and `,`, plus `^` and `e` on the scientific pad, with
   `Enter` (or `=`) for `=`, `Backspace` for `⌫` and `Esc` (or `Delete`) for `AC`.

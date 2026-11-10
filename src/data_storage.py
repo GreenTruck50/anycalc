@@ -7,7 +7,7 @@ from typing import Optional
 
 import flet as ft
 
-from config import MAX_HISTORY_ITEMS
+from config import DEFAULT_HISTORY_LENGTH, MAX_HISTORY_ITEMS
 from precision import Precision, precision_from_payload
 import styles
 
@@ -26,6 +26,7 @@ class AppState:
     secondary_color: Optional[str] = None
     memory_keys_on_scientific: bool = False
     precision: Precision = Precision()
+    history_limit: int = DEFAULT_HISTORY_LENGTH
 
 
 def _decode_json(serialized: str) -> object:
@@ -89,15 +90,25 @@ def decode_state(
         # A save from before the memory keys were a setting never asked for them.
         memory_keys = False
 
+    history_limit = payload.get("history_limit")
+    if (
+        not isinstance(history_limit, int)
+        or isinstance(history_limit, bool)
+        or history_limit < 1
+    ):
+        history_limit = DEFAULT_HISTORY_LENGTH
+    history_limit = min(history_limit, MAX_HISTORY_ITEMS)
+
     return AppState(
         theme=theme,
-        history=tuple(checked_history[-MAX_HISTORY_ITEMS:]),
+        history=tuple(checked_history[-history_limit:]),
         pi_text=pi_text,
         pi_digits=pi_digits,
         primary_color=primary_color,
         secondary_color=secondary_color,
         memory_keys_on_scientific=memory_keys,
         precision=precision_from_payload(payload.get("precision")),
+        history_limit=history_limit,
     )
 
 
@@ -113,6 +124,7 @@ def encode_state(state: AppState) -> str:
             "secondary_color": state.secondary_color,
             "memory_keys_on_scientific": state.memory_keys_on_scientific,
             "precision": state.precision.as_payload(),
+            "history_limit": state.history_limit,
         },
         separators=(",", ":"),
     )
@@ -150,6 +162,18 @@ class AppDataStore:
         if pi_serialized is not None and not isinstance(pi_serialized, str):
             raise ValueError("saved pi data is not text")
         return decode_state(serialized, pi_serialized)
+
+    async def clear(self) -> None:
+        """Drop every key the app has stored, settings, history and pi alike.
+
+        "Reset all app data" is the only caller. The keys are removed rather than
+        overwritten so a reset really is what the user was promised: the next
+        start finds nothing at all.
+        """
+
+        async with self._save_lock:
+            for key in (_STATE_STORAGE_KEY, _PI_STORAGE_KEY):
+                await self.preferences.remove(key)
 
     async def save(self, state: AppState) -> None:
         async with self._save_lock:

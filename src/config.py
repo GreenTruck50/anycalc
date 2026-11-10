@@ -18,8 +18,13 @@ MAX_EXPONENT = 5000
 # Maximum expression length
 MAX_EXPRESSION_LENGTH = 500
 
-# Maximum history items to keep
-MAX_HISTORY_ITEMS = 50
+# Maximum history items the app keeps and stores. The Settings history-length
+# choice can ask for fewer than this, never more.
+MAX_HISTORY_ITEMS = 100
+
+# What that Settings dropdown offers, and what an app starts with.
+HISTORY_LENGTH_CHOICES = (10, 25, 50, 100)
+DEFAULT_HISTORY_LENGTH = 50
 
 # The main display line, and the small live answer shown under it while an
 # expression is being typed. The live answer is promoted to display size when

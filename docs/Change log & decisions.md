@@ -572,3 +572,18 @@ The Android emulator window repeatedly triggered an "is not responding" dialog w
 **Validation:** `pytest -k 'system_theme or styles'` 28 passed with only the two known `tests/test_styles.py` failures; the app-host-free suite is at 443 passed; `pyright src tests` reports only the pre-existing `src/pi.py:160` "tqdm is possibly unbound".
 
 **Docs:** the themes bullet in `calculator_spec.md` now lists System and adds a bullet for what it does, "Saved app data" gained the note that a saved System choice is restored as a choice, `README.md` gained a "Follows the system theme" bullet, and `TODO.md` item (24) ticked.
+
+
+## 2026-11-09 — History length, Clear history and Reset all app data (TODO item 26)
+
+**Asked for:** item (26) - a history-length setting (max 100), a "Clear history" action and a "Reset all app data" action with a confirmation prompt, all in Settings.
+
+**What changed.** `config.MAX_HISTORY_ITEMS` moved from 50 to 100 and became the ceiling rather than the length; `HISTORY_LENGTH_CHOICES = (10, 25, 50, 100)` and `DEFAULT_HISTORY_LENGTH = 50` are what the Settings dropdown offers, so the default app keeps exactly what it kept before. `AnycalcApp.history_limit` is the one number the drawer, the `=` branch, `trim_history()` and `_state_snapshot()` cut against, and it is saved as `AppState.history_limit`; on load it is clamped into range and the stored history is trimmed to it, so a shorter history cannot smuggle itself back in. Shortening the history from Settings drops the oldest entries immediately. "Clear history" reuses the drawer handler rather than duplicating it.
+
+**The reset, and why it asks.** "Reset all app data" opens `key="reset-confirmation-dialog"` with Cancel and Reset. `page.pop_dialog()` closes the most recently opened dialog, so the Settings dialog underneath survives the prompt. On Reset, `reset_app_data()` empties the history, the named variables, the calculator memory and the adopted pi - `pi.reset_program_pi()` is new and puts back the `math.pi` fallback - and restores every default: theme, colors, precision, memory keys, history length. It then re-points the still-open dialog at those defaults (`sync_settings_controls()`, which is also what a reset has to do because nothing was tapped) and hands `store_reset_data()` to the page: `AppDataStore.clear()` - new, and it removes both storage keys - followed by saving the fresh state, so the next start finds the same clean app the prompt promised.
+
+**Tests:** new `tests/test_settings_data.py` - 9 tests, no app host - covering the dropdown and both buttons being there, shortening dropping the oldest entries, the limit being saved and capped, a finished calculation never growing past it, the clear button, Cancel changing nothing, a full reset really clearing history / variables / memory / settings / the adopted pi, the open dialog showing the defaults afterwards, and the saved pi being back at the fallback. `tests/test_data_storage.py` gained the length round-trip, the ceiling clamp, the older-save default, the load-time trim, and an async test that `clear()` empties client storage.
+
+**Validation:** `pytest -k 'settings_data or data_storage'` 25 passed; the app-host-free suite is at 456 passed with only the two known `tests/test_styles.py` failures; `pyright src tests` reports only the pre-existing `src/pi.py:160` "tqdm is possibly unbound".
+
+**Docs:** the history section of `calculator_spec.md` now specifies the length dropdown and the Settings clear action, the settings list gained the reset and its confirmation, `README.md` gained a "Your data, on your terms" bullet, and `TODO.md` item (26) ticked.

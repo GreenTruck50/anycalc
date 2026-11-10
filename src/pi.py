@@ -385,6 +385,21 @@ def program_pi_decimals() -> str:
     return _program_pi_decimals
 
 
+def reset_program_pi() -> None:
+    """Put back the ``math.pi`` the program falls back to.
+
+    This is what "Reset all app data" does to a pi the user adopted from the Pi
+    page: the adopted digits go, and every calculation is back to multiplying by
+    the platform's own pi.
+    """
+
+    global _program_pi, _program_pi_digits, _program_pi_decimals
+
+    _program_pi = Decimal(str(math.pi))
+    _program_pi_decimals = format(_program_pi, "f").partition(".")[2]
+    _program_pi_digits = len(_program_pi_decimals)
+
+
 def set_program_pi(value, digits: int, decimals: Optional[str] = None) -> None:
     """Make ``value`` the pi the program calculates with.
 

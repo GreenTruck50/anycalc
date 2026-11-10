@@ -496,9 +496,14 @@ There should be a conversions.yaml file that says "There should be this tab with
 ## Calculation history
 
 - Every `=` that produces an answer records the equation and the answer; the most
-  recent `config.MAX_HISTORY_ITEMS` entries are kept and shown newest first.
+  recent entries are kept and shown newest first, up to the history length the
+  user chose - never past `config.MAX_HISTORY_ITEMS`.
+- Offer that length in Settings as a dropdown - 10, 25, 50 (the default) or 100.
+  Shortening it drops the oldest entries immediately, from the drawer, from the
+  arrow-key walk and from what is saved.
 - The history lives in its own drawer on the trailing edge of the window and
-  carries a "Clear history" button.
+  carries a "Clear history" button. Settings carries the same action, and it does
+  the same thing: empty the history and save that.
 - At the top of the history drawer, show the notice "History only applies to
   the Regular and Scientific Calculators." when the current page is not either
   calculator; hide the notice on both calculator pages.
@@ -561,6 +566,17 @@ There should be a conversions.yaml file that says "There should be this tab with
   Calculator carries them too. It applies the way every other choice does - the
   pad on screen gains or loses the row the instant the switch is flipped, and the
   choice is saved with the rest of the settings.
+- Offer a "Reset all app data" button in Settings, and make it ask first: a modal
+  confirmation names what is about to go - the history, the saved variables, the
+  calculator memory, the adopted pi and every setting - and only its Reset action
+  acts; Cancel closes the prompt and changes nothing.
+- A reset puts the running app back to how it started: empty history, no variables,
+  empty memory, the fallback pi, default theme and colors, automatic precision, the
+  memory keys off the scientific pad and the default history length. It then clears
+  what the app had stored and writes the fresh state back, so the next start finds
+  the same clean app.
+- Offer a "Clear history" button in Settings next to it, doing what the history
+  drawer's button does.
 - Apply every settings choice the instant it is picked: the chosen theme or color
   recolors the running app - existing controls included - and is saved at once,
   while the dialog stays open for the next choice. Dragging in a color picker is

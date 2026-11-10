@@ -22,8 +22,10 @@ from flet_color_pickers import ColorPicker
 from calculate import calculate, is_number, toggle_sign
 from clipboard import ClipboardService
 from config import (
+    DEFAULT_HISTORY_LENGTH,
     DISPLAY_TEXT_SIZE,
     ERROR_MESSAGES,
+    HISTORY_LENGTH_CHOICES,
     MAX_HISTORY_ITEMS,
     PREVIEW_MORPH_LIFT,
     PREVIEW_MORPH_MS,
@@ -76,6 +78,7 @@ class AnycalcApp:
     # on the class rather than only on a started instance.
     memory_keys_on_scientific: bool = False
     precision: Precision = Precision()
+    history_limit: int = DEFAULT_HISTORY_LENGTH
 
     def __init__(self, page: ft.Page) -> None:
         self.page = page
@@ -129,6 +132,9 @@ class AnycalcApp:
 
         # How answers are rounded and written out once they are calculated.
         self.precision = Precision()
+
+        # How many finished calculations the history keeps.
+        self.history_limit = DEFAULT_HISTORY_LENGTH
 
         # Install a safe computed pi immediately, then restore the last adopted
         # value from client storage before enabling controls in the built page.
@@ -425,13 +431,14 @@ class AnycalcApp:
     def _state_snapshot(self, include_pi: bool = False) -> AppState:
         return AppState(
             theme=self.selected_theme,
-            history=tuple(self.history[-MAX_HISTORY_ITEMS:]),
+            history=tuple(self.history[-self.history_limit:]),
             pi_text=pi.program_pi_text() if include_pi else None,
             pi_digits=pi.program_pi_digits() if include_pi else None,
             primary_color=self.selected_primary_color,
             secondary_color=self.selected_secondary_color,
             memory_keys_on_scientific=self.memory_keys_on_scientific,
             precision=self.precision,
+            history_limit=self.history_limit,
         )
 
     async def load_saved_data(self) -> None:
@@ -457,6 +464,7 @@ class AnycalcApp:
                 self.apply_theme(state.theme)
 
             self.history = list(state.history)
+            self.history_limit = state.history_limit
             self.refresh_history()
             self.memory_keys_on_scientific = state.memory_keys_on_scientific
             self.precision = state.precision
@@ -691,6 +699,26 @@ class AnycalcApp:
             ],
             on_select=self.update_precision,
         )
+        self.settings_history_length = ft.Dropdown(
+            key="settings-history-length",
+            label="History length",
+            value=str(self.history_limit),
+            options=[
+                ft.DropdownOption(key=str(choice), text=f"Keep {choice}")
+                for choice in HISTORY_LENGTH_CHOICES
+            ],
+            on_select=self.update_history_length,
+        )
+        self.settings_clear_history_button = ft.TextButton(
+            key="settings-clear-history",
+            content="Clear history",
+            on_click=self.clear_history,
+        )
+        self.settings_reset_button = ft.TextButton(
+            key="settings-reset-all-data",
+            content="Reset all app data",
+            on_click=self.open_reset_confirmation,
+        )
         self.settings_content = ft.Column(
             [
                 self.settings_theme_dropdown,
@@ -699,6 +727,14 @@ class AnycalcApp:
                 self.settings_precision_sig_figs,
                 self.settings_precision_scientific,
                 self.settings_precision_rounding,
+                self.settings_history_length,
+                ft.Row(
+                    [
+                        self.settings_clear_history_button,
+                        self.settings_reset_button,
+                    ],
+                    spacing=8,
+                ),
                 self.settings_primary_group,
                 self.settings_secondary_group,
             ],
@@ -930,6 +966,142 @@ class AnycalcApp:
         """One calculated answer, written the way the settings ask."""
 
         return format_answer(answer, self.precision)
+
+    # ----------------------------
+    # History length and the data reset
+    # ----------------------------
+
+    def update_history_length(self, event: object) -> None:
+        """Keep fewer or more finished calculations.
+
+        Shortening the history drops the oldest entries straight away - they are
+        gone from the drawer, from the display's arrow-key walk and from what is
+        saved, all at once.
+        """
+
+        del event
+        choice = self.settings_history_length.value
+        try:
+            wanted = int(choice) if isinstance(choice, str) else 0
+        except ValueError:
+            wanted = DEFAULT_HISTORY_LENGTH
+        self.history_limit = max(1, min(wanted, MAX_HISTORY_ITEMS))
+        self.trim_history()
+        self.refresh_history()
+        self.page.update()
+        self.page.run_task(self.save_data)
+
+    def trim_history(self) -> None:
+        """Cut the history back to what the current length allows."""
+
+        if len(self.history) > self.history_limit:
+            del self.history[: len(self.history) - self.history_limit]
+        self.history_walk = None
+
+    def open_reset_confirmation(self, event: object) -> None:
+        """Ask first: a reset throws away work the user cannot get back."""
+
+        del event
+        self.page.show_dialog(
+            ft.AlertDialog(
+                key="reset-confirmation-dialog",
+                modal=True,
+                title=ft.Text("Reset all app data?"),
+                content=ft.Text(
+                    "This clears the calculation history, the saved variables and "
+                    "the memory, forgets the pi the app adopted, and puts every "
+                    "setting back to its default. It cannot be undone."
+                ),
+                actions=[
+                    ft.TextButton(
+                        key="reset-cancel",
+                        content="Cancel",
+                        on_click=self.close_reset_confirmation,
+                    ),
+                    ft.TextButton(
+                        key="reset-confirm",
+                        content="Reset",
+                        on_click=self.confirm_reset_app_data,
+                    ),
+                ],
+                actions_alignment=ft.MainAxisAlignment.END,
+            )
+        )
+        self.page.update()
+
+    def close_reset_confirmation(self, event: object) -> None:
+        del event
+        self.page.pop_dialog()
+        self.page.update()
+
+    def confirm_reset_app_data(self, event: object) -> None:
+        del event
+        self.page.pop_dialog()
+        self.reset_app_data()
+
+    def reset_app_data(self) -> None:
+        """Put the running app back to how it started, and clear what it stored."""
+
+        defaults = styles.DEFAULT_THEME
+        self.history.clear()
+        self.history_limit = DEFAULT_HISTORY_LENGTH
+        self.variables.clear()
+        self.memory = None
+        self.memory_recalled = False
+        self.memory_keys_on_scientific = False
+        self.precision = Precision()
+        self.selected_primary_color = defaults.accent
+        self.selected_secondary_color = defaults.key_operator
+        self.expression = ""
+        self.result_mode = False
+        self.history_walk = None
+        pi.reset_program_pi()
+        if self.pi_view is not None:
+            self.pi_view.refresh_current()
+
+        self.refresh_history()
+        self.refresh_variable_status()
+        self.refresh_memory_status()
+        self.sync_settings_controls()
+        self.apply_theme(defaults.name)
+        self.rebuild_keypad()
+        self.reset_preview_slot()
+        self.update_display()
+        self.page.show_dialog(ft.SnackBar(ft.Text("All app data reset.")))
+        self.page.run_task(self.store_reset_data)
+
+    async def store_reset_data(self) -> None:
+        """Write the emptied state over the top of everything that was stored."""
+
+        try:
+            await self.data_store.clear()
+            await self.data_store.save(self._state_snapshot())
+        except (OSError, ValueError) as error:
+            self._show_storage_error(f"App data could not be reset: {error}")
+
+    def sync_settings_controls(self) -> None:
+        """Point an open settings dialog at what the app now holds.
+
+        A reset changes settings without anyone tapping a dropdown, so the values
+        in the dialog have to be moved in code - and pushed, since the dialog is
+        still on screen.
+        """
+
+        if not hasattr(self, "settings_theme_dropdown"):
+            return
+        defaults = styles.DEFAULT_THEME
+        self.settings_theme_dropdown.value = defaults.name
+        self.settings_memory_switch.value = self.memory_keys_on_scientific
+        self.settings_history_length.value = str(self.history_limit)
+        for dropdown, choice in (
+            (self.settings_precision_decimals, self.precision.decimals),
+            (self.settings_precision_sig_figs, self.precision.sig_figs),
+            (self.settings_precision_scientific, self.precision.sci_threshold),
+        ):
+            dropdown.value = "auto" if choice is None else str(choice)
+        self.settings_precision_rounding.value = self.precision.rounding
+        self._sync_color_settings()
+        self._update_settings_dialog()
 
     def pick_primary_color(self, event: ft.Event[ColorPicker]) -> None:
         """The primary color's picker changed - apply it the same instant way."""
@@ -1175,6 +1347,7 @@ class AnycalcApp:
             self.settings_content,
             self.settings_theme_dropdown,
             self.settings_memory_switch,
+            self.settings_history_length,
             self.settings_primary_group,
             self.settings_primary_content,
             self.settings_secondary_group,
@@ -1550,6 +1723,7 @@ class AnycalcApp:
                 )
                 result = self.format_result(result)
                 self.history.append((original, result))
+                self.trim_history()
                 self.refresh_history()
                 self.page.run_task(self.save_data)
                 self.expression = result
@@ -1793,7 +1967,7 @@ class AnycalcApp:
         """Rebuild the history cards, newest first, capped at the kept items."""
 
         self.history_list.controls = []
-        for equation, answer in reversed(self.history[-MAX_HISTORY_ITEMS:]):
+        for equation, answer in reversed(self.history[-self.history_limit:]):
             async def click_equation(e, value=equation):
                 del e
                 await self.select_history_equation(value)
