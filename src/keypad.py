@@ -89,3 +89,55 @@ def make_key(
         ink_color=styles.KEY_INK,
         on_click=handle_click,
     )
+
+# A physical keyboard presses this very pad, so this says which pad key a real
+# key stands for. pad_key() below then refuses anything the pad on screen does
+# not carry, which is how "^", "e" and "√" stay scientific-mode keys without a
+# second rule anywhere else. Flutter reports printable keys as their character -
+# letters upper-case, so both spellings of "e" are listed - and the editing keys
+# by name.
+KEYBOARD_KEYS = {
+    **{digit: digit for digit in "0123456789"},
+    "+": "+",
+    "-": "−",
+    "_": "−",
+    "*": "×",
+    "/": "÷",
+    "^": "^",
+    "(": "(",
+    ")": ")",
+    "%": "%",
+    ".": ".",
+    ",": ".",
+    "=": "=",
+    "±": "±",
+    "√": "√",
+    "𝜋": "𝜋",
+    "e": "e",
+    "E": "e",
+    "Enter": "=",
+    "Numpad Enter": "=",
+    "Backspace": "⌫",
+    "Delete": "AC",
+    "Escape": "AC",
+}
+
+
+def pad_keys(scientific: bool) -> frozenset[str]:
+    """Every key the pad on screen actually shows."""
+
+    rows = SCIENTIFIC_ROWS + REGULAR_ROWS if scientific else REGULAR_ROWS
+    return frozenset(key for row in rows for key in row)
+
+
+def pad_key(key: str, scientific: bool) -> str | None:
+    """The pad key a physical key stands for, or None if this pad has no such key.
+
+    Unmapped keys (letters the pad does not carry, arrows, Tab, modifiers) and keys
+    whose pad key only the other mode shows both come back as None, so the caller
+    has one rule to honour: press what comes back, or press nothing.
+    """
+
+    label = KEYBOARD_KEYS.get(key)
+    return label if label in pad_keys(scientific) else None
+

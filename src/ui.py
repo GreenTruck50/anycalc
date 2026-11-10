@@ -14,6 +14,7 @@ this, and the arithmetic itself never lives here - it is asked for from
 import asyncio
 from collections.abc import Callable
 from decimal import Decimal
+from typing import cast
 
 import flet as ft
 from flet_color_pickers import ColorPicker
@@ -44,12 +45,17 @@ from keypad import (
     SCIENTIFIC_ROWS,
     key_color,
     make_key,
+    pad_key,
 )
 import pi
 import pi_value
 from pi_view import PiView
 import styles
 from variable_dialogs import open_insert_variable_dialog, open_set_variable_dialog
+
+# The arrow keys walk the stored history into the display; the value says whether
+# the walk steps back in time (the newest entry first) or forward again.
+HISTORY_WALK_KEYS = {"ArrowUp": True, "ArrowDown": False}
 
 
 class AnycalcApp:
@@ -87,6 +93,16 @@ class AnycalcApp:
         # The pi page, built the first time it is opened.
         self.pi_view: PiView | None = None
 
+        # The physical keyboard: whether one of the two calculator pads is on
+        # screen at all, and whether a text field holds the caret - a focused
+        # field types its own keys, so the handler has to stay out of its way.
+        self.calculator_showing = True
+        self.text_field_focused = False
+
+        # How far back into the history the arrow keys have walked; None while
+        # what is on the display is the user's own entry.
+        self.history_walk: int | None = None
+
         # Install a safe computed pi immediately, then restore the last adopted
         # value from client storage before enabling controls in the built page.
         self.program_pi_run = pi_value.install_default_pi()
@@ -119,6 +135,10 @@ class AnycalcApp:
         page.theme_mode = self._theme_mode(styles.DEFAULT_THEME)
         page.bgcolor = styles.APP_BACKGROUND
         page.padding = 16
+
+        # A physical keyboard presses the same pad a tap does; the gates that keep
+        # it out of other people's keys are in handle_keyboard_event.
+        page.on_keyboard_event = self.handle_keyboard_event
 
         # Mobile renders edge-to-edge, so the system bars are given the page colour
         # and light icons instead of floating over the app in their own colours. The
@@ -410,6 +430,10 @@ class AnycalcApp:
             expand=True,
             on_change=lambda e: self.handle_display_change(e.control.value),
             on_focus=lambda e: self.select_result(e.control),
+            # Enter commits what is in the field, the way "=" does on the pad -
+            # the field eats its own printable keys, so this is the one key the
+            # keyboard handler cannot do for it while the caret sits here.
+            on_submit=lambda e: self.handle_key("="),
         )
 
         self.copy_display_button = self.clipboard.make_button(
@@ -447,6 +471,10 @@ class AnycalcApp:
             ),
             visible=False,
         )
+
+        # The display is an editable field, so while it holds the caret its typing
+        # arrives as on_change and must not also be pressed on the pad.
+        self.watch_field_focus(self.display)
 
     def _build_header(self) -> None:
         """Menu button, title and caption, plus history and settings."""
@@ -1187,6 +1215,7 @@ class AnycalcApp:
 
         self.expression = value
         self.result_mode = False
+        self.history_walk = None
         self.expression_label.value = "EXPRESSION"
         self.display.value = self.expression
         self.refresh_copy_button_state()
@@ -1273,6 +1302,7 @@ class AnycalcApp:
 
         if key == "AC":
             self.expression = ""
+            self.history_walk = None
 
         elif key == "⌫":
             if self.expression in ERROR_MESSAGES:
@@ -1329,15 +1359,106 @@ class AnycalcApp:
         self.update_display()
 
     # ----------------------------
+    # The physical keyboard
+    # ----------------------------
+
+    def watch_field_focus(self, field: ft.TextField) -> None:
+        """Note when a text field takes the caret, and when it lets go.
+
+        A focused field consumes its own printable keys, so a "+" typed into the
+        display would otherwise land twice: once as the field's edit and once as a
+        pad press. Whatever handlers the field already had are kept and still run.
+        """
+
+        already_focused = cast(Callable[[object], None] | None, field.on_focus)
+        already_blurred = cast(Callable[[object], None] | None, field.on_blur)
+
+        def note_focus(event) -> None:
+            self.text_field_focused = True
+            if already_focused is not None:
+                already_focused(event)
+
+        def note_blur(event) -> None:
+            self.text_field_focused = False
+            if already_blurred is not None:
+                already_blurred(event)
+
+        field.on_focus = note_focus
+        field.on_blur = note_blur
+
+    def handle_keyboard_event(self, event: ft.KeyboardEvent) -> None:
+        """Press the pad from a real keyboard: digits, ``+ - * / ( ) % .``, ``^``
+        and ``e`` in scientific mode, Enter or ``=`` for ``=``, Backspace for
+        ``⌫`` and Escape or Delete for ``AC``.
+
+        Three gates keep the keyboard out of someone else's business. Ctrl/Alt/Meta
+        combinations are left to the system. A conversion, currency or pi page has
+        no pad to press, and a text field with the caret - the display itself, or
+        the value field of the Set Variable dialog - types its own keys. And
+        ``pad_key`` returns nothing for a key the pad on screen does not carry, so
+        the regular pad never picks up ``^`` or ``e`` from the keyboard any more
+        than it does from a tap.
+        """
+
+        if event.ctrl or event.alt or event.meta:
+            return
+
+        if not self.calculator_showing or self.text_field_focused:
+            return
+
+        if event.key in HISTORY_WALK_KEYS:
+            self.recall_history(backwards=HISTORY_WALK_KEYS[event.key])
+            return
+
+        label = pad_key(event.key, self.scientific)
+        if label is not None:
+            self.handle_key(label)
+
+    def recall_history(self, backwards: bool) -> None:
+        """Put a stored calculation back in the display, one arrow press a step.
+
+        The history is kept oldest first and shown newest first, so the walk starts
+        at the newest entry and steps back from there; it stops at the oldest
+        rather than wrapping, and stepping forward past the newest leaves the
+        display empty again, ready for a fresh entry.
+        """
+
+        if not self.history:
+            return
+
+        if backwards:
+            step = (
+                0
+                if self.history_walk is None
+                else min(self.history_walk + 1, len(self.history) - 1)
+            )
+        elif self.history_walk is None:
+            return
+        else:
+            step = self.history_walk - 1
+
+        if step < 0:
+            self.history_walk = None
+            self.expression = ""
+        else:
+            self.history_walk = step
+            self.expression = self.history[len(self.history) - 1 - step][0]
+
+        self.result_mode = False
+        self.update_display()
+
+    # ----------------------------
     # Modes, variables, history, conversions
     # ----------------------------
 
     def set_mode(self, index) -> None:
         self._deactivate_currency_view()
+        self.calculator_showing = True
         self.scientific = index == 1
         self.content_area.controls = [self.calculator_view]
         self.expression = ""
         self.result_mode = False
+        self.history_walk = None
 
         self.status.value = (
             "SCIENTIFIC MODE" if self.scientific
@@ -1435,6 +1556,7 @@ class AnycalcApp:
             self.clipboard.make_button,
         )
         self.content_area.controls = [self.conversion_view.build()]
+        self.calculator_showing = False
         self.status.value = "UNIT CONVERSION"
         self.page.update()
 
@@ -1447,6 +1569,7 @@ class AnycalcApp:
             self.clipboard.make_button,
         )
         self.content_area.controls = [self.currency_view.build()]
+        self.calculator_showing = False
         self.status.value = "CURRENCY CONVERSION"
         self.page.update()
         self.page.run_task(self.currency_view.load_currencies)
@@ -1470,5 +1593,6 @@ class AnycalcApp:
             )
         self.conversion_view = None
         self.content_area.controls = [self.pi_view.build()]
+        self.calculator_showing = False
         self.status.value = "PI CALCULATION"
         self.page.update()

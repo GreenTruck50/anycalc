@@ -385,6 +385,31 @@ There should be a conversions.yaml file that says "There should be this tab with
 - A rejected calculation shows its error string in the display, and the next key
   pressed - including `±` and backspace - clears the error instead of editing it.
 
+## Physical keyboard
+
+- A physical keyboard presses the same pad a tap presses; it is not a second way
+  into the expression. Digits `0-9`, `.` and `,`, `+`, `-`, `*`, `/`, `(`, `)`,
+  `%`, `^` and `e` stand for the keys of the same name, Enter or `=` for `=`,
+  Backspace for `⌫` and Escape or Delete for `AC`.
+- Only keys the pad on screen actually carries are live: `^`, `e` and `√` do
+  nothing on the Regular Calculator, exactly as that pad has no such key, and a
+  key always means what the pad key it stands for means - `*` is `×`, `/` is `÷`,
+  `-` is `−`.
+- The keyboard stands down wherever it would collide with something else. Ctrl,
+  Alt and Meta combinations are left to the system. A Unit Conversion, Currency
+  Conversion or pi page has no pad, so keys do nothing there. While a text field
+  holds the caret - the display itself, or the value field of the Set Variable
+  dialog - that field takes the typing and the pad is not pressed a second time.
+- Enter while the caret sits in the display commits the expression the way the `=`
+  key does; every other printable key there stays ordinary text editing.
+- The Up and Down arrows walk the stored calculations back into the display for
+  editing: Up starts at the newest entry and steps towards the oldest, Down steps
+  back towards the newest and leaves the display empty once it is past it. Editing
+  or clearing what the display holds starts the walk again from the newest.
+- This is not desktop-only behaviour: it is the page's own keyboard event, so a
+  phone with a paired keyboard gets the same keys and a phone without one never
+  fires them.
+
 ## Angle mode
 
 - The display's caption row carries a button that switches between `DEG` and

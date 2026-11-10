@@ -38,6 +38,10 @@ computes for itself.
   it back into an expression from the Insert Variable dialog.
 - **History.** Every finished calculation becomes a card in the history drawer: tap
   its equation or its answer to put it back in the display, or copy it from the card.
+- **A physical keyboard.** The real keys press the same pad a tap presses: digits,
+  `+ - * / ( ) %`, `.` and `,`, plus `^` and `e` on the scientific pad, with
+  `Enter` (or `=`) for `=`, `Backspace` for `⌫` and `Esc` (or `Delete`) for `AC`.
+  Up and Down arrows walk past calculations back into the display.
 - **Live unit conversions.** Choose a value and two units and the answer re-computes
   on every keystroke, with the chain of hops the engine took shown under it.
 - **π, computed by the app itself.** Anywhere from 3 to 100 000 000 decimals on the

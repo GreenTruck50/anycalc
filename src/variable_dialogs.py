@@ -20,6 +20,18 @@ if TYPE_CHECKING:
     from ui import AnycalcApp
 
 
+def close_dialog(app: AnycalcApp, page: ft.Page) -> None:
+    """Pop the dialog in front of the calculator and hand the keyboard back.
+
+    The value field's blur event is not guaranteed to fire when the dialog it
+    lives in goes away, and a caret remembered after that field is gone would
+    leave the physical keyboard mute for the rest of the session.
+    """
+
+    app.text_field_focused = False
+    page.pop_dialog()
+
+
 def open_set_variable_dialog(app: AnycalcApp) -> None:
     """Ask for a name and a value, and store it as a named variable.
 
@@ -51,6 +63,9 @@ def open_set_variable_dialog(app: AnycalcApp) -> None:
         value="",
         autofocus=True,
     )
+    # The field takes the caret by itself, so what is typed here must not also
+    # press keys on the pad behind the dialog.
+    app.watch_field_focus(value_field)
 
     def assign_variable(value):
         name = name_picker.value
@@ -68,7 +83,7 @@ def open_set_variable_dialog(app: AnycalcApp) -> None:
 
         app.refresh_variable_status()
         app.refresh_preview()
-        page.pop_dialog()
+        close_dialog(app, page)
         page.update()
 
     def save_variable(e):
@@ -97,7 +112,7 @@ def open_set_variable_dialog(app: AnycalcApp) -> None:
     actions: list[ft.Control] = [
         ft.TextButton(
             content="Cancel",
-            on_click=lambda: page.pop_dialog(),
+            on_click=lambda: close_dialog(app, page),
         ),
         ft.TextButton(
             content="Save",
@@ -148,7 +163,7 @@ def open_insert_variable_dialog(app: AnycalcApp) -> None:
                 actions=[
                     ft.TextButton(
                         content="OK",
-                        on_click=lambda: page.pop_dialog(),
+                        on_click=lambda: close_dialog(app, page),
                     ),
                 ],
             )
@@ -168,7 +183,7 @@ def open_insert_variable_dialog(app: AnycalcApp) -> None:
         app.expression += name
         app.result_mode = False
         app.update_display()
-        page.pop_dialog()
+        close_dialog(app, page)
         page.update()
 
     variable_buttons = []
@@ -199,7 +214,7 @@ def open_insert_variable_dialog(app: AnycalcApp) -> None:
             actions=[
                 ft.TextButton(
                     content="Cancel",
-                    on_click=lambda: page.pop_dialog(),
+                    on_click=lambda: close_dialog(app, page),
                 ),
             ],
         )
