@@ -665,11 +665,29 @@ class AnycalcApp:
             color=self._seed_color(self.selected_secondary_color),
             on_color_change=self.pick_secondary_color,
         )
+        # The switch is not given a label of its own: Flet puts a switch label in a
+        # row sized to its contents, with no width left to wrap into, so a long
+        # sentence is simply cut off in a narrow dialog. The words ride beside the
+        # toggle in a row the app builds instead - the Row hands the container the
+        # width that is left, the Text inside it breaks at word boundaries, and a
+        # click on the words does what a click on the toggle does.
         self.settings_memory_switch = ft.Switch(
             key="settings-memory-keys",
-            label="Memory keys on the scientific pad (replaces the variable keys)",
             value=self.memory_keys_on_scientific,
             on_change=self.update_memory_keys_setting,
+        )
+        self.settings_memory_label = ft.Container(
+            content=ft.Text(
+                "Memory keys on the scientific pad (replaces the variable keys)"
+            ),
+            expand=True,
+            padding=ft.Padding.symmetric(vertical=6),
+            on_click=self.toggle_memory_keys_setting,
+        )
+        self.settings_memory_row = ft.Row(
+            [self.settings_memory_switch, self.settings_memory_label],
+            spacing=8,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
         )
         # The precision box: how an answer is rounded and written out. Every
         # dropdown applies the moment it is picked, like the rest of the dialog.
@@ -725,7 +743,7 @@ class AnycalcApp:
         self.settings_content = ft.Column(
             [
                 self.settings_theme_dropdown,
-                self.settings_memory_switch,
+                self.settings_memory_row,
                 self.settings_precision_decimals,
                 self.settings_precision_sig_figs,
                 self.settings_precision_scientific,
@@ -886,7 +904,25 @@ class AnycalcApp:
         saved with the rest of the settings.
         """
 
-        self.memory_keys_on_scientific = bool(event.control.value)
+        self.apply_memory_keys_setting(bool(event.control.value))
+
+    def toggle_memory_keys_setting(self, event: object) -> None:
+        """The words beside the toggle are a click target too.
+
+        The label left the switch itself so that it can wrap over several lines,
+        which also puts it outside the switch's tap area - so clicking the words
+        flips the switch and applies the setting, exactly as the toggle does.
+        """
+
+        del event
+        enabled = not self.memory_keys_on_scientific
+        self.settings_memory_switch.value = enabled
+        self.apply_memory_keys_setting(enabled)
+
+    def apply_memory_keys_setting(self, enabled: bool) -> None:
+        """Put the memory-keys choice into effect, whoever asked for it."""
+
+        self.memory_keys_on_scientific = enabled
         # Turning the memory keys off hands the row back to the variables, and the
         # memory goes with the row - see leave_memory_mode().
         if self.variables_enabled:

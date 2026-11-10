@@ -18,9 +18,11 @@ knowing before adding a test here:
   instead by the exhaustive route tests in ``tests/test_conversion_engine.py``.
   Reversing the pair that the page already opens on is reachable, through the
   form's swap button (``conversion-swap``). A ``Switch`` is another control whose
-  key never resolves - ``find_by_key("settings-memory-keys")`` finds nothing - but
-  its *label* is findable with ``find_by_text_containing`` and tapping the label
-  flips the switch, which is how ``flip_memory_keys_switch`` drives it.
+  key never resolves - ``find_by_key("settings-memory-keys")`` finds nothing. Its
+  sentence is not even the switch's own label any more - a switch label is laid out
+  on one line and gets cut off, so the words are a separate ``Text`` with its own
+  click handler - which makes it findable with ``find_by_text_containing``, and
+  tapping it flips the switch; that is how ``flip_memory_keys_switch`` drives it.
 * The drawer is still closing when ``open_page`` returns, so the first tap after
   it can be spent dismissing the drawer instead of reaching its target. A helper
   that opens something over the calculator has to press its button again when the
@@ -131,11 +133,12 @@ async def open_page(tester: TestDriver, label: str) -> None:
 async def flip_memory_keys_switch(tester: TestDriver) -> None:
     """Flip the Settings switch that swaps the scientific pad's shared row.
 
-    The switch is the second entry of the Settings column, so it is always inside
-    that dialog's viewport, but a ``Switch`` is one of the controls whose ``key``
-    the tester cannot reach - only its label can be found and tapped. A ``Finder``
-    cannot read a switch back either, so this only flips it; what the setting did
-    is read off the pad by ``show_memory_row``.
+    The switch and its words are the second entry of the Settings column, so they
+    are always inside that dialog's viewport, but a ``Switch`` is one of the
+    controls whose ``key`` the tester cannot reach - the sentence beside the toggle
+    is what can be found and tapped, and its own click handler flips the switch. A
+    ``Finder`` cannot read a switch back either, so this only flips it; what the
+    setting did is read off the pad by ``show_memory_row``.
 
     The drawer left open by ``open_page`` swallows the first tap, so the button is
     pressed again if the dialog did not appear.

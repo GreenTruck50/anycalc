@@ -78,8 +78,57 @@ def test_the_settings_dialog_offers_the_memory_keys_switch() -> None:
     dialog = app.build_settings_dialog()
 
     assert dialog.key == "settings-dialog"
-    assert app.settings_memory_switch in app.settings_content.controls
+    assert app.settings_memory_row in app.settings_content.controls
+    assert app.settings_memory_switch in app.settings_memory_row.controls
     assert app.settings_memory_switch.value is False
+
+
+def test_the_memory_switch_label_wraps_instead_of_being_cut_off() -> None:
+    """The one long sentence in the dialog has to be text that can wrap.
+
+    A switch's own label - string or control - is laid out in a row sized to its
+    contents, so nothing constrains it and a long sentence is cut off in a narrow
+    dialog. The words therefore sit beside the toggle as a sibling that is given
+    the width the row has left, which is what lets them break at word boundaries;
+    being outside the switch, they carry their own click handler.
+    """
+
+    app = build_app()
+    app.build_settings_dialog()
+
+    switch = app.settings_memory_switch
+    label = app.settings_memory_label
+
+    assert switch.label is None
+    assert label in app.settings_memory_row.controls
+    assert label.expand
+    assert label.on_click is not None
+    text = label.content
+    assert isinstance(text, ft.Text)
+    assert not text.no_wrap
+    assert text.value == (
+        "Memory keys on the scientific pad (replaces the variable keys)"
+    )
+
+
+def test_clicking_the_label_words_flips_the_memory_keys_setting() -> None:
+    """Clicking the words does exactly what clicking the toggle does."""
+
+    app = build_app()
+    app.build_settings_dialog()
+    app.set_mode(1)
+
+    app.toggle_memory_keys_setting(None)
+
+    assert app.memory_keys_on_scientific is True
+    assert app.settings_memory_switch.value is True
+    assert set(MEMORY_ROW) <= pad_labels(app)
+
+    app.toggle_memory_keys_setting(None)
+
+    assert app.memory_keys_on_scientific is False
+    assert app.settings_memory_switch.value is False
+    assert set(VARIABLE_ROW) <= pad_labels(app)
 
 
 def test_the_keyboard_gate_follows_the_memory_setting() -> None:

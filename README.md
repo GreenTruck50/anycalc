@@ -42,6 +42,9 @@ computes for itself.
   keeps (10 to 100), clears it in one action, and offers "Reset all app data" —
   history, variables, memory, the adopted π and every setting — behind a prompt that
   asks before anything goes.
+- **Settings that fit the screen.** A long setting name wraps over as many lines as
+  the dialog has room for instead of being cut off, and tapping the words flips a
+  switch just like tapping the toggle does.
 - **A physical keyboard.** The real keys press the same pad a tap presses: digits,
   `+ - * / ( ) %`, `.` and `,`, plus `^` and `e` on the scientific pad, with
   `Enter` (or `=`) for `=`, `Backspace` for `⌫` and `Esc` (or `Delete`) for `AC`.

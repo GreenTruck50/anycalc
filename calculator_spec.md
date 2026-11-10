@@ -594,6 +594,13 @@ There should be a conversions.yaml file that says "There should be this tab with
   display goes and comes back with it, and the choice is saved with the rest of the
   settings. Flipping it off empties the memory as well: the pad has no memory keys
   left to recall it with (see "Calculator memory").
+- Lay that switch out so its sentence stays readable however narrow the dialog is:
+  the words are not the switch's own label - a switch label is laid out on a single
+  line, with no width left to break into, so the end of it is simply cut off - but a
+  text block beside the toggle that takes the width the dialog has left and wraps
+  over as many lines as it needs. Being next to the toggle rather than part of it,
+  the words carry their own click action, and clicking them flips the setting
+  exactly as clicking the toggle does.
 - Offer a "Reset all app data" button in Settings, and make it ask first: a modal
   confirmation names what is about to go - the history, the saved variables, the
   calculator memory, the adopted pi and every setting - and only its Reset action
