@@ -8,6 +8,7 @@ from typing import Optional
 import flet as ft
 
 from config import MAX_HISTORY_ITEMS
+from precision import Precision, precision_from_payload
 import styles
 
 _STATE_STORAGE_KEY = "anycalc.app-state"
@@ -24,6 +25,7 @@ class AppState:
     primary_color: Optional[str] = None
     secondary_color: Optional[str] = None
     memory_keys_on_scientific: bool = False
+    precision: Precision = Precision()
 
 
 def _decode_json(serialized: str) -> object:
@@ -95,6 +97,7 @@ def decode_state(
         primary_color=primary_color,
         secondary_color=secondary_color,
         memory_keys_on_scientific=memory_keys,
+        precision=precision_from_payload(payload.get("precision")),
     )
 
 
@@ -109,6 +112,7 @@ def encode_state(state: AppState) -> str:
             "primary_color": state.primary_color,
             "secondary_color": state.secondary_color,
             "memory_keys_on_scientific": state.memory_keys_on_scientific,
+            "precision": state.precision.as_payload(),
         },
         separators=(",", ":"),
     )

@@ -50,6 +50,16 @@ from keypad import (
 import pi
 import pi_value
 from pi_view import PiView
+from precision import (
+    DECIMAL_PLACE_CHOICES,
+    DEFAULT_ROUNDING,
+    ROUNDING_LABELS,
+    ROUNDING_MODES,
+    SCIENTIFIC_THRESHOLD_CHOICES,
+    SIGNIFICANT_FIGURE_CHOICES,
+    Precision,
+    format_answer,
+)
 import styles
 from variable_dialogs import open_insert_variable_dialog, open_set_variable_dialog
 
@@ -65,6 +75,7 @@ class AnycalcApp:
     # the style tests do exactly that - so the pad settings carry their defaults
     # on the class rather than only on a started instance.
     memory_keys_on_scientific: bool = False
+    precision: Precision = Precision()
 
     def __init__(self, page: ft.Page) -> None:
         self.page = page
@@ -115,6 +126,9 @@ class AnycalcApp:
         self.memory: Decimal | None = None
         self.memory_recalled = False
         self.memory_keys_on_scientific = False
+
+        # How answers are rounded and written out once they are calculated.
+        self.precision = Precision()
 
         # Install a safe computed pi immediately, then restore the last adopted
         # value from client storage before enabling controls in the built page.
@@ -373,6 +387,7 @@ class AnycalcApp:
             primary_color=self.selected_primary_color,
             secondary_color=self.selected_secondary_color,
             memory_keys_on_scientific=self.memory_keys_on_scientific,
+            precision=self.precision,
         )
 
     async def load_saved_data(self) -> None:
@@ -401,6 +416,7 @@ class AnycalcApp:
             self.history = list(state.history)
             self.refresh_history()
             self.memory_keys_on_scientific = state.memory_keys_on_scientific
+            self.precision = state.precision
             self.rebuild_keypad()
             if state.pi_text is not None and state.pi_digits is not None:
                 whole, separator, decimals = state.pi_text.partition(".")
@@ -598,10 +614,45 @@ class AnycalcApp:
             value=self.memory_keys_on_scientific,
             on_change=self.update_memory_keys_setting,
         )
+        # The precision box: how an answer is rounded and written out. Every
+        # dropdown applies the moment it is picked, like the rest of the dialog.
+        self.settings_precision_decimals = self._build_precision_dropdown(
+            key="settings-precision-decimals",
+            label="Decimal places",
+            value=self.precision.decimals,
+            choices=DECIMAL_PLACE_CHOICES,
+        )
+        self.settings_precision_sig_figs = self._build_precision_dropdown(
+            key="settings-precision-significant-figures",
+            label="Significant figures",
+            value=self.precision.sig_figs,
+            choices=SIGNIFICANT_FIGURE_CHOICES,
+        )
+        self.settings_precision_scientific = self._build_precision_dropdown(
+            key="settings-precision-scientific-notation",
+            label="Scientific notation from",
+            value=self.precision.sci_threshold,
+            choices=SCIENTIFIC_THRESHOLD_CHOICES,
+            power_labels=True,
+        )
+        self.settings_precision_rounding = ft.Dropdown(
+            key="settings-precision-rounding",
+            label="Rounding",
+            value=self.precision.rounding,
+            options=[
+                ft.DropdownOption(key=mode, text=label)
+                for mode, label in ROUNDING_LABELS.items()
+            ],
+            on_select=self.update_precision,
+        )
         self.settings_content = ft.Column(
             [
                 self.settings_theme_dropdown,
                 self.settings_memory_switch,
+                self.settings_precision_decimals,
+                self.settings_precision_sig_figs,
+                self.settings_precision_scientific,
+                self.settings_precision_rounding,
                 self.settings_primary_group,
                 self.settings_secondary_group,
             ],
@@ -751,6 +802,88 @@ class AnycalcApp:
         self.memory_keys_on_scientific = bool(event.control.value)
         self.rebuild_keypad()
         self.page.run_task(self.save_data)
+
+    def _build_precision_dropdown(
+        self,
+        key: str,
+        label: str,
+        value: int | None,
+        choices: tuple[int | None, ...],
+        power_labels: bool = False,
+    ) -> ft.Dropdown:
+        """One precision dropdown: "Automatic" plus the listed choices.
+
+        The threshold dropdown labels its choices as the powers of ten they
+        stand for; the decimal-place and significant-figure dropdowns just count.
+        """
+
+        def option_label(choice: int | None) -> str:
+            if choice is None:
+                return "Automatic"
+            if power_labels:
+                return f"1E+{choice} and 1E-{choice}"
+            return str(choice)
+
+        return ft.Dropdown(
+            key=key,
+            label=label,
+            value="auto" if value is None else str(value),
+            options=[
+                ft.DropdownOption(
+                    key="auto" if choice is None else str(choice),
+                    text=option_label(choice),
+                )
+                for choice in choices
+            ],
+            on_select=self.update_precision,
+        )
+
+    @staticmethod
+    def _precision_choice(dropdown: ft.Dropdown) -> int | None:
+        """What one precision dropdown stands for: a count, or automatic."""
+
+        value = dropdown.value
+        if not isinstance(value, str) or value == "auto":
+            return None
+        try:
+            return int(value)
+        except ValueError:
+            return None
+
+    def update_precision(self, event: object) -> None:
+        """Apply the precision the dialog's precision box now holds.
+
+        Like every other setting there is no Apply button: the answer on screen is
+        re-shown under the new precision the moment a choice is made, and the
+        choice is saved with the rest of the settings.
+        """
+
+        del event
+        rounding = self.settings_precision_rounding.value
+        if not isinstance(rounding, str) or rounding not in ROUNDING_MODES:
+            rounding = DEFAULT_ROUNDING
+        self.precision = Precision(
+            decimals=self._precision_choice(self.settings_precision_decimals),
+            sig_figs=self._precision_choice(self.settings_precision_sig_figs),
+            sci_threshold=self._precision_choice(
+                self.settings_precision_scientific
+            ),
+            rounding=rounding,
+        )
+        self.apply_precision()
+        self.page.run_task(self.save_data)
+
+    def apply_precision(self) -> None:
+        """Re-show what is already on the display under the new precision."""
+
+        if self.result_mode and is_number(self.expression):
+            self.expression = format_answer(self.expression, self.precision)
+        self.update_display()
+
+    def format_result(self, answer: str) -> str:
+        """One calculated answer, written the way the settings ask."""
+
+        return format_answer(answer, self.precision)
 
     def pick_primary_color(self, event: ft.Event[ColorPicker]) -> None:
         """The primary color's picker changed - apply it the same instant way."""
@@ -1203,6 +1336,8 @@ class AnycalcApp:
         except Exception:
             return ""
 
+        answer = self.format_result(answer)
+
         # A bare number is already the answer; showing it twice is noise.
         return "" if answer == self.expression else answer
 
@@ -1364,6 +1499,7 @@ class AnycalcApp:
                     self.degrees,
                     self.variables,
                 )
+                result = self.format_result(result)
                 self.history.append((original, result))
                 self.refresh_history()
                 self.page.run_task(self.save_data)

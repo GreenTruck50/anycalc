@@ -374,6 +374,33 @@ There should be a conversions.yaml file that says "There should be this tab with
 - The engine takes pi from one place, the value the program calculated (see "Pi
   calculation"), and a caller - a test - can hand it its own pi instead.
 
+## Answer precision
+
+- The settings dialog carries a precision box: decimal places, significant
+  figures, a scientific-notation threshold and a rounding mode. Every one of them
+  starts at "Automatic", which leaves an answer exactly as the engine computed it.
+- Decimal places run 0 to 12 and are kept literally: `2` asked for at two decimal
+  places reads `2.00`. Significant figures run 1 to 12 and count from the first
+  non-zero digit, so `123456` at three figures reads `123000`. When both are set,
+  decimal places win.
+- Rounding is half-up (the default), half-even or truncate. It is the same rule
+  either side of zero: half-even sends a lone `.5` to the even neighbour
+  (`2.5` → `2`, `-2.5` → `-2`) and truncate cuts towards zero (`-0.9` → `0`).
+- The scientific-notation threshold is a power of ten. At `1E+6 and 1E-6` an
+  answer of a million, or of a millionth, is written `1E+6` / `1E-6`, and
+  everything between stays in ordinary digits. Automatic keeps the plain digits
+  the engine writes.
+- The precision shapes what the user is shown - the live preview, the answer after
+  `=`, and the answer kept on the history card - and nothing else: the engine
+  still computes at `config.DECIMAL_PRECISION`, and an error message is shown
+  exactly as the engine wrote it.
+- Picking a precision re-shapes the answer already sitting on the display, the
+  way every other setting applies the instant it is chosen.
+- A precision that leaves nothing behind reads as plain `0` rather than `-0` or
+  `0.00`.
+- The precision is saved with the rest of the settings; a save written before the
+  box existed reads back fully automatic.
+
 ## Calculator memory
 
 - The memory keys work on the number the display rests on: a live expression
@@ -519,6 +546,10 @@ There should be a conversions.yaml file that says "There should be this tab with
   Lime, Emerald, Teal, Turquoise, Cyan) and neutrals (Slate, Charcoal, Gray,
   Light gray). Each theme's own default accent and operator-key color is itself
   one of those named entries, which is what "Reset to defaults" selects.
+- Offer a precision box - decimal places, significant figures, scientific-notation
+  threshold and rounding mode - as four dropdowns, each leading with "Automatic".
+  See the "Answer precision" section for what each one does; like every other
+  setting they apply the moment one is picked and are saved at once.
 - Offer a "Memory keys on the scientific pad" switch. The Regular Calculator
   always carries the memory keys; the switch decides whether the Scientific
   Calculator carries them too. It applies the way every other choice does - the
@@ -540,8 +571,9 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Save the selected theme, primary and secondary colors, up to
   `config.MAX_HISTORY_ITEMS` calculation-history entries, and the exact pi
   currently used by calculations between app launches.
-- Save with them whether the Scientific Calculator carries the memory keys. A save
-  written before that setting existed reads back with the keys off.
+- Save with them whether the Scientific Calculator carries the memory keys, and
+  everything the precision box holds. A save written before either existed reads
+  back with the keys off and the precision automatic.
 - Before enabling the app controls on startup, restore the saved history and
   theme. Restore the saved pi value and its decimal precision through the
   program-pi setter so subsequent calculations use the same pi as before

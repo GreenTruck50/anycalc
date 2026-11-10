@@ -30,7 +30,7 @@ Every item ends with its number in parentheses so it can be referred to by numbe
 
 ## Settings - extends item 7
 
-- [ ] Precision box: decimal places, rounding mode (half-up / half-even / truncate) (21)
+- [x] Precision box: decimal places, rounding mode (half-up / half-even / truncate) (21)
 - [ ] Number formatting: thousands separator style (comma / space / none) (22)
 - [ ] Default angle mode persisted in app state (deg / rad / grad is per-session today) (23)
 - [ ] "Follow system theme" option - styles.THEMES is a fixed tuple with no auto mode (24)

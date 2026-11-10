@@ -42,6 +42,10 @@ computes for itself.
   `+ - * / ( ) %`, `.` and `,`, plus `^` and `e` on the scientific pad, with
   `Enter` (or `=`) for `=`, `Backspace` for `⌫` and `Esc` (or `Delete`) for `AC`.
   Up and Down arrows walk past calculations back into the display.
+- **Answer precision.** A precision box in Settings rounds and writes every answer:
+  decimal places (kept literally — `2` at two places reads `2.00`), significant
+  figures, a scientific-notation threshold, and half-up / half-even / truncate.
+  Each entry starts at Automatic, which leaves the exact `Decimal` answer alone.
 - **A calculator memory.** `M+` and `M-` add or subtract what the display rests on,
   `MRC` puts that number back into the expression — and clears the memory when
   pressed again right after — while an `M` in the caption row says the memory is

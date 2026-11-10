@@ -540,3 +540,20 @@ The Android emulator window repeatedly triggered an "is not responding" dialog w
 **Validation:** `pytest -k 'memory or keyboard or data_storage'` green (58 tests); the app-host-free suite is at 416 passed with only the two known `tests/test_styles.py` failures that also fail with `src/` stashed; `pyright src tests` reports only the pre-existing `src/pi.py:160` "tqdm is possibly unbound".
 
 **Docs:** new "Calculator memory" section in `calculator_spec.md`, the keypad row-count bullet rewritten to name the exception, a switch bullet in the settings list, a saved-data bullet, a "A calculator memory" bullet in `README.md`, and `TODO.md` item (20) ticked.
+
+
+## 2026-11-09 — A precision box: how answers are rounded and written (TODO item 21)
+
+**Asked for:** item (21) - decimal places and a rounding mode (half-up / half-even / truncate). The box also carries significant figures and a scientific-notation threshold, which the same formatting decision needs anyway.
+
+**What changed:** a new pure module, `src/precision.py`, holds the whole decision: a frozen `Precision(decimals, sig_figs, sci_threshold, rounding)` dataclass, `round_answer()` for the `Decimal` work and `format_answer(text, precision)` for writing it out. Nothing in it touches Flet, so it is testable with no app. `AnycalcApp.format_result()` is the single call site, used by the `=` branch of `press()` and by `preview_answer()`, so the live preview, the display and the history card can never disagree about what an answer looks like. `update_precision()` reads the four new settings dropdowns, re-shapes the result already on the display through `apply_precision()` and saves; like every other setting there is no Apply button. `AppState.precision` carries the dataclass as a nested JSON object, and `precision_from_payload()` turns anything malformed or out of range back into the automatic entry rather than failing the load.
+
+**What the box deliberately does not touch.** The engine still computes at `config.DECIMAL_PRECISION` and still trims trailing zeros; the precision is a display decision. An error string the engine raises comes back from `format_answer()` untouched, so rounding can never swallow "Can't divide by 0". Decimal places are kept literally (`2` at two places is `2.00`), significant figures count from the first non-zero digit, decimal places win when both are set, and a threshold writes both ends of the scale in `E` notation (`1E+6`, `1E-6`) while everything between stays in digits - previously the app never used scientific notation at all, because the engine formats with `f`.
+
+**Tests:** new `tests/test_precision.py` - 17 tests, no app host, so `pytest -k precision` runs it alone. Nine of them are the pure function (each rounding mode against the same half, both sides of zero, places kept literally, figures counted past leading zeros, the threshold in both directions, error text untouched, a nonsense saved payload falling back); eight build the app and check what the display, the preview and the history card end up holding, including re-shaping an answer that is already on screen. `tests/test_data_storage.py` gained the precision round-trip and the older-save default.
+
+**One trap worth keeping.** Re-showing the answer after a precision change has to be gated on `result_mode` and `is_number()`: an expression the user is still typing must not be rewritten under their caret, and an error message on the display must stay exactly as it is.
+
+**Validation:** `pytest -k precision` 26 passed; the app-host-free suite is at 435 passed with only the two known `tests/test_styles.py` failures; `pyright src tests` reports only the pre-existing `src/pi.py:160` "tqdm is possibly unbound".
+
+**Docs:** new "Answer precision" section in `calculator_spec.md`, a precision-box bullet in the settings list and one in "Saved app data", a "Answer precision" bullet in `README.md`, a wiring note in `docs/anycalc (Flet calculator app).md`, and `TODO.md` item (21) ticked.
