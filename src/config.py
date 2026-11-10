@@ -87,6 +87,7 @@ ERROR_INVALID_FUNCTION = "Invalid function"
 ERROR_INVALID_OPERATOR = "Invalid operator"
 ERROR_INVALID_NUMBER = "Invalid number"
 ERROR_INVALID_EXPRESSION = "Invalid expression"
+ERROR_VARIABLES_DISABLED = "Variables disabled"
 
 
 # All error messages for easy checking
@@ -101,6 +102,7 @@ ERROR_MESSAGES = (
     ERROR_INVALID_OPERATOR,
     ERROR_INVALID_NUMBER,
     ERROR_INVALID_EXPRESSION,
+    ERROR_VARIABLES_DISABLED,
     "Error"
 )
 

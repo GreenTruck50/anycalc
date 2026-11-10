@@ -12,6 +12,7 @@ this, and the arithmetic itself never lives here - it is asked for from
 """
 
 import asyncio
+import re
 from collections.abc import Callable
 from decimal import Decimal
 from typing import cast
@@ -25,6 +26,7 @@ from config import (
     DEFAULT_HISTORY_LENGTH,
     DISPLAY_TEXT_SIZE,
     ERROR_MESSAGES,
+    ERROR_VARIABLES_DISABLED,
     HISTORY_LENGTH_CHOICES,
     MAX_HISTORY_ITEMS,
     PREVIEW_MORPH_LIFT,
@@ -42,7 +44,9 @@ from history_view import (
     history_notice_visible,
 )
 from keypad import (
+    CLEAR_VARIABLES_KEY,
     DIALOG_KEYS,
+    MEMORY_CLEAR_KEY,
     MEMORY_ROW,
     key_color,
     make_key,
@@ -197,12 +201,11 @@ class AnycalcApp:
             color=styles.TEXT_MUTED,
             visible=False,
         )
-        # The "M" that says the memory is holding something. It sits in the
-        # display's caption row because both pads carry memory keys.
+        # The memory, shown the way the variables are shown: "M = 42" beside the
+        # display caption, because both pads carry memory keys.
         self.memory_status = ft.Text(
-            "M",
-            size=13,
-            weight=ft.FontWeight.BOLD,
+            "",
+            size=11,
             color=styles.TEXT_MUTED,
             visible=False,
         )
@@ -664,7 +667,7 @@ class AnycalcApp:
         )
         self.settings_memory_switch = ft.Switch(
             key="settings-memory-keys",
-            label="Memory keys on the scientific pad",
+            label="Memory keys on the scientific pad (replaces the variable keys)",
             value=self.memory_keys_on_scientific,
             on_change=self.update_memory_keys_setting,
         )
@@ -878,11 +881,15 @@ class AnycalcApp:
 
         The switch applies the way every other setting does - straight away, with
         no Apply button - so the pad on screen is rebuilt to carry the memory row
-        or lose it, and the choice is saved with the rest of the settings.
+        in place of the variable row (or the variable row back again), the variable
+        line under the display appears or disappears with it, and the choice is
+        saved with the rest of the settings.
         """
 
         self.memory_keys_on_scientific = bool(event.control.value)
         self.rebuild_keypad()
+        self.refresh_variable_status()
+        self.update_display()
         self.page.run_task(self.save_data)
 
     def _build_precision_dropdown(
@@ -1549,12 +1556,7 @@ class AnycalcApp:
             return ""
 
         try:
-            answer = calculate(
-                self.expression,
-                self.scientific,
-                self.degrees,
-                self.variables,
-            )
+            answer = self.evaluate(self.expression)
         except Exception:
             return ""
 
@@ -1652,13 +1654,18 @@ class AnycalcApp:
         self.page.update()
 
     def handle_key(self, label: str) -> None:
-        """Dispatch a key press: the two variable keys open dialogs, the rest press."""
+        """Dispatch a key press: the variable keys open dialogs, the rest press."""
 
         if label not in DIALOG_KEYS:
             # Any key other than MRC ends a recall, so the next MRC recalls the
             # stored number again instead of clearing it.
             if label != "MRC":
                 self.memory_recalled = False
+            if label == CLEAR_VARIABLES_KEY:
+                # The variable row's third key empties every variable; it is not a
+                # key the expression can take.
+                self.clear_variables()
+                return
             self.press(label)
             return
 
@@ -1715,12 +1722,7 @@ class AnycalcApp:
         elif key == "=":
             try:
                 original = self.expression or "0"
-                result = calculate(
-                    original,
-                    self.scientific,
-                    self.degrees,
-                    self.variables,
-                )
+                result = self.evaluate(original)
                 result = self.format_result(result)
                 self.history.append((original, result))
                 self.trim_history()
@@ -1865,21 +1867,20 @@ class AnycalcApp:
         """
 
         try:
-            answer = calculate(
-                self.expression or "0",
-                self.scientific,
-                self.degrees,
-                self.variables,
-            )
+            answer = self.evaluate(self.expression or "0")
             return Decimal(answer)
         except Exception:
             return None
 
     def press_memory(self, key: str) -> None:
-        """One of the three memory keys was pressed."""
+        """One of the memory keys was pressed."""
 
         if key == "MRC":
             self.recall_memory()
+            return
+
+        if key == MEMORY_CLEAR_KEY:
+            self.clear_memory()
             return
 
         value = self.memory_operand()
@@ -1887,6 +1888,18 @@ class AnycalcApp:
             return
         stored = self.memory or Decimal(0)
         self.memory = stored + value if key == "M+" else stored - value
+        self.memory_recalled = False
+        self.refresh_memory_status()
+        self.page.update()
+
+    def clear_memory(self) -> None:
+        """MCLR empties the memory, whatever the display is doing.
+
+        A physical calculator's memory-clear key takes the stored number and
+        nothing else: the expression, the history and the variables stay.
+        """
+
+        self.memory = None
         self.memory_recalled = False
         self.refresh_memory_status()
         self.page.update()
@@ -1912,10 +1925,20 @@ class AnycalcApp:
         self.press(str(self.memory))
 
     def refresh_memory_status(self) -> None:
-        """Show or hide the "M" that says the memory holds a number."""
+        """Show what the memory holds, the way the variables are listed.
+
+        An empty memory - or one holding zero - shows nothing, which is what a
+        physical calculator does with its "M" flag.
+        """
 
         stored = self.memory
-        self.memory_status.visible = stored is not None and stored != 0
+        if stored is None or stored == 0:
+            self.memory_status.value = ""
+            self.memory_status.visible = False
+            return
+
+        self.memory_status.value = f"M = {self.format_result(str(stored))}"
+        self.memory_status.visible = True
 
     # ----------------------------
     # Modes, variables, history, conversions
@@ -1947,7 +1970,78 @@ class AnycalcApp:
             for name in VARIABLE_NAMES
             if name in self.variables
         )
-        self.variable_status.visible = self.scientific and bool(self.variables)
+        self.variable_status.visible = self.variables_enabled and bool(self.variables)
+
+    @property
+    def memory_mode(self) -> bool:
+        """Whether the memory keys currently hold the scientific pad's key row.
+
+        That row is the one the named variables live on, so while the memory keys
+        are up the pad has no way to set or insert a variable: memory mode.
+        """
+
+        return self.scientific and self.memory_keys_on_scientific
+
+    @property
+    def variables_enabled(self) -> bool:
+        """Whether named variables may be used at all right now.
+
+        Names belong to the Scientific Calculator, and even there only while its
+        variable keys are on the pad - see ``memory_mode``.
+        """
+
+        return self.scientific and not self.memory_keys_on_scientific
+
+    def variable_context(self) -> dict[str, Decimal]:
+        """The variables the engine is allowed to read for this pad."""
+
+        return self.variables if self.variables_enabled else {}
+
+    def used_variable(self, expression: str) -> str | None:
+        """A variable name the expression uses, or None if it uses none.
+
+        Only names that actually hold a value count - any other name is an unknown
+        name the engine reports itself. Whole words are matched, so a function call
+        like ``sqrt`` never reads as the variable ``s``.
+        """
+
+        if not self.variables:
+            return None
+        for token in re.findall(r"[^\W\d_]+", expression):
+            if token in self.variables:
+                return token
+        return None
+
+    def evaluate(self, expression: str) -> str:
+        """Calculate with the variables this pad may use.
+
+        In memory mode a name is not arithmetic but a variable the pad has put out
+        of reach, so it gets its own message instead of the engine's "Unknown
+        constant" - the number is stored, the user just cannot use it here.
+        """
+
+        if self.memory_mode and self.used_variable(expression) is not None:
+            raise ValueError(ERROR_VARIABLES_DISABLED)
+        return calculate(
+            expression,
+            self.scientific,
+            self.degrees,
+            self.variable_context(),
+        )
+
+    def clear_variables(self, event: object = None) -> None:
+        """The "Clear Variables" key: empty every named variable.
+
+        Only the variables go. The expression, the memory and the history are the
+        user's and stay where they are; a display already resting on a variable
+        re-evaluates and reports what it is worth now.
+        """
+
+        del event
+        self.variables.clear()
+        self.refresh_variable_status()
+        self.update_display()
+        self.page.update()
 
     def toggle_angle(self, e) -> None:
         del e

@@ -25,14 +25,13 @@ REGULAR_ROWS = (
     ("0", ".", "=", "+"),
 )
 
-# The regular rows are part of the scientific pad too, so these rows add only
-# what those lack: ( ) % ± already live in the utility row below, which is why
-# "^" joins this row rather than repeating a fourth row of keys the pad already
-# has.
+# The scientific rows add only what the regular rows lack: ( ) % ± already live in
+# the utility row below, which is why "^" joins this row rather than repeating a
+# fourth row of keys the pad already has. The row that used to hold the variable
+# keys is assembled by pad_rows() instead, because the memory keys share that slot.
 SCIENTIFIC_ROWS = (
     ("sin", "cos", "tan", "√"),
     ("log", "ln", "𝜋", "e", "^"),
-    ("Set Variable", "Insert Variable"),
 )
 
 SCIENTIFIC_KEYS = frozenset(key for row in SCIENTIFIC_ROWS for key in row)
@@ -40,20 +39,29 @@ SCIENTIFIC_KEYS = frozenset(key for row in SCIENTIFIC_ROWS for key in row)
 # The two variable keys open dialogs instead of editing the expression.
 DIALOG_KEYS = ("Set Variable", "Insert Variable")
 
-# The calculator memory is a row of its own, put above the utility row. MRC puts
-# what is stored into the expression and clears it when pressed again right
-# after; M+ and M- fold the number the display rests on into it. The regular pad
-# always carries this row; the scientific pad carries it only while the setting
-# that asks for memory keys there is on.
-MEMORY_ROW = ("MRC", "M+", "M-")
+# The memory and the named variables share one row of the pad. MRC puts what is
+# stored into the expression and clears it when pressed again right after; M+ and
+# M- fold the number the display rests on into it; MCLR empties the memory
+# outright, the way a physical calculator's memory-clear key does. The Regular
+# Calculator always carries this row - it has no variables to make room for - and
+# the Scientific Calculator carries it instead of the variable row while the
+# setting that asks for memory keys there is on.
+MEMORY_ROW = ("MRC", "M+", "M-", "MCLR")
+MEMORY_CLEAR_KEY = "MCLR"
+
+# The same slot when the memory keys are not wanted: the two variable dialogs and
+# a key that empties every variable the pad has set.
+VARIABLE_ROW = ("Set Variable", "Insert Variable", "Clear Variables")
+CLEAR_VARIABLES_KEY = "Clear Variables"
 
 
 def key_color(label: str) -> str:
     """The background a key gets for its label, on either pad.
 
-    The scientific keys and the memory keys carry the operator color because on
-    both pads they are the band of controls above the digits; "=" is the accent
-    and the two clearing keys are the danger color wherever they appear.
+    The scientific keys and the shared memory / variable row carry the operator
+    color because on both pads they are the band of controls above the digits;
+    "=" is the accent and the two clearing keys are the danger color wherever
+    they appear.
     """
 
     if label == "=":
@@ -62,7 +70,7 @@ def key_color(label: str) -> str:
         return styles.KEY_DANGER
     if label in ("÷", "×", "−", "+", "%", "±"):
         return styles.KEY_OPERATOR
-    if label in MEMORY_ROW or label in SCIENTIFIC_KEYS:
+    if label in MEMORY_ROW or label in VARIABLE_ROW or label in SCIENTIFIC_KEYS:
         return styles.KEY_OPERATOR
     return styles.KEY_DEFAULT
 
@@ -143,16 +151,20 @@ def pad_rows(scientific: bool, memory_keys: bool = True) -> tuple[tuple[str, ...
     """The rows the pad on screen shows, top to bottom.
 
     This is the one place that knows how a pad is assembled: the scientific rows
-    only in scientific mode, the memory row wherever the memory keys are wanted,
-    and the regular rows - which both pads carry - last. The pad is built from
-    this, and so is the keyboard gate, which is why a key can never mean a key
-    that is not on the screen.
+    only in scientific mode, the regular rows - which both pads carry - last, and
+    between them one shared slot that holds the memory row or the variable row.
+    The memory keys replace the variable keys rather than being added beside them,
+    so the scientific pad is the same height with the setting on or off, and the
+    regular pad - which has no variables at all - always shows the memory row.
+    The pad is built from this, and so is the keyboard gate, which is why a key
+    can never mean a key that is not on the screen.
     """
 
     rows: list[tuple[str, ...]] = []
     if scientific:
         rows.extend(SCIENTIFIC_ROWS)
-    if memory_keys or not scientific:
+        rows.append(MEMORY_ROW if memory_keys else VARIABLE_ROW)
+    else:
         rows.append(MEMORY_ROW)
     rows.extend(REGULAR_ROWS)
     return tuple(rows)

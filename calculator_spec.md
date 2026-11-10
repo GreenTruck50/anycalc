@@ -304,12 +304,13 @@ There should be a conversions.yaml file that says "There should be this tab with
   regular rows lack, so scientific mode does not show a second `(`, `)`, `%` or
   `±`, and every keypad control keeps a unique `key-<label>` id.
 - Adding keys must not otherwise make the keypad taller: the regular pad stays at
-  five rows (the utility keys share the top row) and the scientific pad at eight.
-  The memory row is the one deliberate exception - the three memory keys would not
-  fit beside the utility keys without shrinking them.
-- `MRC`, `M+` and `M-` form a row of their own, put above the utility row. The
-  Regular Calculator always carries them; the Scientific Calculator carries them
-  only while the setting that asks for them there is on.
+  six rows (the utility keys share the top row) and the scientific pad at eight -
+  whether the memory keys or the variable keys hold the row above the utility row.
+- `MRC`, `M+`, `M-` and `MCLR` share one row. The Regular Calculator always carries
+  it, above the utility row. On the Scientific Calculator the memory keys take that
+  row in place of the variable keys - they replace them rather than being added
+  beside them, which is what keeps the pad the same height with the setting on or
+  off - and they are there only while the setting that asks for them is on.
 - Every key acknowledges a press visually: a Material ink ripple spreads through
   the tile while it is held, the same feedback the menu button, the history button
   and the dialog buttons give. A key is a plain tap tile, so without that ripple
@@ -370,7 +371,8 @@ There should be a conversions.yaml file that says "There should be this tab with
   listed in `config.ERROR_MESSAGES` ("Can't divide by 0", "Number Overflow",
   "Invalid result", "Exponent too large", "Expression too long", "Unknown
   constant", "Invalid function", "Invalid operator", "Invalid number", "Invalid
-  expression", "Error") - never a Python exception name or a traceback.
+  expression", "Variables disabled", "Error") - never a Python exception name or a
+  traceback.
 - The engine takes pi from one place, the value the program calculated (see "Pi
   calculation"), and a caller - a test - can hand it its own pi instead.
 
@@ -411,9 +413,15 @@ There should be a conversions.yaml file that says "There should be this tab with
 - `MRC` puts the stored number into the expression where the caret is, exactly as
   typing it there would. Pressed again right after such a recall it clears the
   memory instead; any other key in between leaves the next `MRC` recalling again.
-- The memory outlives `AC`, a mode change and a new expression. Only a second `MRC`
-  empties it.
-- While the memory holds a number, an `M` shows in the display's caption row.
+- `MCLR` is the memory-clear key of a physical calculator: it empties the memory
+  outright, whatever the display is doing, and takes nothing else - the expression,
+  the history and the variables stay exactly where they are.
+- The memory outlives `AC`, a mode change and a new expression. Only `MCLR`, or a
+  second `MRC` right after a recall, empties it.
+- While the memory holds a number it is listed next to the display's caption as
+  `M = 42`, the way the variables are listed under the display. An empty memory -
+  or one holding zero - lists nothing, which is what the "M" flag of a real
+  calculator does.
 - The memory belongs to the open window: it is not saved between runs.
 
 ## Calculator display and typing
@@ -469,8 +477,19 @@ There should be a conversions.yaml file that says "There should be this tab with
 
 ## Named variables
 
-- The Scientific Calculator carries two keys, "Set Variable" and "Insert
-  Variable", that open dialogs instead of editing the expression.
+- The Scientific Calculator carries three keys there - "Set Variable", "Insert
+  Variable" and "Clear Variables". The first two open dialogs instead of editing the
+  expression; the third empties every variable that has been set and nothing else -
+  the expression, the memory and the history stay where they are.
+- Those three keys share their row with the memory keys, so the Scientific
+  Calculator shows one or the other (see "Calculator keypad"). While it is carrying
+  the memory keys it is in **memory mode**: it has no variable keys and the
+  variables are out of use.
+- In memory mode the variable line under the display is hidden and the engine is
+  given no variables at all. An expression that uses a name a variable holds - one
+  recalled from the history, for instance - reports "Variables disabled" instead of
+  evaluating, and the live answer and the memory keys simply have nothing to work
+  on. Switching the setting back leaves every variable exactly as it was.
 - Set Variable asks for a name and a value. The value is not stored literally: it
   goes through the scientific engine first, in the angle mode currently in force,
   so `2 * pi` or another variable can be assigned. While the display rests on a
@@ -563,9 +582,11 @@ There should be a conversions.yaml file that says "There should be this tab with
   setting they apply the moment one is picked and are saved at once.
 - Offer a "Memory keys on the scientific pad" switch. The Regular Calculator
   always carries the memory keys; the switch decides whether the Scientific
-  Calculator carries them too. It applies the way every other choice does - the
-  pad on screen gains or loses the row the instant the switch is flipped, and the
-  choice is saved with the rest of the settings.
+  Calculator carries them *instead of* its variable keys - one row, the two sets
+  swapping places. It applies the way every other choice does: the pad on screen
+  swaps the row the instant the switch is flipped, the variable line under the
+  display goes and comes back with it, and the choice is saved with the rest of the
+  settings.
 - Offer a "Reset all app data" button in Settings, and make it ask first: a modal
   confirmation names what is about to go - the history, the saved variables, the
   calculator memory, the adopted pi and every setting - and only its Reset action
