@@ -167,6 +167,10 @@ class AnycalcApp:
         # it out of other people's keys are in handle_keyboard_event.
         page.on_keyboard_event = self.handle_keyboard_event
 
+        # The "System" theme follows the host platform, so it has to hear when the
+        # platform moves between light and dark.
+        page.on_platform_brightness_change = self.handle_platform_brightness
+
         # Mobile renders edge-to-edge, so the system bars are given the page colour
         # and light icons instead of floating over the app in their own colours. The
         # bars stay visible; the content that used to sit under them is pushed clear
@@ -253,8 +257,15 @@ class AnycalcApp:
         )
         page.run_task(self.load_saved_data)
 
-    @staticmethod
-    def _theme_mode(theme: styles.AppTheme) -> ft.ThemeMode:
+    def _theme_mode(self, theme: styles.AppTheme) -> ft.ThemeMode:
+        """The Material brightness the app asks Flet for.
+
+        Following the system means handing that decision to Flet; every palette
+        the app owns states its own brightness.
+        """
+
+        if styles.is_system_theme(self.selected_theme):
+            return ft.ThemeMode.SYSTEM
         return ft.ThemeMode.DARK if theme.mode == "dark" else ft.ThemeMode.LIGHT
 
     @staticmethod
@@ -332,12 +343,28 @@ class AnycalcApp:
             if isinstance(content, ft.BaseControl):
                 pending.append(content)
 
+    def _saved_theme(self, name: str) -> styles.AppTheme:
+        """The palette a saved theme name stands for, "System" included.
+
+        A name that is neither a built-in nor the system entry is the one case
+        that has to be reported to the user - the saved data is older than the
+        app reading it.
+        """
+
+        if styles.is_system_theme(name):
+            return styles.system_theme(self.page.platform_brightness)
+        return styles.get_theme(name)
+
     def apply_theme(self, name: str) -> None:
         """Make one theme live, recoloring the controls already on screen.
 
         Only the Custom theme takes hand-picked accent colors. Every built-in
         theme ships its own, and the Custom theme's saved colors survive a trip
         through them untouched.
+
+        "System" is not a palette: it borrows whichever built-in the host
+        platform's brightness asks for right now, and stays selected so the app
+        keeps following the system as that changes.
         """
 
         old_palette = styles.active_palette()
@@ -348,13 +375,29 @@ class AnycalcApp:
             )
         else:
             overrides = (None, None)
-        _, new_theme = styles.set_active_theme(name, *overrides)
-        self.selected_theme = new_theme.name
+        if styles.is_system_theme(name):
+            applied = styles.system_theme(self.page.platform_brightness).name
+        else:
+            applied = name
+        _, new_theme = styles.set_active_theme(applied, *overrides)
+        self.selected_theme = name if styles.is_system_theme(name) else new_theme.name
         self._recolor_controls(old_palette, styles.active_palette())
         self.page.bgcolor = new_theme.app_background
         self.page.theme_mode = self._theme_mode(new_theme)
         self.page.theme = self._make_page_theme(new_theme)
         self.page.update()
+
+    def handle_platform_brightness(self, event: object) -> None:
+        """The host platform changed between light and dark.
+
+        Only the "System" theme cares: a hand-picked theme stays exactly as it was
+        picked, whatever the operating system does around it.
+        """
+
+        del event
+        if not styles.is_system_theme(self.selected_theme):
+            return
+        self.apply_theme(styles.SYSTEM_THEME_NAME)
 
     def apply_settings_selection(
         self,
@@ -369,7 +412,8 @@ class AnycalcApp:
         colors saved for the Custom theme alone.
         """
 
-        styles.get_theme(name)
+        if not styles.is_system_theme(name):
+            styles.get_theme(name)
         if name == styles.CUSTOM_THEME_NAME:
             self.selected_primary_color = styles.normalize_color(primary_color)
             self.selected_secondary_color = styles.normalize_color(secondary_color)
@@ -400,11 +444,10 @@ class AnycalcApp:
                 return
 
             try:
-                styles.get_theme(state.theme)
+                theme = self._saved_theme(state.theme)
             except ValueError as error:
                 self._show_storage_error(f"Saved theme could not be used: {error}")
             else:
-                theme = styles.get_theme(state.theme)
                 self.selected_primary_color = (
                     state.primary_color or theme.accent
                 )
@@ -579,8 +622,11 @@ class AnycalcApp:
             label="Theme",
             value=self.selected_theme,
             options=[
-                ft.DropdownOption(key=theme.name, text=theme.name)
-                for theme in styles.THEMES
+                ft.DropdownOption(key=theme, text=theme)
+                for theme in (
+                    styles.SYSTEM_THEME_NAME,
+                    *(built_in.name for built_in in styles.THEMES),
+                )
             ],
             on_select=self.update_settings,
         )
@@ -964,7 +1010,10 @@ class AnycalcApp:
                 self.settings_secondary_picker,
             )
         else:
-            theme = styles.get_theme(name)
+            if styles.is_system_theme(name):
+                theme = styles.system_theme(self.page.platform_brightness)
+            else:
+                theme = styles.get_theme(name)
             primary_color, secondary_color = theme.accent, theme.key_operator
         # Reveal first: the page update inside apply_settings_selection is the one
         # that paints what switching to the Custom theme shows, so the child lists

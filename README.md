@@ -58,6 +58,9 @@ computes for itself.
   calculation in the app multiplies by.
 - **Copy everywhere.** Every result, the π digits and the program's own π sit behind
   one shared clipboard service.
+- **Follows the system theme.** The Settings theme dropdown leads with System,
+  which takes the dark palette in a dark OS and the light one in a light OS — and
+  keeps following when the OS switches. Pick a palette yourself and it stays put.
 - **Desktop and mobile from one source.** `src/` holds no platform-specific code; the
   same tree ships to a desktop bundle, an APK and an AAB.
 

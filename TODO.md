@@ -33,7 +33,7 @@ Every item ends with its number in parentheses so it can be referred to by numbe
 - [x] Precision box: decimal places, rounding mode (half-up / half-even / truncate) (21)
 - [ ] Number formatting: thousands separator style (comma / space / none) (22)
 - [ ] Default angle mode persisted in app state (deg / rad / grad is per-session today) (23)
-- [ ] "Follow system theme" option - styles.THEMES is a fixed tuple with no auto mode (24)
+- [x] "Follow system theme" option - styles.THEMES is a fixed tuple with no auto mode (24)
 - [ ] Add more themes (25)
 - [ ] History length setting (max 100) + "Clear history" + "Reset all app data" (with prompt for confirmation) in Settings (26)
 - [ ] Accessibility: font scale and a large-keypad layout for phones (27)

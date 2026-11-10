@@ -522,10 +522,16 @@ There should be a conversions.yaml file that says "There should be this tab with
   "Reset to defaults" and Close actions. Dark is the default theme. The primary
   color controls the app's primary accent, and the secondary color controls
   operator-key accents.
-- Offer these themes: Dark, Light, Midnight, Forest, Sepia, High contrast and
-  Custom. Every built-in theme carries its own accent and operator-key colors;
+- Offer these themes: System, Dark, Light, Midnight, Forest, Sepia, High contrast
+  and Custom. Every built-in theme carries its own accent and operator-key colors;
   Custom is the theme whose colors the user picks, and it starts out on Dark's
   surfaces.
+- Offer "System" first in that dropdown. It is not a palette of its own: it
+  follows the host platform, taking the dark built-in in a dark system and the
+  light built-in in a light one, and asks Flet for `ThemeMode.SYSTEM` so the
+  Material widgets follow as well. Moving the system between light and dark
+  recolors the app while that entry is selected, and changes nothing while a
+  palette the app owns is picked.
 - Hide both color dropdowns, and any color picker under them, unless the Custom
   theme is selected. A built-in theme never borrows the picked colors and never
   spends them either: switching to one leaves the colors saved for the Custom
@@ -586,6 +592,8 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Report load and save errors to the user rather than silently discarding data.
 - Persist only the pi currently adopted for calculator use; a newly computed but
   unadopted Pi-page result does not replace it.
+- A saved "System" theme comes back as the choice to follow the system - not as
+  whichever built-in the last run happened to resolve it to.
 
 ## Copy to clipboard
 

@@ -557,3 +557,18 @@ The Android emulator window repeatedly triggered an "is not responding" dialog w
 **Validation:** `pytest -k precision` 26 passed; the app-host-free suite is at 435 passed with only the two known `tests/test_styles.py` failures; `pyright src tests` reports only the pre-existing `src/pi.py:160` "tqdm is possibly unbound".
 
 **Docs:** new "Answer precision" section in `calculator_spec.md`, a precision-box bullet in the settings list and one in "Saved app data", a "Answer precision" bullet in `README.md`, a wiring note in `docs/anycalc (Flet calculator app).md`, and `TODO.md` item (21) ticked.
+
+
+## 2026-11-09 — A "System" theme that follows the platform (TODO item 24)
+
+**Asked for:** item (24) - a "Follow system theme" option; `styles.THEMES` is a fixed tuple with no automatic mode in it.
+
+**What changed:** `"System"` joined the settings dropdown as its first entry, deliberately **outside** `styles.THEMES`. The tuple is a list of palettes, and this entry owns no colors - it is a rule for choosing between the built-ins, so it lives beside the tuple as `styles.SYSTEM_THEME_NAME`, with `is_system_theme()` and `system_theme(brightness)` next to it. `AnycalcApp.apply_theme()` resolves the entry through `page.platform_brightness` (dark system → the Dark palette, light system → Light, no answer at all → the app default), applies that palette, and then keeps `selected_theme` on `"System"`. That one line is what makes the rest work: `_theme_mode()` - now an instance method - hands Flet `ThemeMode.SYSTEM` so the Material widgets follow as well, and `handle_platform_brightness()`, wired to `page.on_platform_brightness_change` in `build()`, re-applies whenever the OS flips. A hand-picked palette ignores that handler entirely.
+
+**Loading one.** A saved `"System"` name is read through `AnycalcApp._saved_theme()`, which resolves it the same way, so a restart follows the system again instead of freezing the palette the previous run happened to land on. A name that is neither a built-in nor the system entry is still reported to the user as unusable saved data. The color dropdowns stay a Custom-theme-only affordance: `"System"` borrows built-in accents, so there is nothing to pick.
+
+**Tests:** new `tests/test_system_theme.py` - 8 tests, no app host. It pins the rule itself (each brightness to its palette, a silent platform to the default), the dropdown order, `ThemeMode.SYSTEM` while following, the palette actually painted for a light and a dark start, an OS change recoloring only while `"System"` is selected, the color settings staying hidden, and a saved `"System"` loading as a theme. `tests/test_styles.py` had an assertion pinning the dropdown to exactly `[theme.name for theme in styles.THEMES]` - that list is the spec, so the test moved with it. The new file also restores the process-wide active palette, which building an app over the page stub replaces.
+
+**Validation:** `pytest -k 'system_theme or styles'` 28 passed with only the two known `tests/test_styles.py` failures; the app-host-free suite is at 443 passed; `pyright src tests` reports only the pre-existing `src/pi.py:160` "tqdm is possibly unbound".
+
+**Docs:** the themes bullet in `calculator_spec.md` now lists System and adds a bullet for what it does, "Saved app data" gained the note that a saved System choice is restored as a choice, `README.md` gained a "Follows the system theme" bullet, and `TODO.md` item (24) ticked.

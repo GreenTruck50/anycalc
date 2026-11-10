@@ -240,6 +240,33 @@ def get_theme(name: str) -> AppTheme:
     raise ValueError(f"Unknown theme: {name}")
 
 
+# The dropdown entry that follows the operating system instead of picking a
+# palette of its own. It is not a theme in THEMES - it has no colors - it is a
+# rule for choosing between the built-ins, which is why it lives beside them
+# rather than inside the tuple.
+SYSTEM_THEME_NAME = "System"
+
+
+def is_system_theme(name: str) -> bool:
+    """Whether a theme name asks to follow the system rather than pick a palette."""
+
+    return name == SYSTEM_THEME_NAME
+
+
+def system_theme(brightness: object) -> AppTheme:
+    """The built-in palette the host platform's brightness asks for.
+
+    A dark system gets the dark palette and a light system the light one; a
+    platform that reports nothing at all - a test, or a desktop toolkit that
+    never answers - keeps the app's own default.
+    """
+
+    value = getattr(brightness, "value", brightness)
+    if value == "light":
+        return get_theme("Light")
+    return DEFAULT_THEME
+
+
 def normalize_color(color: str) -> str:
     """Validate a six-digit RGB hex color and return it in uppercase."""
 
@@ -302,6 +329,12 @@ def picker_color(color: object) -> str:
     if text.startswith("#") and len(text) == 9:
         text = f"#{text[3:]}"
     return normalize_color(text)
+
+
+def get_active_theme() -> AppTheme:
+    """The theme whose colors are live right now."""
+
+    return _active_theme
 
 
 def active_palette() -> dict[str, str]:

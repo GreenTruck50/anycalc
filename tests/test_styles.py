@@ -206,7 +206,8 @@ def test_settings_dialog_has_named_color_dropdowns_with_indicators() -> None:
     assert dialog.modal is True
     assert app.settings_theme_dropdown.value == "Dark"
     assert [option.text for option in app.settings_theme_dropdown.options] == [
-        theme.name for theme in styles.THEMES
+        styles.SYSTEM_THEME_NAME,
+        *(theme.name for theme in styles.THEMES),
     ]
     assert app.settings_primary_dropdown.value == styles.DEFAULT_THEME.accent
     assert app.settings_secondary_dropdown.value == styles.DEFAULT_THEME.key_operator

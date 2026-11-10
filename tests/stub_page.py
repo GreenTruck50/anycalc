@@ -29,6 +29,8 @@ class StubPage:
         self.controls: list[ft.Control] = []
         self.drawer: ft.NavigationDrawer | None = None
         self.end_drawer: ft.NavigationDrawer | None = None
+        # What the "System" theme reads. Tests set this to watch the app follow.
+        self.platform_brightness: ft.Brightness | None = None
         self.updates = 0
         self.tasks: list[str] = []
         self.dialogs: list[object] = []
