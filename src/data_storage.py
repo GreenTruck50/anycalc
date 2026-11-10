@@ -23,6 +23,7 @@ class AppState:
     pi_digits: Optional[int] = None
     primary_color: Optional[str] = None
     secondary_color: Optional[str] = None
+    memory_keys_on_scientific: bool = False
 
 
 def _decode_json(serialized: str) -> object:
@@ -81,6 +82,11 @@ def decode_state(
         if not isinstance(pi_digits, int) or isinstance(pi_digits, bool):
             raise ValueError("saved pi precision is invalid")
 
+    memory_keys = payload.get("memory_keys_on_scientific")
+    if not isinstance(memory_keys, bool):
+        # A save from before the memory keys were a setting never asked for them.
+        memory_keys = False
+
     return AppState(
         theme=theme,
         history=tuple(checked_history[-MAX_HISTORY_ITEMS:]),
@@ -88,6 +94,7 @@ def decode_state(
         pi_digits=pi_digits,
         primary_color=primary_color,
         secondary_color=secondary_color,
+        memory_keys_on_scientific=memory_keys,
     )
 
 
@@ -101,6 +108,7 @@ def encode_state(state: AppState) -> str:
             "history": state.history,
             "primary_color": state.primary_color,
             "secondary_color": state.secondary_color,
+            "memory_keys_on_scientific": state.memory_keys_on_scientific,
         },
         separators=(",", ":"),
     )

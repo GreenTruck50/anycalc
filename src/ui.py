@@ -41,11 +41,11 @@ from history_view import (
 )
 from keypad import (
     DIALOG_KEYS,
-    REGULAR_ROWS,
-    SCIENTIFIC_ROWS,
+    MEMORY_ROW,
     key_color,
     make_key,
     pad_key,
+    pad_rows,
 )
 import pi
 import pi_value
@@ -60,6 +60,11 @@ HISTORY_WALK_KEYS = {"ArrowUp": True, "ArrowDown": False}
 
 class AnycalcApp:
     """The AnythingCalculator window: two calculator pads and the conversions."""
+
+    # The settings dialog gets built on an app instance that was never started -
+    # the style tests do exactly that - so the pad settings carry their defaults
+    # on the class rather than only on a started instance.
+    memory_keys_on_scientific: bool = False
 
     def __init__(self, page: ft.Page) -> None:
         self.page = page
@@ -102,6 +107,14 @@ class AnycalcApp:
         # How far back into the history the arrow keys have walked; None while
         # what is on the display is the user's own entry.
         self.history_walk: int | None = None
+
+        # The calculator memory: what M+ / M- store, and whether MRC has just put
+        # it back into the expression (a second MRC right after that clears it).
+        # The regular pad always carries the keys; the scientific pad only does
+        # while the setting that asks for them there is on.
+        self.memory: Decimal | None = None
+        self.memory_recalled = False
+        self.memory_keys_on_scientific = False
 
         # Install a safe computed pi immediately, then restore the last adopted
         # value from client storage before enabling controls in the built page.
@@ -157,6 +170,15 @@ class AnycalcApp:
         self.variable_status = ft.Text(
             "",
             size=11,
+            color=styles.TEXT_MUTED,
+            visible=False,
+        )
+        # The "M" that says the memory is holding something. It sits in the
+        # display's caption row because both pads carry memory keys.
+        self.memory_status = ft.Text(
+            "M",
+            size=13,
+            weight=ft.FontWeight.BOLD,
             color=styles.TEXT_MUTED,
             visible=False,
         )
@@ -350,6 +372,7 @@ class AnycalcApp:
             pi_digits=pi.program_pi_digits() if include_pi else None,
             primary_color=self.selected_primary_color,
             secondary_color=self.selected_secondary_color,
+            memory_keys_on_scientific=self.memory_keys_on_scientific,
         )
 
     async def load_saved_data(self) -> None:
@@ -377,6 +400,8 @@ class AnycalcApp:
 
             self.history = list(state.history)
             self.refresh_history()
+            self.memory_keys_on_scientific = state.memory_keys_on_scientific
+            self.rebuild_keypad()
             if state.pi_text is not None and state.pi_digits is not None:
                 whole, separator, decimals = state.pi_text.partition(".")
                 if whole != "3" or not separator or len(decimals) != state.pi_digits:
@@ -567,9 +592,16 @@ class AnycalcApp:
             color=self._seed_color(self.selected_secondary_color),
             on_color_change=self.pick_secondary_color,
         )
+        self.settings_memory_switch = ft.Switch(
+            key="settings-memory-keys",
+            label="Memory keys on the scientific pad",
+            value=self.memory_keys_on_scientific,
+            on_change=self.update_memory_keys_setting,
+        )
         self.settings_content = ft.Column(
             [
                 self.settings_theme_dropdown,
+                self.settings_memory_switch,
                 self.settings_primary_group,
                 self.settings_secondary_group,
             ],
@@ -707,6 +739,18 @@ class AnycalcApp:
 
         del event
         self._apply_settings_from_dialog()
+
+    def update_memory_keys_setting(self, event) -> None:
+        """Ask for the memory keys on the scientific pad, or stop asking.
+
+        The switch applies the way every other setting does - straight away, with
+        no Apply button - so the pad on screen is rebuilt to carry the memory row
+        or lose it, and the choice is saved with the rest of the settings.
+        """
+
+        self.memory_keys_on_scientific = bool(event.control.value)
+        self.rebuild_keypad()
+        self.page.run_task(self.save_data)
 
     def pick_primary_color(self, event: ft.Event[ColorPicker]) -> None:
         """The primary color's picker changed - apply it the same instant way."""
@@ -948,6 +992,7 @@ class AnycalcApp:
             self.settings_dialog,
             self.settings_content,
             self.settings_theme_dropdown,
+            self.settings_memory_switch,
             self.settings_primary_group,
             self.settings_primary_content,
             self.settings_secondary_group,
@@ -965,6 +1010,7 @@ class AnycalcApp:
                     ft.Row(
                         [
                             self.expression_label,
+                            self.memory_status,
                             ft.Container(expand=True),
                             self.copy_display_button,
                             self.angle_button,
@@ -1234,23 +1280,11 @@ class AnycalcApp:
     # ----------------------------
 
     def rebuild_keypad(self) -> None:
-        """Put the pad's rows back: the scientific rows on top when in that mode."""
+        """Put the pad back together: the rows this mode and settings ask for."""
 
         self.keypad.controls.clear()
 
-        if self.scientific:
-            for row in SCIENTIFIC_ROWS:
-                self.keypad.controls.append(
-                    ft.Row(
-                        [
-                            make_key(key, self.handle_key, styles.KEY_OPERATOR)
-                            for key in row
-                        ],
-                        spacing=8,
-                    )
-                )
-
-        for row in REGULAR_ROWS:
+        for row in pad_rows(self.scientific, self.memory_keys_on_scientific):
             self.keypad.controls.append(
                 ft.Row(
                     [make_key(key, self.handle_key, key_color(key)) for key in row],
@@ -1264,6 +1298,10 @@ class AnycalcApp:
         """Dispatch a key press: the two variable keys open dialogs, the rest press."""
 
         if label not in DIALOG_KEYS:
+            # Any key other than MRC ends a recall, so the next MRC recalls the
+            # stored number again instead of clearing it.
+            if label != "MRC":
+                self.memory_recalled = False
             self.press(label)
             return
 
@@ -1273,6 +1311,13 @@ class AnycalcApp:
             open_insert_variable_dialog(self)
 
     def press(self, key):
+        if key in MEMORY_ROW:
+            # The memory keys work on the number the display rests on, so they
+            # never edit the expression the way the other keys do - except MRC,
+            # which puts the stored number in as if it had been typed.
+            self.press_memory(key)
+            return
+
         if key == "±":
             # A sign change edits the number that is already on the display, so
             # it bypasses the "any other key starts a new entry" rule below and
@@ -1410,7 +1455,7 @@ class AnycalcApp:
             self.recall_history(backwards=HISTORY_WALK_KEYS[event.key])
             return
 
-        label = pad_key(event.key, self.scientific)
+        label = pad_key(event.key, self.scientific, self.memory_keys_on_scientific)
         if label is not None:
             self.handle_key(label)
 
@@ -1446,6 +1491,72 @@ class AnycalcApp:
 
         self.result_mode = False
         self.update_display()
+
+    # ----------------------------
+    # The calculator memory
+    # ----------------------------
+
+    def memory_operand(self) -> Decimal | None:
+        """The number the memory keys work on: what the display rests on.
+
+        A live expression is worth what it evaluates to, and a result or a bare
+        number is worth itself. An expression that cannot be evaluated - or an
+        error message on the display - has no number to store, and comes back as
+        None so the press is simply ignored.
+        """
+
+        try:
+            answer = calculate(
+                self.expression or "0",
+                self.scientific,
+                self.degrees,
+                self.variables,
+            )
+            return Decimal(answer)
+        except Exception:
+            return None
+
+    def press_memory(self, key: str) -> None:
+        """One of the three memory keys was pressed."""
+
+        if key == "MRC":
+            self.recall_memory()
+            return
+
+        value = self.memory_operand()
+        if value is None:
+            return
+        stored = self.memory or Decimal(0)
+        self.memory = stored + value if key == "M+" else stored - value
+        self.memory_recalled = False
+        self.refresh_memory_status()
+        self.page.update()
+
+    def recall_memory(self) -> None:
+        """MRC puts the stored number into the expression; pressing it again clears.
+
+        The second press only counts while nothing else has been pressed since the
+        recall, which is what makes one key do both jobs the way a physical
+        calculator's MRC does.
+        """
+
+        if self.memory_recalled:
+            self.memory = None
+            self.memory_recalled = False
+            self.refresh_memory_status()
+            self.page.update()
+            return
+
+        if self.memory is None:
+            return
+        self.memory_recalled = True
+        self.press(str(self.memory))
+
+    def refresh_memory_status(self) -> None:
+        """Show or hide the "M" that says the memory holds a number."""
+
+        stored = self.memory
+        self.memory_status.visible = stored is not None and stored != 0
 
     # ----------------------------
     # Modes, variables, history, conversions

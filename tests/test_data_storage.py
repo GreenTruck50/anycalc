@@ -43,6 +43,23 @@ def test_metadata_saves_leave_the_saved_pi_untouched() -> None:
     assert restored.secondary_color is None
 
 
+def test_the_memory_key_setting_round_trips_with_the_rest() -> None:
+    state = AppState(theme="Dark", history=(), memory_keys_on_scientific=True)
+
+    restored = decode_state(encode_state(state))
+
+    assert restored.memory_keys_on_scientific is True
+
+
+def test_a_save_from_before_the_memory_setting_leaves_the_keys_off() -> None:
+    payload = json.loads(encode_state(AppState(theme="Dark", history=())))
+    del payload["memory_keys_on_scientific"]
+
+    restored = decode_state(json.dumps(payload))
+
+    assert restored.memory_keys_on_scientific is False
+
+
 @pytest.mark.asyncio
 async def test_client_storage_persists_metadata_and_pi_separately(monkeypatch) -> None:
     class MemoryPreferences:

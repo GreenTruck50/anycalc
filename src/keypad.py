@@ -35,18 +35,34 @@ SCIENTIFIC_ROWS = (
     ("Set Variable", "Insert Variable"),
 )
 
+SCIENTIFIC_KEYS = frozenset(key for row in SCIENTIFIC_ROWS for key in row)
+
 # The two variable keys open dialogs instead of editing the expression.
 DIALOG_KEYS = ("Set Variable", "Insert Variable")
 
+# The calculator memory is a row of its own, put above the utility row. MRC puts
+# what is stored into the expression and clears it when pressed again right
+# after; M+ and M- fold the number the display rests on into it. The regular pad
+# always carries this row; the scientific pad carries it only while the setting
+# that asks for memory keys there is on.
+MEMORY_ROW = ("MRC", "M+", "M-")
+
 
 def key_color(label: str) -> str:
-    """The background a regular-pad key gets for its label."""
+    """The background a key gets for its label, on either pad.
+
+    The scientific keys and the memory keys carry the operator color because on
+    both pads they are the band of controls above the digits; "=" is the accent
+    and the two clearing keys are the danger color wherever they appear.
+    """
 
     if label == "=":
         return styles.ACCENT
     if label in ("AC", "⌫"):
         return styles.KEY_DANGER
     if label in ("÷", "×", "−", "+", "%", "±"):
+        return styles.KEY_OPERATOR
+    if label in MEMORY_ROW or label in SCIENTIFIC_KEYS:
         return styles.KEY_OPERATOR
     return styles.KEY_DEFAULT
 
@@ -123,14 +139,32 @@ KEYBOARD_KEYS = {
 }
 
 
-def pad_keys(scientific: bool) -> frozenset[str]:
+def pad_rows(scientific: bool, memory_keys: bool = True) -> tuple[tuple[str, ...], ...]:
+    """The rows the pad on screen shows, top to bottom.
+
+    This is the one place that knows how a pad is assembled: the scientific rows
+    only in scientific mode, the memory row wherever the memory keys are wanted,
+    and the regular rows - which both pads carry - last. The pad is built from
+    this, and so is the keyboard gate, which is why a key can never mean a key
+    that is not on the screen.
+    """
+
+    rows: list[tuple[str, ...]] = []
+    if scientific:
+        rows.extend(SCIENTIFIC_ROWS)
+    if memory_keys or not scientific:
+        rows.append(MEMORY_ROW)
+    rows.extend(REGULAR_ROWS)
+    return tuple(rows)
+
+
+def pad_keys(scientific: bool, memory_keys: bool = True) -> frozenset[str]:
     """Every key the pad on screen actually shows."""
 
-    rows = SCIENTIFIC_ROWS + REGULAR_ROWS if scientific else REGULAR_ROWS
-    return frozenset(key for row in rows for key in row)
+    return frozenset(key for row in pad_rows(scientific, memory_keys) for key in row)
 
 
-def pad_key(key: str, scientific: bool) -> str | None:
+def pad_key(key: str, scientific: bool, memory_keys: bool = True) -> str | None:
     """The pad key a physical key stands for, or None if this pad has no such key.
 
     Unmapped keys (letters the pad does not carry, arrows, Tab, modifiers) and keys
@@ -139,5 +173,5 @@ def pad_key(key: str, scientific: bool) -> str | None:
     """
 
     label = KEYBOARD_KEYS.get(key)
-    return label if label in pad_keys(scientific) else None
+    return label if label in pad_keys(scientific, memory_keys) else None
 

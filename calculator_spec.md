@@ -303,8 +303,13 @@ There should be a conversions.yaml file that says "There should be this tab with
 - A key appears on the pad exactly once: the scientific rows add only what the
   regular rows lack, so scientific mode does not show a second `(`, `)`, `%` or
   `±`, and every keypad control keeps a unique `key-<label>` id.
-- Adding keys must not make the keypad taller: the regular pad stays at five rows
-  (the utility keys share the top row) and the scientific pad at eight.
+- Adding keys must not otherwise make the keypad taller: the regular pad stays at
+  five rows (the utility keys share the top row) and the scientific pad at eight.
+  The memory row is the one deliberate exception - the three memory keys would not
+  fit beside the utility keys without shrinking them.
+- `MRC`, `M+` and `M-` form a row of their own, put above the utility row. The
+  Regular Calculator always carries them; the Scientific Calculator carries them
+  only while the setting that asks for them there is on.
 - Every key acknowledges a press visually: a Material ink ripple spreads through
   the tile while it is held, the same feedback the menu button, the history button
   and the dialog buttons give. A key is a plain tap tile, so without that ripple
@@ -368,6 +373,21 @@ There should be a conversions.yaml file that says "There should be this tab with
   expression", "Error") - never a Python exception name or a traceback.
 - The engine takes pi from one place, the value the program calculated (see "Pi
   calculation"), and a caller - a test - can hand it its own pi instead.
+
+## Calculator memory
+
+- The memory keys work on the number the display rests on: a live expression
+  counts as what it evaluates to, and a result or a bare number counts as itself.
+- `M+` adds that number to the memory, `M-` subtracts it. The memory starts empty,
+  and a display that holds something with no value - an unfinished expression or
+  an error message - stores nothing at all.
+- `MRC` puts the stored number into the expression where the caret is, exactly as
+  typing it there would. Pressed again right after such a recall it clears the
+  memory instead; any other key in between leaves the next `MRC` recalling again.
+- The memory outlives `AC`, a mode change and a new expression. Only a second `MRC`
+  empties it.
+- While the memory holds a number, an `M` shows in the display's caption row.
+- The memory belongs to the open window: it is not saved between runs.
 
 ## Calculator display and typing
 
@@ -499,6 +519,11 @@ There should be a conversions.yaml file that says "There should be this tab with
   Lime, Emerald, Teal, Turquoise, Cyan) and neutrals (Slate, Charcoal, Gray,
   Light gray). Each theme's own default accent and operator-key color is itself
   one of those named entries, which is what "Reset to defaults" selects.
+- Offer a "Memory keys on the scientific pad" switch. The Regular Calculator
+  always carries the memory keys; the switch decides whether the Scientific
+  Calculator carries them too. It applies the way every other choice does - the
+  pad on screen gains or loses the row the instant the switch is flipped, and the
+  choice is saved with the rest of the settings.
 - Apply every settings choice the instant it is picked: the chosen theme or color
   recolors the running app - existing controls included - and is saved at once,
   while the dialog stays open for the next choice. Dragging in a color picker is
@@ -515,6 +540,8 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Save the selected theme, primary and secondary colors, up to
   `config.MAX_HISTORY_ITEMS` calculation-history entries, and the exact pi
   currently used by calculations between app launches.
+- Save with them whether the Scientific Calculator carries the memory keys. A save
+  written before that setting existed reads back with the keys off.
 - Before enabling the app controls on startup, restore the saved history and
   theme. Restore the saved pi value and its decimal precision through the
   program-pi setter so subsequent calculations use the same pi as before

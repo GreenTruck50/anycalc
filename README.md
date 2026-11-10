@@ -42,6 +42,11 @@ computes for itself.
   `+ - * / ( ) %`, `.` and `,`, plus `^` and `e` on the scientific pad, with
   `Enter` (or `=`) for `=`, `Backspace` for `⌫` and `Esc` (or `Delete`) for `AC`.
   Up and Down arrows walk past calculations back into the display.
+- **A calculator memory.** `M+` and `M-` add or subtract what the display rests on,
+  `MRC` puts that number back into the expression — and clears the memory when
+  pressed again right after — while an `M` in the caption row says the memory is
+  holding something. The regular pad always carries the three keys; a Settings
+  switch adds them to the scientific pad too.
 - **Live unit conversions.** Choose a value and two units and the answer re-computes
   on every keystroke, with the chain of hops the engine took shown under it.
 - **π, computed by the app itself.** Anywhere from 3 to 100 000 000 decimals on the

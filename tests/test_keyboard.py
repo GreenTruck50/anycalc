@@ -3,77 +3,19 @@
 No app host is needed - ``pytest -k keyboard`` runs this on its own. The key
 mapping is a pure function in ``keypad.py``, and the gates around it are driven
 here with the same ``ft.KeyboardEvent`` payloads the page hands
-``AnycalcApp.handle_keyboard_event``, on an app built over a stub page (the
-pattern ``tests/test_pi_view.py`` uses for a view).
+``AnycalcApp.handle_keyboard_event``, on an app built over the shared page stub
+in ``tests/stub_page.py``.
 """
 
-import inspect
 import types
-from collections.abc import Generator
 from typing import cast
 
 import flet as ft
-import pytest
 
-import pi
 from keypad import KEYBOARD_KEYS, pad_key, pad_keys
+from stub_page import StubPage, build_app, fire
 from ui import AnycalcApp
 from variable_dialogs import open_set_variable_dialog
-
-
-@pytest.fixture(autouse=True)
-def _leave_the_program_pi_as_found() -> Generator[None, None, None]:
-    """Put back the process-wide pi that building the app replaces.
-
-    ``AnycalcApp`` installs its own computed pi on startup, exactly as it does in
-    a real window, and that value is process-wide state - the pi-engine tests
-    assert on the fallback pi, so they must not see this app's. Same guard
-    ``tests/test_pi_view.py`` runs its fixture with.
-    """
-
-    before = (pi.program_pi(), pi.program_pi_digits(), pi.program_pi_decimals())
-    try:
-        yield
-    finally:
-        pi.set_program_pi(before[0], before[1], decimals=before[2])
-
-
-class StubPage:
-    """Just enough of a page for ``AnycalcApp.build()``: it updates and runs tasks."""
-
-    def __init__(self) -> None:
-        self.width: int | float | None = 400
-        self.height: int | float | None = 780
-        self.window = types.SimpleNamespace(
-            width=None, height=None, min_width=None, min_height=None
-        )
-        self.updates = 0
-        self.tasks: list[str] = []
-        self.dialogs: list[object] = []
-        self.popped = 0
-
-    def update(self, *_controls: ft.Control) -> None:
-        del _controls
-        self.updates += 1
-
-    def add(self, *_controls: ft.Control) -> None:
-        del _controls
-
-    def run_task(self, handler, *args) -> None:
-        """Stand in for ``Page.run_task``: there is no event loop here, so the
-        coroutine is closed rather than awaited - the test only cares that the
-        page was asked to schedule it."""
-
-        self.tasks.append(getattr(handler, "__name__", str(handler)))
-        result = handler(*args)
-        if inspect.iscoroutine(result):
-            result.close()
-
-    def show_dialog(self, dialog: ft.AlertDialog) -> None:
-        self.dialogs.append(dialog)
-
-    def pop_dialog(self) -> None:
-        self.popped += 1
 
 
 def key_event(key: str, **modifiers: bool) -> ft.KeyboardEvent:
@@ -90,34 +32,11 @@ def key_event(key: str, **modifiers: bool) -> ft.KeyboardEvent:
     )
 
 
-def build_app() -> AnycalcApp:
-    """The whole app over a stub page, opening on the regular pad."""
-
-    app = AnycalcApp(cast(ft.Page, StubPage()))
-    app.build()
-    return app
-
-
 def type_keys(app: AnycalcApp, keys: str) -> None:
     """Press a run of keys the way the page would deliver them."""
 
     for key in keys:
         app.handle_keyboard_event(key_event(key))
-
-
-def fire(handler: object, event: object | None = None) -> None:
-    """Call a control's own handler the way the page calls it.
-
-    A Flet handler takes the event, except the ones written as a bare lambda that
-    ignores it - like the dialog buttons' ``on_click`` - and those are called with
-    nothing at all.
-    """
-
-    assert callable(handler), "the control carries no handler to call"
-    if event is None:
-        handler()
-    else:
-        handler(event)
 
 
 # --- the mapping, with no app in sight ---------------------------------------

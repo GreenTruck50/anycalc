@@ -26,7 +26,7 @@ Every item ends with its number in parentheses so it can be referred to by numbe
 
 ## Keypad & memory
 
-- [ ] MRC / M+ / M- (memory) buttons on the regular pad, plus a setting to have them on the scientific pad too (20)
+- [x] MRC / M+ / M- (memory) buttons on the regular pad, plus a setting to have them on the scientific pad too (20)
 
 ## Settings - extends item 7
 
