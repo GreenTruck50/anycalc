@@ -637,3 +637,17 @@ The Android emulator window repeatedly triggered an "is not responding" dialog w
 **Validation:** `pytest -k 'memory or settings_data'` 53 passed; the app-host-free suite 483 passed with only the two known `tests/test_styles.py` color-picker failures; `flet test -k 'drawer_switches or memory_keys_replace'` 2 passed on the real app host; `pyright src tests` reports only the pre-existing `src/pi.py:160` "tqdm is possibly unbound".
 
 **Docs:** `calculator_spec.md` gained a Settings bullet specifying that the sentence wraps and that clicking the words flips the setting; `README.md` gained a "Settings that fit the screen" bullet; the app doc gained a bullet recording why a Flet switch label cannot wrap and what the app builds instead.
+
+## 2026-11-09 — The memory-keys toggle keeps its name for a screen reader
+
+**Asked for:** the gap the wrapping change above opened. A `Switch` label is also the switch's accessible name, so moving the sentence beside the toggle left a screen reader holding an unnamed toggle.
+
+**One labelled node over the whole row.** The settings column now carries `settings_memory_control`: `ft.Semantics(key="settings-memory-row", label=MEMORY_KEYS_LABEL, content=settings_memory_row)`. The words inside it are silenced - `ft.Semantics(content=ft.Text(MEMORY_KEYS_LABEL), exclude_semantics=True)` - so the sentence is announced once rather than twice. `MEMORY_KEYS_LABEL` is a module constant because the visible words and the accessible name are the same sentence and must not drift.
+
+**No state to keep in step.** `SemanticsControl` (`packages/flet/lib/src/controls/semantics.dart`) maps `label` to `Semantics(label:)`, `exclude_semantics` to the same widget's `excludeSemantics`, and reads `container` with a default of `false` - which is what lets descendants merge into the labelled node. The `Switch` therefore still contributes its own on/off state to that node on its own, so no `toggled` copy is held anywhere: `apply_memory_keys_setting()` and `sync_settings_controls()` (which moves the dialog's values after an app reset) needed no new line, and cannot fall out of sync.
+
+**Tests:** `tests/test_memory.py` gained `test_the_memory_toggle_is_named_for_a_screen_reader` (the wrapper is a `Semantics` labelled with the same sentence as the visible text, wraps that exact row, and the words are excluded), and the wrap test now reads the `Text` through the semantics wrapper. `find_settings_control` in `tests/test_settings_data.py` had to be widened: it only walked `controls`, and a `Semantics` or `Container` hangs its child off `content`, so anything nested under one was invisible to it.
+
+**Validation:** `pytest -k 'memory or settings_data'` 54 passed; the app-host-free suite 484 passed with only the two known `tests/test_styles.py` color-picker failures; `flet test -k 'drawer_switches or memory_keys_replace'` 2 passed on the real app host - the integration test drives this very setting by tapping the sentence, which is now inside two semantics wrappers, and still reaches it; `pyright src tests` reports only the pre-existing `src/pi.py:160` "tqdm is possibly unbound".
+
+**Docs:** the Settings bullet in `calculator_spec.md` now specifies the accessible name and that the words stay out of the accessibility tree; `README.md`'s "Settings that fit the screen" bullet says a screen reader still gets the whole sentence; the app doc's switch bullet records the semantics node, the shared constant and why no on/off copy is needed.

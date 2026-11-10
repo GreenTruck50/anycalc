@@ -600,7 +600,11 @@ There should be a conversions.yaml file that says "There should be this tab with
   text block beside the toggle that takes the width the dialog has left and wraps
   over as many lines as it needs. Being next to the toggle rather than part of it,
   the words carry their own click action, and clicking them flips the setting
-  exactly as clicking the toggle does.
+  exactly as clicking the toggle does. The toggle keeps its name for a screen reader
+  all the same: the row it lives in is wrapped in one accessibility node labelled
+  with that same sentence, the switch inside still reports its on/off state into that
+  node, and the words are kept out of the accessibility tree so the sentence is
+  announced once rather than twice.
 - Offer a "Reset all app data" button in Settings, and make it ask first: a modal
   confirmation names what is about to go - the history, the saved variables, the
   calculator memory, the adopted pi and every setting - and only its Reset action

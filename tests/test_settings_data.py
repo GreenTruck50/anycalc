@@ -31,7 +31,12 @@ def _leave_the_live_theme_as_found():
 
 
 def find_settings_control(app, key: str) -> Any:
-    """One control inside the settings dialog, found by its key."""
+    """One control inside the settings dialog, found by its key.
+
+    The walk follows both child lists (``controls``) and single children
+    (``content``), since a wrapper like ``Semantics`` or ``Container`` hangs its
+    child off the latter.
+    """
 
     stack = list(app.settings_content.controls)
     while stack:
@@ -41,6 +46,9 @@ def find_settings_control(app, key: str) -> Any:
         children = getattr(control, "controls", None)
         if children:
             stack.extend(children)
+        single = getattr(control, "content", None)
+        if single is not None:
+            stack.append(single)
     raise AssertionError(f"the settings dialog has no control keyed {key!r}")
 
 

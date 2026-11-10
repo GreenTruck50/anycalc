@@ -13,7 +13,7 @@ import flet as ft
 
 from keypad import MEMORY_ROW, REGULAR_ROWS, VARIABLE_ROW, pad_keys, pad_rows
 from stub_page import build_app, switch_event
-from ui import AnycalcApp
+from ui import MEMORY_KEYS_LABEL, AnycalcApp
 
 
 def pad_labels(app: AnycalcApp) -> set[str]:
@@ -78,7 +78,7 @@ def test_the_settings_dialog_offers_the_memory_keys_switch() -> None:
     dialog = app.build_settings_dialog()
 
     assert dialog.key == "settings-dialog"
-    assert app.settings_memory_row in app.settings_content.controls
+    assert app.settings_memory_control in app.settings_content.controls
     assert app.settings_memory_switch in app.settings_memory_row.controls
     assert app.settings_memory_switch.value is False
 
@@ -103,12 +103,33 @@ def test_the_memory_switch_label_wraps_instead_of_being_cut_off() -> None:
     assert label in app.settings_memory_row.controls
     assert label.expand
     assert label.on_click is not None
-    text = label.content
+    text = cast(ft.Semantics, label.content).content
     assert isinstance(text, ft.Text)
     assert not text.no_wrap
-    assert text.value == (
-        "Memory keys on the scientific pad (replaces the variable keys)"
-    )
+    assert text.value == MEMORY_KEYS_LABEL
+
+
+def test_the_memory_toggle_is_named_for_a_screen_reader() -> None:
+    """The toggle has to say its name, now the words are no longer its label.
+
+    ``settings_memory_control`` wraps the whole row in one semantics node labelled
+    with the same sentence. The switch keeps reporting its own on/off state, which
+    merges into that node, and the words are silenced so the sentence is not read
+    twice.
+    """
+
+    app = build_app()
+    app.build_settings_dialog()
+
+    node = app.settings_memory_control
+    words = app.settings_memory_label.content
+
+    assert isinstance(node, ft.Semantics)
+    assert node.content is app.settings_memory_row
+    assert node.label == MEMORY_KEYS_LABEL
+    assert isinstance(words, ft.Semantics)
+    assert words.exclude_semantics is True
+    assert node.label == cast(ft.Text, words.content).value
 
 
 def test_clicking_the_label_words_flips_the_memory_keys_setting() -> None:

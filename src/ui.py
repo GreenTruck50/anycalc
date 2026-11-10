@@ -73,6 +73,11 @@ from variable_dialogs import open_insert_variable_dialog, open_set_variable_dial
 # the walk steps back in time (the newest entry first) or forward again.
 HISTORY_WALK_KEYS = {"ArrowUp": True, "ArrowDown": False}
 
+# The memory-keys setting is one sentence, said twice: as the words next to the
+# toggle, and as the name a screen reader gives that toggle. One constant so the
+# two can never drift apart.
+MEMORY_KEYS_LABEL = "Memory keys on the scientific pad (replaces the variable keys)"
+
 
 class AnycalcApp:
     """The AnythingCalculator window: two calculator pads and the conversions."""
@@ -671,14 +676,21 @@ class AnycalcApp:
         # toggle in a row the app builds instead - the Row hands the container the
         # width that is left, the Text inside it breaks at word boundaries, and a
         # click on the words does what a click on the toggle does.
+        #
+        # That move takes the words out of the switch's own accessibility node, so a
+        # screen reader would reach an unnamed toggle. The row therefore rides inside
+        # a Semantics node named with the same sentence: the switch keeps reporting
+        # its on/off state, which merges into that node, and the words are silenced
+        # so the sentence is not read twice.
         self.settings_memory_switch = ft.Switch(
             key="settings-memory-keys",
             value=self.memory_keys_on_scientific,
             on_change=self.update_memory_keys_setting,
         )
         self.settings_memory_label = ft.Container(
-            content=ft.Text(
-                "Memory keys on the scientific pad (replaces the variable keys)"
+            content=ft.Semantics(
+                content=ft.Text(MEMORY_KEYS_LABEL),
+                exclude_semantics=True,
             ),
             expand=True,
             padding=ft.Padding.symmetric(vertical=6),
@@ -688,6 +700,11 @@ class AnycalcApp:
             [self.settings_memory_switch, self.settings_memory_label],
             spacing=8,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        )
+        self.settings_memory_control = ft.Semantics(
+            key="settings-memory-row",
+            label=MEMORY_KEYS_LABEL,
+            content=self.settings_memory_row,
         )
         # The precision box: how an answer is rounded and written out. Every
         # dropdown applies the moment it is picked, like the rest of the dialog.
@@ -743,7 +760,7 @@ class AnycalcApp:
         self.settings_content = ft.Column(
             [
                 self.settings_theme_dropdown,
-                self.settings_memory_row,
+                self.settings_memory_control,
                 self.settings_precision_decimals,
                 self.settings_precision_sig_figs,
                 self.settings_precision_scientific,

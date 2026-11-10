@@ -44,7 +44,8 @@ computes for itself.
   asks before anything goes.
 - **Settings that fit the screen.** A long setting name wraps over as many lines as
   the dialog has room for instead of being cut off, and tapping the words flips a
-  switch just like tapping the toggle does.
+  switch just like tapping the toggle does. A screen reader still gets the whole
+  sentence as that switch's name.
 - **A physical keyboard.** The real keys press the same pad a tap presses: digits,
   `+ - * / ( ) %`, `.` and `,`, plus `^` and `e` on the scientific pad, with
   `Enter` (or `=`) for `=`, `Backspace` for `⌫` and `Esc` (or `Delete`) for `AC`.
