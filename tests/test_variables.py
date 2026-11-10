@@ -152,6 +152,25 @@ def test_the_variables_survive_memory_mode_and_work_again_without_it() -> None:
     assert app.preview_answer() == "8"
 
 
+def test_leaving_memory_mode_clears_the_memory_and_keeps_the_variables() -> None:
+    """The swap is one-way for the memory and the other way for the variables."""
+
+    app = build_app()
+    scientific_pad(app, memory_keys=True)
+    set_variable(app, "x", "4")
+    type_keys(app, "8")
+    app.handle_key("M+")
+
+    assert app.memory == Decimal("8")
+
+    app.update_memory_keys_setting(switch_event(False))
+
+    assert app.memory is None
+    assert not app.memory_status.visible
+    assert app.variables == {"x": Decimal("4")}
+    assert app.variable_status.visible
+
+
 def test_the_regular_pad_never_reports_the_memory_mode_error() -> None:
     """A name on the regular pad is not arithmetic - that stays the engine's call."""
 

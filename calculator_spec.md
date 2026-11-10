@@ -416,12 +416,16 @@ There should be a conversions.yaml file that says "There should be this tab with
 - `MCLR` is the memory-clear key of a physical calculator: it empties the memory
   outright, whatever the display is doing, and takes nothing else - the expression,
   the history and the variables stay exactly where they are.
-- The memory outlives `AC`, a mode change and a new expression. Only `MCLR`, or a
-  second `MRC` right after a recall, empties it.
-- While the memory holds a number it is listed next to the display's caption as
-  `M = 42`, the way the variables are listed under the display. An empty memory -
-  or one holding zero - lists nothing, which is what the "M" flag of a real
-  calculator does.
+- The memory outlives `AC`, a new expression and a switch to the Regular
+  Calculator - that pad always carries the memory keys. What takes it is `MCLR`, a
+  second `MRC` right after a recall, or the Scientific Calculator's variable row:
+  the memory belongs to the memory row, so a pad that has swapped that row for the
+  variable keys has no keys left to recall, list or clear it with and empties it
+  rather than hiding it behind the swap.
+- While the memory holds a number it is listed on the line under the display - the
+  very line the variables use, since the pad's shared row owns that line either way
+  - as `M = 42`. An empty memory - or one holding zero - lists nothing, which is
+  what the "M" flag of a real calculator does.
 - The memory belongs to the open window: it is not saved between runs.
 
 ## Calculator display and typing
@@ -507,8 +511,10 @@ There should be a conversions.yaml file that says "There should be this tab with
   expression already ends on a number, a name or a closing bracket, and replacing
   the display outright when it rests on a result.
 - A line under the display lists the variables currently set (`x = 3    F = 12`).
-  It is shown only in scientific mode and only while at least one variable has a
-  value.
+  It is shown only while the Scientific Calculator is carrying its variable keys and
+  at least one variable has a value. The memory is listed on that same line while
+  the pad is carrying the memory keys instead - the two can never be on screen
+  together.
 - Variables live in the app for the session: they survive switching between the
   two calculators, and nothing is kept between runs.
 
@@ -586,7 +592,8 @@ There should be a conversions.yaml file that says "There should be this tab with
   swapping places. It applies the way every other choice does: the pad on screen
   swaps the row the instant the switch is flipped, the variable line under the
   display goes and comes back with it, and the choice is saved with the rest of the
-  settings.
+  settings. Flipping it off empties the memory as well: the pad has no memory keys
+  left to recall it with (see "Calculator memory").
 - Offer a "Reset all app data" button in Settings, and make it ask first: a modal
   confirmation names what is about to go - the history, the saved variables, the
   calculator memory, the adopted pi and every setting - and only its Reset action

@@ -201,8 +201,8 @@ class AnycalcApp:
             color=styles.TEXT_MUTED,
             visible=False,
         )
-        # The memory, shown the way the variables are shown: "M = 42" beside the
-        # display caption, because both pads carry memory keys.
+        # The memory, listed the way the variables are: "M = 42" on the line under
+        # the display, which is the line the pad's shared row owns.
         self.memory_status = ft.Text(
             "",
             size=11,
@@ -887,6 +887,10 @@ class AnycalcApp:
         """
 
         self.memory_keys_on_scientific = bool(event.control.value)
+        # Turning the memory keys off hands the row back to the variables, and the
+        # memory goes with the row - see leave_memory_mode().
+        if self.variables_enabled:
+            self.leave_memory_mode()
         self.rebuild_keypad()
         self.refresh_variable_status()
         self.update_display()
@@ -1372,7 +1376,6 @@ class AnycalcApp:
                     ft.Row(
                         [
                             self.expression_label,
-                            self.memory_status,
                             ft.Container(expand=True),
                             self.copy_display_button,
                             self.angle_button,
@@ -1386,6 +1389,10 @@ class AnycalcApp:
                         expand=True,
                     ),
                     self.preview_slot,
+                    # The memory and the named variables share the line under the
+                    # display: whichever row the pad is carrying owns that line, so
+                    # only one of the two is ever on screen.
+                    self.memory_status,
                     self.variable_status,
                 ],
                 spacing=8,
@@ -1904,6 +1911,19 @@ class AnycalcApp:
         self.refresh_memory_status()
         self.page.update()
 
+    def leave_memory_mode(self) -> None:
+        """The pad swapped its memory row for the variable row, so the memory goes.
+
+        A memory the pad has no keys for cannot be recalled, listed or cleared, so
+        it is not left behind the swap. The two rows own each other's state: the
+        variable row takes the memory with it, and memory mode puts the variables
+        out of use.
+        """
+
+        self.memory = None
+        self.memory_recalled = False
+        self.refresh_memory_status()
+
     def recall_memory(self) -> None:
         """MRC puts the stored number into the expression; pressing it again clears.
 
@@ -1957,6 +1977,10 @@ class AnycalcApp:
             "SCIENTIFIC MODE" if self.scientific
             else "REGULAR MODE"
         )
+        # The scientific pad without the memory keys runs on its variable keys, and
+        # a memory it has no keys for goes with them.
+        if self.variables_enabled:
+            self.leave_memory_mode()
         self.refresh_variable_status()
         self.reset_preview_slot()
 

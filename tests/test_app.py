@@ -17,7 +17,14 @@ knowing before adding a test here:
   pair cannot be driven from a UI test at all, so the unit pairs are covered
   instead by the exhaustive route tests in ``tests/test_conversion_engine.py``.
   Reversing the pair that the page already opens on is reachable, through the
-  form's swap button (``conversion-swap``).
+  form's swap button (``conversion-swap``). A ``Switch`` is another control whose
+  key never resolves - ``find_by_key("settings-memory-keys")`` finds nothing - but
+  its *label* is findable with ``find_by_text_containing`` and tapping the label
+  flips the switch, which is how ``flip_memory_keys_switch`` drives it.
+* The drawer is still closing when ``open_page`` returns, so the first tap after
+  it can be spent dismissing the drawer instead of reaching its target. A helper
+  that opens something over the calculator has to press its button again when the
+  expected dialog is not on screen - see ``flip_memory_keys_switch``.
 * A ``Dropdown``'s option texts *are* findable with ``find_by_text`` even while
   its menu is closed, which inflates those counts: an option matches once per
   dropdown that offers it, plus one more time for the option a dropdown is
@@ -119,6 +126,49 @@ async def open_page(tester: TestDriver, label: str) -> None:
     assert destination.count == 1, f"{label!r} is not in the drawer"
     await tester.tap(destination.first)
     await tester.pump_and_settle()
+
+
+async def flip_memory_keys_switch(tester: TestDriver) -> None:
+    """Flip the Settings switch that swaps the scientific pad's shared row.
+
+    The switch is the second entry of the Settings column, so it is always inside
+    that dialog's viewport, but a ``Switch`` is one of the controls whose ``key``
+    the tester cannot reach - only its label can be found and tapped. A ``Finder``
+    cannot read a switch back either, so this only flips it; what the setting did
+    is read off the pad by ``show_memory_row``.
+
+    The drawer left open by ``open_page`` swallows the first tap, so the button is
+    pressed again if the dialog did not appear.
+    """
+
+    for attempt in (1, 2):
+        await tester.tap(await tester.find_by_key("settings-button"))
+        await tester.pump_and_settle()
+        if (await tester.find_by_text("Settings")).count == 1:
+            break
+        assert attempt == 1, "the Settings dialog never opened"
+    switch = await tester.find_by_text_containing("Memory keys")
+    assert switch.count == 1, "the memory-keys switch is not in the dialog"
+    await tester.tap(switch.first)
+    await tester.pump_and_settle()
+    await tester.tap(await tester.find_by_key("settings-close"))
+    await tester.pump_and_settle()
+
+
+async def show_memory_row(tester: TestDriver, wanted: bool) -> None:
+    """Put the scientific pad's shared row where a test needs it.
+
+    Call it with the Scientific Calculator showing. The pad says which row it
+    carries: that row holds ``MCLR`` while the memory keys are up and
+    ``Set Variable`` while the variable keys are. Normalising first is not
+    optional - the app restores its settings from the real app-data directory, so
+    an earlier run or a developer's own session may have left the switch on.
+    """
+
+    memory_row_on_pad = (await tester.find_by_key("key-MCLR")).count == 1
+    if memory_row_on_pad != wanted:
+        await flip_memory_keys_switch(tester)
+    assert (await tester.find_by_key("key-MCLR")).count == int(wanted)
 
 
 async def test_volume_conversion_page_converts_as_you_type(
@@ -480,6 +530,9 @@ async def test_drawer_switches_to_the_scientific_calculator(
     assert (await tester.find_by_key("key-sin")).count == 0
 
     await open_page(tester, "Scientific Calculator")
+    # Storage may leave the memory keys on this pad, and they replace the variable
+    # keys - so put the row this test reads into place before reading it.
+    await show_memory_row(tester, wanted=False)
 
     assert (await tester.find_by_key("key-sin")).count == 1
     assert (await tester.find_by_key("key-Set Variable")).count == 1
@@ -487,6 +540,47 @@ async def test_drawer_switches_to_the_scientific_calculator(
     assert (await tester.find_by_text("SCIENTIFIC MODE")).count == 1
     # the regular rows stay, so the digits are still there
     assert (await tester.find_by_key("key-7")).count == 1
+
+
+async def test_the_memory_keys_replace_the_variable_keys(
+    flet_app: ftt.FletTestApp,
+) -> None:
+    """One shared row: the memory keys or the variable keys, never both.
+
+    The pad stays eight rows tall either way, and the stored number is listed on
+    the line under the display - the line the variables use - which is the only
+    sign the memory holds anything.
+    """
+
+    tester = flet_app.tester
+    await tester.pump_and_settle()
+
+    await open_page(tester, "Scientific Calculator")
+    await show_memory_row(tester, wanted=False)
+
+    assert (await tester.find_by_key("key-Set Variable")).count == 1
+    assert (await tester.find_by_key("key-MCLR")).count == 0
+
+    await show_memory_row(tester, wanted=True)
+
+    assert (await tester.find_by_key("key-MCLR")).count == 1
+    assert (await tester.find_by_key("key-M+")).count == 1
+    assert (await tester.find_by_key("key-Set Variable")).count == 0
+    assert (await tester.find_by_key("key-Insert Variable")).count == 0
+    assert (await tester.find_by_key("key-Clear Variables")).count == 0
+
+    for key in ("4", "M+"):
+        await tester.tap(await tester.find_by_key(f"key-{key}"))
+        await tester.pump_and_settle()
+    assert (await tester.find_by_text("M = 4")).count == 1
+
+    await tester.tap(await tester.find_by_key("key-MCLR"))
+    await tester.pump_and_settle()
+    assert (await tester.find_by_text("M = 4")).count == 0
+
+    # Back to the variable keys, which is also the app's default.
+    await show_memory_row(tester, wanted=False)
+    assert (await tester.find_by_key("key-Set Variable")).count == 1
 
 
 async def test_regular_calculator_keypad_still_works(

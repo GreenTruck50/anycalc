@@ -1,4 +1,5 @@
-"""The calculator memory: what MRC / M+ / M- do, and where those keys appear.
+"""The calculator memory: what MRC / M+ / M- / MCLR do, where those keys appear and
+where the stored number is listed.
 
 No app host is needed - ``pytest -k memory`` runs this on its own. The app is
 built over the shared page stub in ``tests/stub_page.py`` and the keys are
@@ -6,6 +7,7 @@ pressed the way a tap presses them, through ``AnycalcApp.handle_key``.
 """
 
 from decimal import Decimal
+from typing import cast
 
 import flet as ft
 
@@ -317,3 +319,86 @@ def test_m_plus_then_m_minus_of_the_same_number_empties_the_memory() -> None:
 
     assert app.memory == Decimal(0)
     assert not app.memory_status.visible
+
+
+# --- the memory goes with the row that carries it ------------------------------
+
+
+def test_turning_the_memory_keys_off_clears_the_memory_it_has_no_keys_for() -> None:
+    """Variable mode takes the memory row back, and the memory with it."""
+
+    app = build_app()
+    app.set_mode(1)
+    app.update_memory_keys_setting(switch_event(True))
+    type_digits(app, "42")
+    app.handle_key("M+")
+
+    assert app.memory == Decimal("42")
+
+    app.update_memory_keys_setting(switch_event(False))
+
+    assert app.memory is None
+    assert app.memory_status.value == ""
+    assert not app.memory_status.visible
+
+
+def test_the_scientific_pad_clears_a_memory_it_arrives_without_keys_for() -> None:
+    app = build_app()
+    type_digits(app, "42")
+    app.handle_key("M+")
+
+    app.set_mode(1)
+
+    assert app.memory is None
+    assert not app.memory_status.visible
+
+
+def test_the_regular_pad_keeps_the_memory_it_was_given() -> None:
+    """The regular pad always carries the memory keys, so nothing is dropped."""
+
+    app = build_app()
+    app.set_mode(1)
+    app.update_memory_keys_setting(switch_event(True))
+    type_digits(app, "42")
+    app.handle_key("M+")
+
+    app.set_mode(0)
+
+    assert app.memory == Decimal("42")
+    assert app.memory_status.visible
+
+
+# --- where the memory is listed ------------------------------------------------
+
+
+def display_lines(app: AnycalcApp) -> list[ft.Control]:
+    """The controls under the display: the preview slot and the status lines."""
+
+    panel = cast(ft.Column, app.display_panel.content)
+    return list(panel.controls)
+
+
+def test_the_memory_is_listed_where_the_variables_are() -> None:
+    app = build_app()
+
+    lines = display_lines(app)
+
+    assert any(line is app.memory_status for line in lines)
+    assert any(line is app.variable_status for line in lines)
+
+
+def test_only_one_of_the_two_lines_is_on_screen_at_a_time() -> None:
+    app = build_app()
+    app.set_mode(1)
+    app.variables["x"] = Decimal("3")
+    app.refresh_variable_status()
+
+    assert app.variable_status.visible
+    assert not app.memory_status.visible
+
+    app.update_memory_keys_setting(switch_event(True))
+    type_digits(app, "8")
+    app.handle_key("M+")
+
+    assert app.memory_status.visible
+    assert not app.variable_status.visible
