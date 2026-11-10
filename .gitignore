@@ -39,3 +39,4 @@ checkpoints/
 *.log
 .history
 *.swp
+current_task*
