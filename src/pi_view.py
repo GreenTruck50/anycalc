@@ -15,9 +15,15 @@ very large multiplication. The digits are shown as plain text in a scrolling dia
 opens holding one batch of them and builds the next batch as the reader scrolls near the
 bottom - a hundred million digits are never put on screen at once, which is what would
 make the app lag or die - and one button copies the whole number.
+
+Under the result, a search box answers the other question a person asks about a long
+number: "where does this digit string appear?". It takes digits only, and it searches
+whatever the page actually holds - the decimals of the run that last finished, or the
+pi the program calculates with while no run is on the page.
 """
 
 import asyncio
+import re
 import threading
 from time import monotonic
 from typing import Awaitable, Callable, Generic, Optional, Protocol, TypeVar
@@ -143,6 +149,87 @@ def dialog_batch_range(decimals: str, loaded: int) -> tuple[int, int]:
     return start, min(start + DIALOG_BATCH_DECIMALS, dialog_load_ceiling(len(decimals)))
 
 
+# The longest digit string a search will take. Anything longer is not a question
+# about a number, it is the number itself being pasted back at the page.
+MAX_SEARCH_PATTERN_DIGITS = 100
+
+# What the search field throws away: everything that is not a decimal digit. The
+# field also carries this as its input filter, and the page re-applies it before a
+# search runs - see PiView.search_pattern.
+NON_DIGITS = re.compile(r"[^0-9]")
+NON_DIGITS_PATTERN = r"[^0-9]"
+
+
+def search_decimals(decimals: str, pattern: str) -> tuple[int, int]:
+    """Where a digit string first appears in a run of decimals, and how often.
+
+    Returns ``(start, count)`` where ``start`` is the 1-based position of the first
+    occurrence counted in decimals after the point - the same reckoning as the digit
+    counts and the digits dialog, where ``3.1415`` has its ``1`` at decimal 1. Returns
+    ``(-1, 0)`` when the string is absent, and an empty pattern never matches: asking
+    where "" appears in a number is not a question a person wants an answer to.
+    """
+
+    if not pattern:
+        return -1, 0
+    first = decimals.find(pattern)
+    if first < 0:
+        return -1, 0
+    return first + 1, decimals.count(pattern)
+
+
+def search_scope_text(decimals: str, source: str) -> str:
+    """Which digits a search runs over, so the page can say it out loud."""
+
+    return f"searches the {len(decimals):,} decimals of {source}"
+
+
+def search_result_text(pattern: str, decimals: str, source: str) -> str:
+    """What searching ``decimals`` for ``pattern`` has to report.
+
+    A position is only meaningful next to the number it was found in, so every
+    sentence names both: how long the number is, whose digits they are, and where in
+    them the string sits.
+    """
+
+    total = len(decimals)
+    if not pattern:
+        return "Type the digits to look for."
+    if len(pattern) > MAX_SEARCH_PATTERN_DIGITS:
+        return (
+            f"{pattern} is {len(pattern):,} digits long - a search string is "
+            f"limited to {MAX_SEARCH_PATTERN_DIGITS:,} digits."
+        )
+    if len(pattern) > total:
+        return (
+            f"{pattern} is {len(pattern)} digits long - longer than the "
+            f"{total:,} decimals of {source}, so it cannot appear in them."
+        )
+
+    start, count = search_decimals(decimals, pattern)
+    if start < 0:
+        return (
+            f"{pattern} is not in the {total:,} decimals of {source} - compute more "
+            "decimals and search again."
+        )
+
+    last = start + len(pattern) - 1
+    where = (
+        f"decimal {start:,}"
+        if len(pattern) == 1
+        else f"decimals {start:,} to {last:,}"
+    )
+    if count == 1:
+        return (
+            f"{pattern} appears once in the {total:,} decimals of {source}, at "
+            f"{where} after the decimal point."
+        )
+    return (
+        f"{pattern} appears {count:,} times in the {total:,} decimals of {source}, "
+        f"first at {where} after the decimal point."
+    )
+
+
 class PiView(Generic[PageT]):
     """The pi calculation page.
 
@@ -208,6 +295,7 @@ class PiView(Generic[PageT]):
         if self.root is not None:
             self.refresh_plan(paint=False)
             self.refresh_current()
+            self.refresh_search_state(paint=False)
             return self.root
 
         self.current_text = ft.Text(size=14, selectable=True, key="pi-current")
@@ -306,8 +394,45 @@ class PiView(Generic[PageT]):
             on_click=self.adopt_value,
         )
 
+        # The digit search. It takes digits and nothing else: the field asks for a
+        # numeric keyboard, carries a filter that drops every non-digit as it is
+        # typed or pasted, and the page drops them again before searching - a
+        # desktop keyboard sends keystrokes that a soft-keyboard hint cannot refuse.
+        self.search_field = ft.TextField(
+            key="pi-search",
+            label="Find digits",
+            hint_text="digits only - e.g. 141592",
+            keyboard_type=ft.KeyboardType.NUMBER,
+            input_filter=ft.InputFilter(
+                regex_string=NON_DIGITS_PATTERN, allow=False
+            ),
+            on_change=self.refresh_search_state,
+            on_submit=self.run_search,
+        )
+        self.search_button = ft.OutlinedButton(
+            "Search digits",
+            key="pi-search-go",
+            icon=ft.Icons.SEARCH,
+            icon_color=styles.ACCENT,
+            disabled=True,
+            on_click=self.run_search,
+        )
+        # Which digits the search runs over, because the page holds two sets: the
+        # last finished run, and the pi the program calculates with.
+        self.search_scope = ft.Text(
+            "", size=11, color=styles.TEXT_FAINT, key="pi-search-scope"
+        )
+        self.search_result = ft.Text(
+            "",
+            key="pi-search-result",
+            size=12,
+            color=styles.TEXT_SOFT,
+            selectable=True,
+        )
+
         self.refresh_plan(paint=False)
         self.refresh_current()
+        self.refresh_search_state(paint=False)
 
         self.root = ft.Column(
             [
@@ -366,6 +491,13 @@ class PiView(Generic[PageT]):
                         ],
                         spacing=10,
                     ),
+                ),
+                self._card(
+                    ft.Text("DIGIT SEARCH", size=10, color=styles.TEXT_MUTED),
+                    self._stretched(self.search_field),
+                    ft.Row([self.search_button], spacing=10),
+                    self.search_scope,
+                    self.search_result,
                 ),
             ],
             spacing=16,
@@ -487,6 +619,10 @@ class PiView(Generic[PageT]):
         self.estimate_text.value = "estimate -"
         self.result_text.value = ""
         self.status_text.value = f"computing {digits:,} decimals ..."
+        # A run in flight has no answer to search yet, so the search card goes back
+        # to the pi the program uses and drops the answer it printed for the last run.
+        self.search_result.value = ""
+        self.refresh_search_state(paint=False)
         self.page.update()
 
         # Flet's own background-thread API rather than a bare threading.Thread: the
@@ -634,6 +770,10 @@ class PiView(Generic[PageT]):
             self.computation and self.computation.complete
         )
         self.adopt_button.visible = not self.adopt_button.disabled
+        # A run that finished is now the longest number the page holds, so it is what
+        # a digit search runs over; a run that stopped holds nothing, and the search
+        # goes back to the program's pi. Either way the search card has to say which.
+        self.refresh_search_state(paint=False)
 
     def _paint_progress(self) -> None:
         """Push the running numbers into the progress card, at most twice a second.
@@ -717,6 +857,72 @@ class PiView(Generic[PageT]):
         # might expect a million decimals to change a million digits of an answer.
         self.precision_text.value = precision_notice(digits)
         self.view_current_button.disabled = digits < 1
+
+    # ----------------------------
+    # Finding digits in the number
+    # ----------------------------
+
+    def search_target(self) -> tuple[str, str]:
+        """The decimals a search runs over, and what to call them out loud.
+
+        The page holds two numbers: the run that last finished, and the pi the
+        program calculates with. A search uses the run when there is one - it is the
+        longer number, and the one the reader is looking at - and the program's pi
+        otherwise, so the box is never left with nothing to search. A stopped run
+        computed nothing, so it is not a search target.
+        """
+
+        computation = self.computation
+        if computation is not None and computation.complete and computation.decimals:
+            return computation.decimals, "the run that last finished on this page"
+        return pi.program_pi_decimals(), "the pi the program calculates with"
+
+    def search_pattern(self) -> str:
+        """The digits typed into the search field, with anything else dropped.
+
+        The field carries a digits-only filter, but that filter is a Flutter-side
+        convenience: a value that arrives another way - pasted on a platform whose
+        filter differs, set by a test, restored by a rebuild - still has to read as
+        digits before it can be searched for.
+        """
+
+        return NON_DIGITS.sub("", self.search_field.value or "")
+
+    def refresh_search_state(self, e: object = None, paint: bool = True) -> None:
+        """Keep the search box honest about what it holds and what it searches.
+
+        ``paint`` is off while :meth:`build` is still assembling the tree, and from
+        the handlers that repaint the page themselves once they are done.
+        """
+
+        del e
+        typed = self.search_field.value or ""
+        pattern = self.search_pattern()
+        if pattern != typed:
+            self.search_field.value = pattern
+        self.search_button.disabled = not pattern
+        decimals, source = self.search_target()
+        self.search_scope.value = search_scope_text(decimals, source)
+        if paint:
+            self.page.update()
+
+    def run_search(self, e: object = None) -> None:
+        """Look the typed digits up in the decimals the page holds.
+
+        The scan is a plain substring search over a string the page already holds,
+        which is a C-level sweep even across a hundred million decimals - a fraction
+        of a second, so it runs here rather than on a worker thread. It is the
+        computation that needs a thread, not the reading of a number already computed.
+        """
+
+        del e
+        decimals, source = self.search_target()
+        self.search_scope.value = search_scope_text(decimals, source)
+        pattern = self.search_pattern()
+        self.search_field.value = pattern
+        self.search_button.disabled = not pattern
+        self.search_result.value = search_result_text(pattern, decimals, source)
+        self.page.update()
 
     # ----------------------------
     # The digits dialog

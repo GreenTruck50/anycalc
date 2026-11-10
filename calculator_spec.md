@@ -820,6 +820,30 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Give the dialog a button that says what it copies and copies every decimal of the
   run in one press, whatever part of the number happens to be on screen - selecting
   a hundred thousand digits by hand is not something a person can do.
+- Offer a digit search on the Pi page: type a digit string and the page says where
+  in the number it appears. The field takes digits and nothing else - a numeric
+  keyboard where a soft keyboard is offered, and an input filter that drops every
+  non-digit on a desktop, where a hardware keystroke is never refused by a keyboard
+  hint. The page drops non-digits once more before searching, so the sentence on
+  screen always names what was actually looked for, and the field is left showing
+  that.
+- Search the digits the page actually holds, and say on the card which those are:
+  the decimals of the run that last finished, or the pi the program calculates with
+  while the page holds no finished run. A stopped run computed nothing, so it is
+  never a search target, and a new run clears the answer the last search printed -
+  a position found in one run is not an answer about the next.
+- Report a position in decimals after the point, the same reckoning as the digit
+  counts and the digits dialog, where the `1` of `3.1415` is decimal 1. Say how
+  many decimals the string covers, how often it occurs in the number, and how long
+  that number is - a position means nothing without the number it was found in.
+- Refuse what cannot be an answer: an empty field says there is nothing to look for
+  and the button stays disabled; a search string over 100 digits is the number
+  itself being pasted back at the page, not a question; and a string longer than the
+  decimals available cannot appear in them.
+- Run the scan inline rather than on a worker thread: it is a substring search over
+  a string the page already holds, which is a fraction of a second even across a
+  hundred million decimals. It is the computation that needs a thread, not the
+  reading of a number already computed.
 - Keep the whole feature importable without Flet: the algorithm in `pi.py`, the
   run wrapper and the program's pi in `pi_value.py`, only the page in
   `pi_view.py`.

@@ -20,7 +20,7 @@ How `src/` is organised after the module split, and the packaging fact that deci
 | `currency_view.py` | The live currency conversion form and its API loading state | `CurrencyConversionView` |
 | `pi.py` | Chudnovsky/binary-splitting pi calculation and the program's active pi | pi calculation and program-pi functions |
 | `pi_value.py` | Timed pi runs, progress reporting, cancellation, and adoption | `PiComputation`, `compute_pi()`, `adopt()` |
-| `pi_view.py` | Pi digit-count form, progress, result, adoption, and digits dialog | `PiView` |
+| `pi_view.py` | Pi digit-count form, progress, result, adoption, digit search, and digits dialog | `PiView` |
 | `ui.py` | The app object: page setup, display state, theme switching and persistence, keypad dispatch, mode/content switching | `AnycalcApp` |
 
 Names in this table were corrected on 2026-10-24 against the actual source: the app class is `**AnycalcApp**` (earlier notes said `CalculatorApp`), the conversion call is `**convert_units()**` (not `convert()`), and the dialog functions are `**open_set_variable_dialog()**` **/** `**open_insert_variable_dialog()**` (not `prompt_variable()` / `insert_variable()`).

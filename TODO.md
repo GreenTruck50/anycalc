@@ -1,5 +1,5 @@
 If you are an AI agent DON'T do anything in here unless told!
-Every item ends with its number in parentheses so it can be referred to by number.
+Every item ends with its number in parentheses so it can be referred to by number. This is TODO.md
 
 - [ ] Add new section for other calculators (1)
 - [ ] Add a compost calculator like https://urbanwormcompany.com/composting-calculator-carbon-nitrogen-ratio/ (2)
@@ -59,7 +59,7 @@ Every item ends with its number in parentheses so it can be referred to by numbe
 
 ## Pi page
 
-- [ ] Digit search: find a digit string in the computed digits and report its position (38)
+- [x] Digit search: find a digit string in the computed digits and report its position (38)
 - [ ] Save the digits to a text file; copy in chunks for 100 000 000 digits (39)
 - [ ] Pause / resume a long computation; ETA next to the progress bar (40)
 

@@ -64,8 +64,9 @@ computes for itself.
 - **Live unit conversions.** Choose a value and two units and the answer re-computes
   on every keystroke, with the chain of hops the engine took shown under it.
 - **π, computed by the app itself.** Anywhere from 3 to 100 000 000 decimals on the
-  Pi page, with a progress card and a button that makes the finished run the π every
-  calculation in the app multiplies by.
+  Pi page, with a progress card, a digits-only search that says where a digit string
+  appears, and a button that makes the finished run the π every calculation in the
+  app multiplies by.
 - **Copy everywhere.** Every result, the π digits and the program's own π sit behind
   one shared clipboard service.
 - **Follows the system theme.** The Settings theme dropdown leads with System,
@@ -99,7 +100,10 @@ splitting, shows a progress bar with a speed and time estimate, and offers "Use
 this value for the program" to make a finished run the π everything uses. Viewing
 the digits opens a scrolling popup that loads the next batch of decimals as you
 approach the end of what is on screen, so a hundred million decimals are never put
-on screen at once.
+on screen at once. A digits-only search box under the result answers the other
+question about a long number: it reports where a digit string first appears, how
+many decimals it covers and how often it occurs — in the run that last finished, or
+in the π the program uses while the page holds no finished run.
 
 π is computed on plain Python integers by default. `gmpy2` — in the optional
 `[pi]` extra, and already in `[dev]` — makes big runs far faster; it is a C
@@ -181,8 +185,9 @@ into the app):
   the progress numbers, stopping a run, the offered range and the one π the
   program calculates with.
 - `test_pi_view.py` — the pi page without a window: the digit-count rules,
-  adopting a finished run, and the digits popup (how much is on screen before any
-  scrolling and how scrolling loads the next batch).
+  adopting a finished run, the digits search (digits only, and where a string sits
+  in whichever decimals the page holds), and the digits popup (how much is on
+  screen before any scrolling and how scrolling loads the next batch).
 - `test_app.py` — Flet integration tests. `flet test` packages `src/` into a
   monolithic app with an embedded Python and the test drives *that* (drawer
   navigation, the conversion page re-converting as you type, the keypad) through
@@ -324,7 +329,8 @@ src/                        the app (entry point: src/main.py)
   keypad.py                 which keys each pad shows and how a key looks
   conversion_view.py        the live conversion form and its chain cards
   pi_view.py                the pi page — digit choice, progress card, "use this
-                            value", the digits popup that loads more as you scroll
+                            value", digit search, the digits popup that loads more
+                            as you scroll
   history_view.py           history cards and the history drawer
   variable_dialogs.py       the Set / Insert Variable dialogs
   assets/conversions.yaml   unit groups and the formulas between them

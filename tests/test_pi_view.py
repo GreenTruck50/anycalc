@@ -9,6 +9,9 @@ here against a stub page. What gets pinned is the behaviour the page promises:
   field wins over the menu;
 * a finished run can be adopted, and the program's pi is what it became;
 * a stopped run adopts nothing and leaves the program's pi alone;
+* the digit search takes digits only, and reports where a string sits in whichever
+  decimals the page actually holds - the run that last finished, or the program's pi
+  while the page holds no finished run;
 * the digits dialog is the plain number in an ordinary scroll area that opens holding
   one batch of it and appends the next batch when the reader scrolls near the bottom of
   what is there - and never past the bound on what it may hold - so a run of a hundred
@@ -33,6 +36,8 @@ from pi_view import (
     DIALOG_BATCH_DECIMALS,
     DIALOG_LOAD_AHEAD_PIXELS,
     DIALOG_MAX_LOADED_DECIMALS,
+    MAX_SEARCH_PATTERN_DIGITS,
+    NON_DIGITS_PATTERN,
     PROGRESS_PAINT_SECONDS,
     PiView as PiViewClass,
     dialog_batch_range,
@@ -40,6 +45,7 @@ from pi_view import (
     dialog_width,
     percent_text,
     precision_notice,
+    search_decimals,
 )
 from styles import CARD_BACKGROUND
 
@@ -1003,3 +1009,160 @@ def test_the_copy_button_of_the_dialog_copies_all_of_the_digits(view: PiView) ->
     assert copies[0].content == "Copy all 25,000 decimals"
     assert view.page.copies[-1]() == f"3.{computed_decimals(view)}"
     assert len(view.page.copies[-1]()) == 25002, "3. plus every decimal computed"
+
+
+# --- finding digits in the number --------------------------------------------
+
+def test_the_search_field_takes_digits_and_nothing_else(view: PiView) -> None:
+    """Digits only, twice over: a keyboard hint and a hard filter.
+
+    The keyboard type is what a phone offers; the filter is what a desktop keyboard
+    is actually held to, because a hardware keystroke is never refused by a
+    soft-keyboard hint.
+    """
+
+    field = find_by_key(view.build(), "pi-search")
+    assert field.keyboard_type == ft.KeyboardType.NUMBER
+    assert field.input_filter is not None, "a desktop keyboard needs a filter, not a hint"
+    assert field.input_filter.regex_string == NON_DIGITS_PATTERN
+    assert field.input_filter.allow is False, "the filter denies non-digits"
+
+
+def test_junk_in_the_field_never_reaches_a_search(view: PiView) -> None:
+    """Whatever arrives in the box, what gets looked for is digits.
+
+    The filter lives on the Flutter side, so a value that gets in another way - a
+    paste, a test, a rebuilt page - is cleaned again before it is searched, and the
+    field is left showing what was actually searched for.
+    """
+
+    view.search_field.value = "14-1a5,9.2 "
+    view.run_search()
+    assert view.search_field.value == "141592"
+    assert find_by_key(view.build(), "pi-search-result").value.startswith(
+        "141592 appears once in the 12 decimals"
+    )
+
+
+@pytest.mark.parametrize(
+    ("pattern", "where"),
+    [("589", "at decimals 10 to 12"), ("26535", "at decimals 6 to 10")],
+)
+def test_a_found_string_says_where_it_sits(
+    view: PiView, pattern: str, where: str
+) -> None:
+    """Positions are counted in decimals after the point, not from the ``3``."""
+
+    view.search_field.value = pattern
+    view.run_search()
+    result = find_by_key(view.build(), "pi-search-result").value
+    assert f"{pattern} appears once in the 12 decimals" in result
+    assert where in result
+    assert "after the decimal point" in result
+
+
+def test_a_digit_that_repeats_says_how_often(view: PiView) -> None:
+    view.search_field.value = "1"
+    view.run_search()
+    result = find_by_key(view.build(), "pi-search-result").value
+    assert "appears 2 times in the 12 decimals" in result
+    assert "first at decimal 1 after the decimal point" in result
+
+
+def test_a_string_that_is_not_there_says_so(view: PiView) -> None:
+    view.search_field.value = "0"
+    view.run_search()
+    assert find_by_key(view.build(), "pi-search-result").value == (
+        "0 is not in the 12 decimals of the pi the program calculates with - "
+        "compute more decimals and search again."
+    )
+
+
+def test_a_string_longer_than_the_number_cannot_be_in_it(view: PiView) -> None:
+    view.search_field.value = PI_DECIMALS[:13]
+    view.run_search()
+    assert "longer than the 12 decimals" in find_by_key(
+        view.build(), "pi-search-result"
+    ).value
+
+
+def test_a_search_string_is_capped(view: PiView) -> None:
+    """Pasting a whole number back at the page is not a question about it."""
+
+    view.search_field.value = "7" * (MAX_SEARCH_PATTERN_DIGITS + 1)
+    view.run_search()
+    assert f"limited to {MAX_SEARCH_PATTERN_DIGITS} digits" in find_by_key(
+        view.build(), "pi-search-result"
+    ).value
+
+
+def test_an_empty_field_offers_nothing_to_search(view: PiView) -> None:
+    page = view.build()
+    assert view.search_button.disabled is True
+    view.run_search()
+    assert find_by_key(page, "pi-search-result").value == (
+        "Type the digits to look for."
+    )
+
+    view.search_field.value = "265"
+    view.refresh_search_state()
+    assert view.search_button.disabled is False
+
+
+def test_the_search_says_which_digits_it_runs_over(view: PiView) -> None:
+    """The page holds two numbers, so the search card names the one it uses."""
+
+    assert find_by_key(view.build(), "pi-search-scope").value == (
+        "searches the 12 decimals of the pi the program calculates with"
+    )
+    run_to_completion(view, "600")
+    assert find_by_key(view.build(), "pi-search-scope").value == (
+        "searches the 600 decimals of the run that last finished on this page"
+    )
+
+
+def test_a_search_after_a_run_looks_through_the_run(view: PiView) -> None:
+    run_to_completion(view, "600")
+    view.search_field.value = "7260249141273"
+    view.run_search()
+    assert find_by_key(view.build(), "pi-search-result").value == (
+        "7260249141273 appears once in the 600 decimals of the run that last "
+        "finished on this page, at decimals 288 to 300 after the decimal point."
+    )
+
+
+def test_a_stopped_run_leaves_the_program_pi_to_search(view: PiView) -> None:
+    """A run that was stopped computed nothing, so it is not a number to search."""
+
+    set_digits(view, typed="200000")
+    view.start_run()
+    view.stop_run()
+    wait_for_run(view)
+
+    assert view.computation is not None and view.computation.cancelled
+    assert find_by_key(view.build(), "pi-search-scope").value == (
+        "searches the 12 decimals of the pi the program calculates with"
+    )
+
+
+def test_a_new_run_clears_the_last_search_answer(view: PiView) -> None:
+    """A position found in one run is not an answer about the next one."""
+
+    run_to_completion(view, "600")
+    view.search_field.value = "99999"
+    view.run_search()
+    assert "not in the 600 decimals" in find_by_key(
+        view.build(), "pi-search-result"
+    ).value
+
+    set_digits(view, typed="100")
+    view.start_run()
+    wait_for_run(view)
+    assert find_by_key(view.build(), "pi-search-result").value == ""
+
+
+def test_search_decimals_reports_the_first_place_and_every_one() -> None:
+    assert search_decimals("12121", "12") == (1, 2)
+    assert search_decimals("12121", "212") == (2, 1)
+    assert search_decimals("12121", "3") == (-1, 0)
+    assert search_decimals("12121", "") == (-1, 0), "an empty pattern asks nothing"
