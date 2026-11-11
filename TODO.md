@@ -95,7 +95,17 @@ Every item ends with its number in parentheses so it can be referred to by numbe
     `ft.SearchBar` if it ever is not.
 - [x] Missing unit groups: speed, pressure, power, angle, data rate, mass flow (34)
 - [ ] Custom user-defined units / formulas stored alongside conversions.yaml (35)
-- [ ] Validator / test that walks the whole formula graph in conversions.yaml and proves every unit in a group is reachable from every other (MD reversal is silent when it fails) (36)
+- [x] Validator / test that walks the whole formula graph in conversions.yaml and proves every unit in a group is reachable from every other (MD reversal is silent when it fails) (36)
+  - Already in place, and it now covers all fifteen groups because (34) landed. In
+    `tests/test_conversion_engine.py`: `test_every_pair_of_units_is_reachable`
+    parametrizes over every conversion entry and asserts `find_conversion_path`
+    finds a route for all n² ordered pairs of that group's units, and
+    `test_group_has_exactly_its_own_units` asserts every formula endpoint is one of
+    the group's own units and that no unit is left unwired. The "MD reversal is
+    silent" half is covered by the loader itself: `load_conversion_config()`
+    evaluates each `MD` formula forward and then reverses it
+    (`src/conversions.py:104-108`), so an irreversible formula raises as soon as the
+    config is read - which every test in that file does.
 - [ ] Currency: staleness badge + "rates as of ..." line + offline last-known-rates fallback (37)
 
 ## Pi page
