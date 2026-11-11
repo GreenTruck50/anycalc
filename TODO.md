@@ -52,6 +52,47 @@ Every item ends with its number in parentheses so it can be referred to by numbe
 ## Conversions & currency
 
 - [ ] Search / filter box over the unit menu - conversions.yaml is 1803 lines of units, scrolling is losing (33)
+  - Researched 2026-11-10, not implemented. The menu is a plain `ft.Dropdown`, and
+    Flet 1.1.2 already ships the filter - no app-side option-list juggling needed:
+    `ft.Dropdown(enable_filter=True, editable=True)`, the recipe in Flet's own
+    `examples/controls/material/dropdown/icon_selection` (which also puts a
+    `leading_icon=ft.Icons.SEARCH` on the field).
+  - How it works: Flet's client (`packages/flet/lib/src/controls/dropdown.dart`)
+    passes both flags straight to Flutter's `DropdownMenu`. The default filter is
+    `entry.label.toLowerCase().contains(typed.toLowerCase())` - case-insensitive
+    substring on the option's **label**, which for this app is the option `text`,
+    i.e. `"Mile per hour (mph)"`: name *and* symbol are searchable, and the query is
+    matched as plain text, never as a regex. `enable_search` (already on by default)
+    highlights and scrolls to the first match; with filtering on it is redundant but
+    harmless. Flutter's `filterCallback` / `searchCallback` are not exposed by Flet,
+    so the predicate cannot be customised.
+  - `editable=True` is not optional: the Dart maps it to `_focusNode.canRequestFocus`
+    and Flutter renders the field `readOnly` whenever it cannot take focus, so with
+    the default `editable=False` there is nothing to type and `enable_filter` does
+    nothing at all.
+  - The one real cost: an editable field can be left holding text that is not any
+    option, while the Python `value` still names the old unit - the Dart rewrites the
+    field text only when the Python `value` *changes*. `on_text_change` reports the
+    typed text (`e.control.text`); `on_select` fires only for a real pick. So the
+    form needs a blur/submit rule: match the typed text against the option labels,
+    select it when exactly one option matches, and otherwise put the old selection
+    back (force it by setting `value` to `None` and back, since an unchanged value
+    never rewrites the text). The live re-conversion handler stays on `on_select`
+    exactly as it is now.
+  - Untested against the app's layout: the unit dropdowns are wrapped in a `Row` with
+    `expand=True` to make them as wide as the value field (see the comment in
+    `conversion_view.py`); `editable` should not disturb that, but it has to be
+    checked on desktop and on the emulator. `flet test` cannot reach a `Dropdown`'s
+    options at all (see the header notes of `tests/test_app.py`), so coverage for
+    this is a stub-page assertion that the flags are set, plus a manual look.
+  - Alternative if the built-in filter misbehaves: an app-side "Filter units" field
+    above the two dropdowns that rebuilds `options` with the matching subset. Costs a
+    full `DropdownMenu` rebuild per keystroke - the Dart hashes the option set into
+    the widget key to recompute the menu's intrinsic width - which closes an open
+    menu, and duplicates logic Flutter already has.
+  - Separate menu, same complaint possible later: the drawer's conversion list is 15
+    entries once (34) lands. It is short enough to scroll, and Flet 1.1.2 has
+    `ft.SearchBar` if it ever is not.
 - [ ] Missing unit groups: speed, pressure, power, angle, data rate, mass flow (34)
 - [ ] Custom user-defined units / formulas stored alongside conversions.yaml (35)
 - [ ] Validator / test that walks the whole formula graph in conversions.yaml and proves every unit in a group is reachable from every other (MD reversal is silent when it fails) (36)
