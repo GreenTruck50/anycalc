@@ -6,17 +6,24 @@ process. They are the cheap half of the suite; ``tests/test_app.py`` drives the
 same code through the real built app.
 
 The exactness sweep is the load-bearing test. Every unit in the Volume, Area,
-Weight, Energy and Force groups is defined by law (NIST Handbook 44, the 1959
-international yard-and-pound agreement, the International Table calorie and
-Btu, standard gravity, the 2019 SI), so each pair's factor is an exact rational
-number. Whenever that rational has a terminating decimal expansion, the value
-the app produces must be *bit for bit* that decimal - which is what catches a
+Weight, Energy, Force, Speed, Pressure, Power, Data Rate and Mass Flow groups
+is defined by law (NIST Handbook 44, the 1959 international yard-and-pound
+agreement, the International Table calorie and Btu, standard gravity, the 2019
+SI, IEC 80000-13 for the binary prefixes), so each pair's factor is an exact
+rational number. Whenever that rational has a terminating decimal expansion,
+the value the app produces must be that decimal - which is what catches a
 factor that somebody typed in rounded, or a hop that divides where it should
 multiply. The Length group gets its own, narrower sweep: a parsec is 648000/pi
 astronomical units, so the parsec family has no rational metre to be measured
 against and is left out. The same single exception exists in Energy - the
 thermochemical Btu carries a 5/9, so it never ends as a decimal and gets its
-own test instead.
+own test instead - and in Angle, where a radian is 180/pi degrees and is held
+to the app's own pi instead.
+
+One group's paths can also be exact overall and still round on the way: a
+per-day flow converted through per-hour divides by 24, and 1/24 repeats. Those
+pairs are allowed the last few digits of the engine's 500-digit answer; see
+:func:`agrees_to_significant_digits`.
 """
 
 import itertools
@@ -34,6 +41,7 @@ from conversions import (
     format_conversion_value,
     load_conversion_config,
 )
+from pi import program_pi, program_pi_digits
 
 UNIT_GROUPS, CONVERSIONS = load_conversion_config()
 UNITS_BY_GROUP = {group["name"]: group["units"] for group in UNIT_GROUPS}
@@ -206,6 +214,149 @@ FORCE_N = {
     "force_kip": F(1000) * LBF_N,
 }
 
+# --- the six groups added on 2026-11-10 ---------------------------------------
+# Speed, Pressure, Power, Angle, Data Rate and Mass Flow. Every unit in them is
+# defined by law or by a standards body, so each has an exact rational anchor -
+# with one exception, recorded with the Angle table below.
+
+MILE_M = F(5280) * FOOT_M                # 1 mi = 1609.344 m exactly (1959 agreement)
+NAUTICAL_MILE_M = F(1852)                # the international nautical mile, by definition
+FURLONG_M = F(660) * FOOT_M              # 1 furlong = 660 ft exactly
+LIGHT_SPEED_M_S = F(299792458)           # exact: the metre is defined through c
+MERCURY_KG_M3 = F(135951, 10)            # conventional mercury density at 0 C
+WATER_KG_M3 = F(1000)                    # conventional water density
+ATMOSPHERE_PA = F(101325)                # 1 atm by definition
+FOOT2_M2 = FOOT_M * FOOT_M                       # 1 ft² = 0.09290304 m² exactly
+
+# Speed factors keyed by unit id, in metres per second.
+SPEED_M_S = {
+    "speed_millimeter_per_second": F(1, 1000),
+    "speed_centimeter_per_second": F(1, 100),
+    "speed_meter_per_second": F(1),
+    "speed_kilometer_per_second": F(1000),
+    "speed_kilometer_per_hour": F(1000, 3600),
+    "speed_mile_per_hour": MILE_M / 3600,
+    "speed_knot": NAUTICAL_MILE_M / 3600,
+    "speed_foot_per_second": FOOT_M,
+    "speed_foot_per_minute": FOOT_M / 60,
+    "speed_inch_per_second": IN_M,
+    "speed_inch_per_minute": IN_M / 60,
+    "speed_light": LIGHT_SPEED_M_S,
+    # a fortnight is exactly 14 days: 1209600 s
+    "speed_furlong_per_fortnight": FURLONG_M / 1209600,
+}
+
+# Pressure factors keyed by unit id, in pascals. The mercury and water columns
+# are the conventional ones NIST prints: rho x g_n x h, with rho 13595.1 and
+# 1000 kg/m3 and g_n the same standard gravity as the force group.
+PRESSURE_PA = {
+    "pressure_pascal": F(1),
+    "pressure_hectopascal": F(100),
+    "pressure_kilopascal": F(1000),
+    "pressure_megapascal": F(10**6),
+    "pressure_gigapascal": F(10**9),
+    "pressure_bar": F(10**5),
+    "pressure_millibar": F(100),
+    "pressure_standard_atmosphere": ATMOSPHERE_PA,
+    "pressure_torr": ATMOSPHERE_PA / 760,
+    "pressure_millimeter_mercury": MERCURY_KG_M3 * GRAVITY / 1000,
+    "pressure_inch_mercury": MERCURY_KG_M3 * GRAVITY * IN_M,
+    "pressure_psi": LBF_N / IN2_M2,
+    "pressure_pound_per_square_foot": LBF_N / FOOT2_M2,
+    "pressure_kilogram_force_per_square_centimeter": GRAVITY * 10**4,
+    "pressure_millimeter_water": WATER_KG_M3 * GRAVITY / 1000,
+    "pressure_centimeter_water": WATER_KG_M3 * GRAVITY / 100,
+    "pressure_inch_water": WATER_KG_M3 * GRAVITY * IN_M,
+}
+
+# Power factors keyed by unit id, in watts.
+POWER_W = {
+    "power_milliwatt": F(1, 1000),
+    "power_watt": F(1),
+    "power_kilowatt": F(1000),
+    "power_megawatt": F(10**6),
+    "power_gigawatt": F(10**9),
+    "power_terawatt": F(10**12),
+    "power_volt_ampere": F(1),                       # apparent power: 1 VA = 1 W
+    "power_erg_per_second": F(1, 10**7),
+    "power_foot_pound_force_per_second": FOOT_POUND_FORCE_J,
+    "power_horsepower_mechanical": F(550) * FOOT_POUND_FORCE_J,
+    "power_horsepower_metric": F(75) * GRAVITY,      # 75 kgf m/s = 735.49875 W
+    "power_horsepower_electric": F(746),
+    "power_horsepower_boiler": F(33475) * BTU_IT_J / 3600,
+    "power_btu_per_hour": BTU_IT_J / 3600,
+    "power_ton_of_refrigeration": F(12000) * BTU_IT_J / 3600,
+    "power_calorie_it_per_hour": CALORIE_IT_J / 3600,
+    "power_kilocalorie_it_per_hour": F(1000) * CALORIE_IT_J / 3600,
+}
+
+# Data rate factors keyed by unit id, in bits per second. IEC 80000-13: decimal
+# prefixes are powers of 1000, binary prefixes powers of 1024, a byte is 8 bits.
+DATARATE_BPS = {
+    "datarate_bit_per_second": F(1),
+    "datarate_kilobit_per_second": F(10**3),
+    "datarate_megabit_per_second": F(10**6),
+    "datarate_gigabit_per_second": F(10**9),
+    "datarate_terabit_per_second": F(10**12),
+    "datarate_kibibit_per_second": F(2**10),
+    "datarate_mebibit_per_second": F(2**20),
+    "datarate_gibibit_per_second": F(2**30),
+    "datarate_tebibit_per_second": F(2**40),
+    "datarate_byte_per_second": F(8),
+    "datarate_kilobyte_per_second": F(8) * 10**3,
+    "datarate_megabyte_per_second": F(8) * 10**6,
+    "datarate_gigabyte_per_second": F(8) * 10**9,
+    "datarate_terabyte_per_second": F(8) * 10**12,
+    "datarate_kibibyte_per_second": F(8) * 2**10,
+    "datarate_mebibyte_per_second": F(8) * 2**20,
+    "datarate_gibibyte_per_second": F(8) * 2**30,
+    "datarate_tebibyte_per_second": F(8) * 2**40,
+    # 810 bytes every 125 us = 51840000 bit/s exactly; STM-1 is three STS-1.
+    "datarate_sts_1": F(5184, 100) * 10**6,
+    "datarate_stm_1": F(3) * F(5184, 100) * 10**6,
+}
+
+# Mass flow factors keyed by unit id, in kilograms per second.
+MASSFLOW_KG_S = {
+    "massflow_milligram_per_second": F(1, 10**6),
+    "massflow_gram_per_second": F(1, 1000),
+    "massflow_kilogram_per_second": F(1),
+    "massflow_kilogram_per_minute": F(1, 60),
+    "massflow_kilogram_per_hour": F(1, 3600),
+    "massflow_kilogram_per_day": F(1, 86400),
+    "massflow_gram_per_minute": F(1, 60000),
+    "massflow_gram_per_hour": F(1, 3600000),
+    "massflow_tonne_per_second": F(1000),
+    "massflow_tonne_per_minute": F(1000, 60),
+    "massflow_tonne_per_hour": F(1000, 3600),
+    "massflow_tonne_per_day": F(1000, 86400),
+    "massflow_pound_per_second": POUND_KG,
+    "massflow_pound_per_minute": POUND_KG / 60,
+    "massflow_pound_per_hour": POUND_KG / 3600,
+    "massflow_ounce_per_minute": POUND_KG / 16 / 60,
+    "massflow_short_ton_per_hour": F(2000) * POUND_KG / 3600,
+    "massflow_short_ton_per_day": F(2000) * POUND_KG / 86400,
+    "massflow_long_ton_per_hour": F(2240) * POUND_KG / 3600,
+    "massflow_stone_per_day": F(14) * POUND_KG / 86400,
+}
+
+# Angle factors keyed by unit id, in degrees. Every customary and metric angle
+# here is an exact fraction of a turn. A radian is not - it is 180/pi degrees,
+# and pi has no decimal expansion - so the two radian units are held to the
+# app's own pi by their own test instead of to a rational.
+ANGLE_DEG = {
+    "angle_degree": F(1),
+    "angle_arcminute": F(1, 60),
+    "angle_arcsecond": F(1, 3600),
+    "angle_gradian": F(9, 10),                 # 400 gon to the turn
+    "angle_turn": F(360),
+    "angle_compass_point": F(360, 32),         # 32 points to the turn
+    "angle_nato_mil": F(360, 6400),            # 6400 mils to the turn
+    "angle_hour_angle": F(15),                 # 24 hours to the turn
+}
+
+IRRATIONAL_ANGLE_UNITS = {"angle_radian", "angle_milliradian"}
+
 
 def unit_ids(conversion_name: str) -> list[str]:
     """Unit ids of the unit group that backs a conversion menu entry."""
@@ -240,9 +391,27 @@ def app_value(conversion_name: str, amount: str, source: str, target: str) -> De
     ).value
 
 
+def agrees_to_significant_digits(
+    got: Decimal, want: Decimal, digits: int = 100
+) -> bool:
+    """Whether the app's value matches the exact one to ``digits`` digits.
+
+    Bit-for-bit equality is the standard, and the older groups meet it. This is
+    the escape hatch for a path that divides by a repeating number part-way
+    through, which costs the tail of a 500-digit answer but nothing above it.
+    """
+
+    if got == want:
+        return True
+    if want == 0:
+        return False
+    error = abs(Fraction(got) - Fraction(want)) / abs(Fraction(want))
+    return error < F(1, 10**digits)
+
+
 # --- configuration -----------------------------------------------------------
 
-def test_conversion_groups_are_the_expected_nine() -> None:
+def test_conversion_groups_are_the_expected_fifteen() -> None:
     assert set(CONVERSION_NAMES) == {
         "Length Conversion",
         "Time Conversion",
@@ -253,6 +422,12 @@ def test_conversion_groups_are_the_expected_nine() -> None:
         "Weight Conversion",
         "Energy Conversion",
         "Force Conversion",
+        "Speed Conversion",
+        "Pressure Conversion",
+        "Power Conversion",
+        "Angle Conversion",
+        "Data Rate Conversion",
+        "Mass Flow Conversion",
     }
 
 
@@ -292,8 +467,24 @@ def test_every_pair_of_units_is_reachable(conversion_name: str) -> None:
         ("Weight Conversion", WEIGHT_G, 200),
         ("Energy Conversion", ENERGY_J, 100),
         ("Force Conversion", FORCE_N, 80),
+        ("Speed Conversion", SPEED_M_S, 50),
+        ("Pressure Conversion", PRESSURE_PA, 100),
+        ("Power Conversion", POWER_W, 100),
+        ("Data Rate Conversion", DATARATE_BPS, 300),
+        ("Mass Flow Conversion", MASSFLOW_KG_S, 140),
     ],
-    ids=["volume", "area", "weight", "energy", "force"],
+    ids=[
+        "volume",
+        "area",
+        "weight",
+        "energy",
+        "force",
+        "speed",
+        "pressure",
+        "power",
+        "data-rate",
+        "mass-flow",
+    ],
 )
 def test_every_terminating_factor_is_exact(
     conversion_name: str, legal_factors: dict[str, Fraction], minimum_pairs: int
@@ -301,7 +492,20 @@ def test_every_terminating_factor_is_exact(
     """Each pair's factor must equal the legally defined rational exactly.
 
     Pairs whose true factor is a repeating decimal (imperial -> US, most troy
-    -> metric) are skipped: the engine's 50-digit rounding is legitimate there.
+    -> metric) are skipped: the engine's rounding is legitimate there.
+
+    The five original groups come out bit for bit. The six groups added in 2026
+    can land a hair off even when the pair's own factor terminates, because the
+    path the graph picks can divide by a number that does not terminate on the
+    way - a per-day flow going through per-hour divides by 24, and 1/24 repeats.
+    The engine works at ``DECIMAL_PRECISION`` (500) significant digits, so what
+    that costs is one unit in the last place of the 500-digit answer and nothing
+    above it: 34 of the six groups' terminating pairs come out like that (five in
+    Speed, twenty-nine in Mass Flow), every one of them agreeing with the defined
+    rational to better than 1e-499. The sweep therefore demands agreement to 100
+    significant digits: still eighty-five orders of magnitude tighter than the
+    15-digit literals the engine parses, which is the mistake this test exists to
+    catch.
     """
 
     ids = unit_ids(conversion_name)
@@ -318,7 +522,7 @@ def test_every_terminating_factor_is_exact(
             continue
         checked += 1
         got = format_conversion_value(app_value(conversion_name, "1", source, target))
-        if Decimal(got) != Decimal(want):
+        if not agrees_to_significant_digits(Decimal(got), Decimal(want)):
             wrong.append(f"{source} -> {target}: app {got}, exact {want}")
 
     assert checked >= minimum_pairs, f"only {checked} comparable pairs - too few"
@@ -651,6 +855,83 @@ def test_the_irrational_parsec_hop_keeps_its_significant_digits() -> None:
     got = app_value("Length Conversion", "1", "length_parsec", "length_light_year")
     relative_error = abs(Fraction(got) - parsec_ly) / parsec_ly
     assert relative_error < F(1, 10**13), f"{got} is off by {float(relative_error):.2e}"
+
+
+# --- the Angle group: exact fractions of a turn, and pi for the radian --------
+
+PI_TO_FRACTION_DIGITS = Decimal(
+    "3.14159265358979323846264338327950288419716939937510582097"
+)
+
+
+def test_angle_group_uses_exact_legal_angles() -> None:
+    """Every non-radian Angle unit is an exact fraction of a turn.
+
+    360 degrees, 400 gradians, 32 compass points, 6400 NATO mils and 24 hours of
+    right ascension to the circle; 60 arcminutes and 60 arcseconds to the degree.
+    None of that needs a decimal approximation, so none of it may carry one.
+    """
+
+    ids = [
+        unit for unit in unit_ids("Angle Conversion") if unit not in IRRATIONAL_ANGLE_UNITS
+    ]
+    assert sorted(ids) == sorted(ANGLE_DEG), (
+        "the Angle units and the test's exact table drifted apart: "
+        f"{set(ids) ^ set(ANGLE_DEG)}"
+    )
+
+    checked = 0
+    wrong: list[str] = []
+    for source, target in itertools.permutations(ids, 2):
+        want = terminating_decimal(ANGLE_DEG[source] / ANGLE_DEG[target])
+        if want is None:
+            continue
+        checked += 1
+        got = format_conversion_value(app_value("Angle Conversion", "1", source, target))
+        if Decimal(got) != Decimal(want):
+            wrong.append(f"{source} -> {target}: app {got}, exact {want}")
+
+    assert checked >= 25, f"only {checked} comparable pairs - too few"
+    assert wrong == [], (
+        f"{len(wrong)} of {checked} pairs are not exact:\n" + "\n".join(wrong[:20])
+    )
+
+
+def test_the_radian_hops_run_on_the_apps_own_pi() -> None:
+    """A radian converts through ``pi.program_pi``, not through a typed literal.
+
+    "x * (180 / pi)" is the only honest way to write the hop: 180/pi has no
+    decimal expansion, so any literal in the YAML would be an approximation
+    frozen into the file. Carrying ``pi`` instead means the conversion inherits
+    whatever pi the app is using, which is what adopting longer digits on the Pi
+    page is for. These hops are therefore exact against the program pi - and no
+    better than it, which the last assertion pins.
+    """
+
+    pi = program_pi()
+    to_degrees = Decimal(180) / pi
+    cases = [
+        ("angle_radian", "angle_degree", to_degrees),
+        ("angle_degree", "angle_radian", Decimal(1) / to_degrees),
+        ("angle_milliradian", "angle_degree", (Decimal(1) / 1000) * to_degrees),
+        ("angle_turn", "angle_radian", Decimal(360) / to_degrees),
+    ]
+    for source, target, want in cases:
+        got = app_value("Angle Conversion", "1", source, target)
+        assert format_conversion_value(got) == format_conversion_value(want), (
+            f"{source} -> {target}: app {got}, the program pi gives {want}"
+        )
+
+    # ...and the program pi is the only thing limiting them. The bound tightens
+    # by itself if the app is handed a longer pi - the conversion follows it.
+    got = app_value("Angle Conversion", "1", "angle_radian", "angle_turn")
+    true_turn = 1 / (2 * Fraction(PI_TO_FRACTION_DIGITS))
+    relative_error = abs(Fraction(got) - true_turn) / true_turn
+    limit = F(1, 10 ** (program_pi_digits() - 2))
+    assert relative_error < limit, (
+        f"{got} is off from a true radian by {float(relative_error):.2e}, "
+        f"more than the app's {program_pi_digits()}-digit pi can explain"
+    )
 
 # --- the one Energy factor that cannot be written exactly ---------------------
 

@@ -201,7 +201,7 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Keep Energy and Force apart: there is no bridge between a joule and a newton,
   and none between a cubic foot of gas and a therm, even though ccf and the therm
   are both gas-bill units - the guidance lines say how they relate instead.
-- With the two new groups the drawer lists nine conversions, so its entry list is
+- The drawer lists fifteen conversions, so its entry list is
   taller than the window and the last entries are reached by scrolling - they live
   in a list the drawer scrolls, not in one that truncates. The order the entries
   appear in is the order `conversions.yaml` lists the groups. To keep as many
@@ -214,7 +214,93 @@ There should be a conversions.yaml file that says "There should be this tab with
   means, so selecting an entry resolves to calculators, then conversions, then
   the "Other" pages in the order they are listed.
 
-## Unit guidance notes
+## Speed, pressure, power, angle, data rate and mass flow conversions
+
+- Offer six more conversion groups, each its own drawer entry, in this order and
+  with these icons and descriptions: "Speed Conversion" (`SPEED`, "Convert
+  between metres per second, kilometres per hour, miles per hour, knots, feet per
+  second, etc."), "Pressure Conversion" (`DASHBOARD`, "Convert between pascals,
+  bar, psi, atmospheres, torr, mmHg, inches of water, etc."), "Power Conversion"
+  (`POWER`, "Convert between watts, kilowatts, horsepower, BTU per hour, tons of
+  refrigeration, etc."), "Angle Conversion" (`ROTATE_90_DEGREES_CW`, "Convert
+  between degrees, radians, gradians, arcminutes, turns, milli-radians, etc."),
+  "Data Rate Conversion" (`DOWNLOAD`, "Convert between bits per second, bytes per
+  second, kibibytes per second, Mbit/s, STS-1, etc.") and "Mass Flow Conversion"
+  (`WATER`, "Convert between kilograms per second, tonnes per hour, pounds per
+  hour, short tons per day, etc.").
+- Cover, per group: Speed - millimetre, centimetre, metre and kilometre per
+  second, kilometre and mile per hour, the knot, foot per second and per minute,
+  inch per second and per minute, the speed of light and the furlong per fortnight;
+  Pressure - pascal with its hecto-, kilo-, mega- and gigaprefixes, bar and
+  millibar, the standard atmosphere, the torr, the conventional millimetre and
+  inch of mercury, psi and psf, the technical atmosphere (kgf/cm2) and the
+  conventional millimetre, centimetre and inch of water; Power - milliwatt
+  through terawatt, the volt-ampere, the CGS erg per second, the foot-pound-force
+  per second, the mechanical, metric, electrical and boiler horsepower, the BTU
+  (IT) per hour, the ton of refrigeration and the calorie and kilocalorie (IT) per
+  hour; Angle - radian and milliradian, degree, arcminute and arcsecond, gradian,
+  turn, compass point, NATO mil and the astronomical hour; Data Rate - bit per
+  second through terabit per second, the kibibit through tebibit, byte per second
+  through terabyte per second, the kibibyte through tebibyte, and STS-1 and STM-1;
+  Mass Flow - milligram through kilogram per second, kilogram per minute, hour and
+  day, gram per minute and hour, tonne per second, minute, hour and day, pound per
+  second, minute and hour, ounce per minute, short ton per hour and day, long ton
+  per hour and stone per day.
+- Order each new group's unit list the way the existing ones are - metric units
+  first, then the customary ones - because that list is the order both unit
+  dropdowns show, and open each form on its first two units: millimetre per second
+  to centimetre per second, pascal to hectopascal, milliwatt to watt, radian to
+  milliradian, bit per second to kilobit per second, milligram per second to gram
+  per second.
+- Use the legal or standards-body definition as the formula factor and never a
+  rounded approximation of it: the 1959 mile (1609.344 m) and foot (0.3048 m) and
+  inch (25.4 mm), the international nautical mile of exactly 1852 m, the speed of
+  light of exactly 299792458 m/s, the bar of exactly 100000 Pa, the atmosphere of
+  exactly 101325 Pa, the torr as exactly 1/760 of it, the conventional mercury and
+  water columns as rho x g x h with rho 13595.1 and 1000 kg/m3 under standard
+  gravity of exactly 9.80665 m/s2, the technical atmosphere as exactly 98066.5 Pa,
+  the metric horsepower as exactly 75 kgf metres per second (735.49875 W), the
+  electrical horsepower as exactly 746 W, the boiler horsepower as exactly 33475
+  Btu (IT) per hour, the refrigeration ton as exactly 12000 Btu (IT) per hour, the
+  IEC 80000-13 binary prefixes as powers of 1024 against the decimal ones as
+  powers of 1000, STS-1 as 810 bytes every 125 us (51840000 bit/s) with STM-1
+  exactly three of them, and the pound of exactly 0.45359237 kg behind every mass
+  flow.
+- Write the Pressure hop that cannot be a single literal as its exact factors: psi
+  is `x * 4.4482216152605 / 0.00064516 / 1000` - a pound-force over a square inch -
+  because the single equivalent decimal, 6894.757293168361..., has a repeating tail
+  and is longer than a literal the engine can parse.
+- Convert an angle through `pi` and not through a literal: the radian hops are
+  `x * (180 / pi)` and `x / (180 / pi)`, both spelled out as `UD` formulas because
+  reversing an `MD` formula evaluates its constant part through the regular
+  (non-scientific) evaluator, where `pi` is not a name - forward formulas are
+  evaluated with the constants table, reversed ones are not. A
+  radian is therefore as accurate as the app's own computed pi, and a longer pi
+  adopted on the Pi page makes these hops more accurate by itself.
+- Hold all six groups to the same exactness sweep as Volume, Area, Weight, Energy
+  and Force: of the 156 ordered pairs of Speed's 13 units the 54 with a
+  terminating factor, of Pressure's 272 the 110, of Power's 272 the 111, of Data
+  Rate's 380 the 343 and of Mass Flow's 380 the 148 must match the defined
+  rational; of the 56 pairs among Angle's eight units that carry no π, the 34
+  terminating ones must too.
+- Let a pair whose path divides by a repeating number part-way through keep the
+  tail of the answer: a per-day flow routed through per-hour divides by 24, so
+  kg/d to t/d comes out 0.000999... rather than 0.001, differing from the exact
+  value only in the last place of the engine's 500-digit working precision. 34 of
+  the six new groups' terminating pairs land there - five in Speed, twenty-nine in
+  Mass Flow - and all of them agree with the defined rational to better than
+  1e-499. The sweep demands agreement to 100 significant digits, eighty-five
+  orders of magnitude tighter than the 15-digit literals the engine parses - which
+  is the mistake the sweep exists to catch.
+- Keep each new group to its own kind: no bridge between a pascal and a newton,
+  none between a watt and a joule, none between a knot and a kilometre per hour on
+  one side and a nautical mile on the other. The guidance lines say how those
+  relate instead.
+- With the six new groups the drawer lists fifteen conversions, which makes its
+  entry list taller than the window on every platform - the entries below the fold
+  are reached by scrolling, and on the desktop test host, which cannot scroll, the
+  last of them cannot be opened from a UI test at all.
+
 
 - A unit may carry a `guidance` line in `src/assets/conversions.yaml`: one short
   sentence saying which country or which kind of source actually uses that unit,

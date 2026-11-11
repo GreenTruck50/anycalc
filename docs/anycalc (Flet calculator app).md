@@ -135,7 +135,7 @@ Selecting a destination swaps the **main content area** — conversions render i
 
 ## Spec status
 
-`calculator_spec.md` currently specifies: Flet app, PEMDAS/BODMAS evaluation, YAML-driven conversions with forward-route preference and `MD` inversion, unit-ID integrity checks, the inline conversion form converting **live** (no Convert button, silent while typing), daily currency conversion with minified exchange API data and a Cloudflare fallback, the conversion chain of operations (formula behind a "View formula" toggle), a "Live result preview" section for both calculators (grey live answer, promoted into the display on `=`), the grouped drawer navigation, copy-to-clipboard on the result surfaces, and a "Physical keyboard" section (a real keyboard presses the same pad a tap does, gated against modifiers, other pages and a field that holds the caret) and a "Calculator memory" section (`MRC`/`M+`/`M-`/`MCLR`, the row those keys share with the variable keys, what each key does and the `M = <value>` line) and an "Answer precision" section (decimal places, significant figures, scientific-notation threshold and rounding mode).
+`calculator_spec.md` currently specifies: Flet app, PEMDAS/BODMAS evaluation, YAML-driven conversions with forward-route preference and `MD` inversion, unit-ID integrity checks, the inline conversion form converting **live** (no Convert button, silent while typing), daily currency conversion with minified exchange API data and a Cloudflare fallback, the conversion chain of operations (formula behind a "View formula" toggle), a "Live result preview" section for both calculators (grey live answer, promoted into the display on `=`), the grouped drawer navigation, copy-to-clipboard on the result surfaces, and a "Physical keyboard" section (a real keyboard presses the same pad a tap does, gated against modifiers, other pages and a field that holds the caret) and a "Calculator memory" section (`MRC`/`M+`/`M-`/`MCLR`, the row those keys share with the variable keys, what each key does and the `M = <value>` line) and an "Answer precision" section (decimal places, significant figures, scientific-notation threshold and rounding mode) and a "Speed, pressure, power, angle, data rate and mass flow conversions" section (the six groups added 2026-11-10, their units, the exact-definition rule, the conventional fluid columns, the radian-through-`pi` rule and the sweep the six must pass).
 
 ## 9\. Volume & weight conversion groups (added 2026-10-23)
 
@@ -155,10 +155,40 @@ Each group is a tree plus two deliberate shortcuts, so exactly one shortest rout
 1.  Factors are the **legal definitions**, never rounded lookups: in = 2.54 cm ⇒ in³ = 16.387064 cm³; US liq gal = 231 in³; US dry gal = 268.8025 in³; imp gal = 4.54609 L; lb = 0.45359237 kg (1959 international yard & pound agreement); gr = 1/7000 lb = 0.00006479891 kg; dwt = 24 gr, oz t = 480 gr; carat = 0.2 g. Sources: NIST SP 811 App. B, Wikipedia (Gallon, Pound (mass), Troy weight).
 2.  `calculate()` turns numeric literals into `Decimal(str(float_literal))`, so a literal longer than ~15 significant digits is silently truncated. Anything longer must be **chained through integers**: mi³ is `x / 5451776000` + `x / 27` + `x / 1728` + `x * 16.387064` (exact 4168181825.440579584 m³), acre-ft is `x * 75271680` in³.
 3.  A route must never perform a non-terminating division _before_ multiplying, otherwise a value that is actually exact prints as e.g. `4.9289215937499999999…`. That is why US tbsp/tsp also carry direct mL definitions (`14.78676478125`, `4.92892159375`) instead of only routing through `tbsp → tsp (x * 3)`.
-4.  Values whose true decimal expansion repeats (1 lb in stone = 1/14, 1 grain in dr = 1/27.34375, imp gal in US gal) are correct at the full 50-digit `DECIMAL_PRECISION` — they are not defects.
+4.  Values whose true decimal expansion repeats (1 lb in stone = 1/14, 1 grain in dr = 1/27.34375, imp gal in US gal) are correct at the full 500-digit `DECIMAL_PRECISION` — they are not defects.
 
 ### Verification probes (not in the repo)
 
 *   `/tmp/probe_volwt.py` — `load_conversion_config()` accepts the file (icons, ids, MD reversibility), drawer name mapping (`name.removesuffix(" Conversion")` → unit group) resolves, **every ordered pair of units in each new group is reachable** (1482 + 506 pairs, 0 unreachable, max 18 hops), and every decimal literal round-trips through float.
-*   `/tmp/probe_sweep.py` — each unit independently redefined as an exact `Fraction` of mL / gram; every pair whose true factor is a terminating decimal must match the engine bit-for-bit: **Volume 672/672 exact, Weight 247/247 exact** (810 + 259 pairs skipped because the true value repeats).
+*   `/tmp/probe_sweep.py` — each unit independently redefined as an exact `Fraction` of mL / gram; every pair whose true factor is a terminating decimal must match the engine bit-for-bit: **Volume 672/672 exact, Weight 247/247 exact** (810 + 259 pairs skipped because the true value repeats). That probe lives in `tests/test_conversion_engine.py` now, for every group.
+
+## 10\. Speed, pressure, power, angle, data rate and mass flow (added 2026-11-10)
+
+`src/assets/conversions.yaml` now holds **15 unit groups / 15 conversion entries**: the nine above plus **Speed (13 units, 12 formulas)**, **Pressure (17, 16)**, **Power (17, 16)**, **Angle (10, 10)**, **Data Rate (20, 19)** and **Mass Flow (20, 19)** — 285 units and 276 formulas in total. They were appended, so every existing drawer position is unchanged; the six new entries sit below the fold on a desktop window and are reached by scrolling.
+
+Icons: Speed `SPEED`, Pressure `DASHBOARD`, Power `POWER`, Angle `ROTATE_90_DEGREES_CW`, Data Rate `DOWNLOAD`, Mass Flow `WATER` — all six exist on `ft.Icons` (checked with `hasattr`; the loader raises `Unknown Flet icon: …` otherwise, `src/conversions.py:82`).
+
+### Graph shape (keep it this way)
+
+One spine per group, customary units hanging off a single exact bridge, so a shortest route is unique:
+
+*   **Speed:** mm/s–cm/s–m/s–km/s and m/s–km/h; the 1959 foot hangs off m/s (`ft/s`, `ft/min`, `in/s`, `in/min`), the mile off ft/s, the knot off m/s through the 1852 m nautical mile, `c` off m/s, furlong/fortnight off the mile.
+*   **Pressure:** Pa–hPa–kPa–MPa–GPa; bar–mbar off Pa; atm, torr, psi and psf, kgf/cm² and the mercury/water columns all land on Pa. psi is the only unit with no exact single literal, so it is chained: `x * 4.4482216152605 / 0.00064516 / 1000`.
+*   **Power:** mW–W–kW–MW–GW–TW; VA and erg/s off W; the four horsepower definitions and the thermal units (Btu/h, ton-ref, cal/h, kcal/h) off W through the exact Btu (IT) and calorie (IT).
+*   **Angle:** radian is the hub; mrad off it, degree off it through `180 / pi`, arcminute/arcsecond off degree, gradian/turn/compass point/NATO mil/hour angle off degree.
+*   **Data Rate:** bit/s up through the IEC decimal prefixes, and a parallel binary ladder at 1024; the byte ladder hangs off bit/s at `x * 8`; STS-1 off Mbit/s at 51.84, STM-1 at 3 STS-1.
+*   **Mass Flow:** mg/s–g/s–kg/s, then the time ladder (per minute, per hour, per day) off kg/s; the tonne ladder off kg/s; the customary units hang off kg/s through the exact pound (0.45359237 kg) and the ounce/short ton/long ton/stone ratios.
+
+No group bridges to another kind: no pascal↔newton, no watt↔joule, no knot↔nautical mile. The `guidance` lines carry those relationships in prose instead — all 97 new units have one, so these six pages show the "UNIT GUIDANCE" block.
+
+### Accuracy policy
+
+1.  Factors are the definitions: 1959 yard and pound (in 25.4 mm, ft 0.3048 m, mi 1609.344 m, lb 0.45359237 kg), nmi 1852 m, c 299792458 m/s, bar 100000 Pa, atm 101325 Pa, torr 1/760 atm, technical atmosphere 98066.5 Pa, g₀ 9.80665 m/s², PS 735.49875 W, hp(E) 746 W, hp(S) 33475 Btu/h, ton-ref 12000 Btu/h, Btu (IT) 1055.05585262 J, cal (IT) 4.1868 J, IEC 80000-13 1024-powers, STS-1 51.84 Mbit/s.
+2.  Conventional fluid columns are stated as conventions in comments, not measured: mercury 13595.1 kg/m³ and water 1000 kg/m³ under g₀, so 1 mmHg is exactly 133.322387415 Pa and 1 mmH₂O exactly 9.80665 Pa.
+3.  Angle is the group where the factor is not rational: the radian hops are `UD` formulas written in both directions (`x * (180 / pi)` forward, `x / (180 / pi)` back). `MD` cannot be used for them because reversing an `MD` formula evaluates its constant part with `calculate(..., scientific=False)`, where `pi` is not a name (`src/conversions.py:191`), while forward formulas evaluate with `scientific=True` (`:163`). Consequence: those hops run at whatever π the app currently uses, so adopting a longer π on the Pi page makes them more accurate by itself.
+4.  A path may divide by a repeating number part-way through even when the pair's own factor terminates (per-day flows route through per-hour, and 1/24 repeats). The cost is one unit in the last place of the 500-digit answer; 34 of the new groups' terminating pairs (5 Speed, 29 Mass Flow) come out like that, all agreeing with the exact rational to better than 1e-499.
+
+### Verification
+
+`tests/test_conversion_engine.py` carries it now — no /tmp probe. Reachability is asserted for every ordered pair of every group; the exactness sweep re-derives each unit as an exact `Fraction` and demands bit-level agreement for every pair whose true factor terminates: **Speed 54, Pressure 110, Power 111, Data Rate 343, Mass Flow 148 pairs, plus 34 of Angle's 56 π-free pairs**, with the 100-significant-digit escape hatch above. Two real data bugs fell out of that sweep before the change was committed: `psi → kPa` written as `x * 6894.757293168361 / 1000` (a pascal figure in the kilopascal slot) and several inverted mass-flow time hops (`kg/s → kg/min` multiplying by 60).
 *   `/tmp/probe_exact.py` — 41 published-value spot checks (US gal = 3.785411784 L, imp fl oz = 28.4130625 mL, dry qt = 1.101220942715 L, bbl = 158.987294928 L, acre-ft = 1233481.83754752 L, oz t = 31.1034768 g, ap dr = 3.8879346 g, long ton = 1016.0469088 kg, …): 41/41. Bugs these caught while writing the groups: hectoliter hop had been `x / 10` (that is a dekaliter — 1 hL = 100 L ⇒ `x / 100`), and tsp→mL routed through a `/3`.

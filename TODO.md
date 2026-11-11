@@ -91,9 +91,9 @@ Every item ends with its number in parentheses so it can be referred to by numbe
     the widget key to recompute the menu's intrinsic width - which closes an open
     menu, and duplicates logic Flutter already has.
   - Separate menu, same complaint possible later: the drawer's conversion list is 15
-    entries once (34) lands. It is short enough to scroll, and Flet 1.1.2 has
+    entries now that (34) has landed. It is short enough to scroll, and Flet 1.1.2 has
     `ft.SearchBar` if it ever is not.
-- [ ] Missing unit groups: speed, pressure, power, angle, data rate, mass flow (34)
+- [x] Missing unit groups: speed, pressure, power, angle, data rate, mass flow (34)
 - [ ] Custom user-defined units / formulas stored alongside conversions.yaml (35)
 - [ ] Validator / test that walks the whole formula graph in conversions.yaml and proves every unit in a group is reachable from every other (MD reversal is silent when it fails) (36)
 - [ ] Currency: staleness badge + "rates as of ..." line + offline last-known-rates fallback (37)

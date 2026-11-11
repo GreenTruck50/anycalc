@@ -691,6 +691,406 @@ units:
         symbol: "kip"
         id: "force_kip"
         guidance: "1000 lbf - US structural engineering, as in a 20 kip beam load."
+  - name: "Speed"
+    units:
+      - name: "Millimeter per second"
+        symbol: "mm/s"
+        id: "speed_millimeter_per_second"
+        guidance: "0.001 m/s - vibration velocity, creep and crack growth rates."
+      - name: "Centimeter per second"
+        symbol: "cm/s"
+        id: "speed_centimeter_per_second"
+        guidance: "0.01 m/s - flow in laboratory channels, glacier creep."
+      - name: "Meter per second"
+        symbol: "m/s"
+        id: "speed_meter_per_second"
+        guidance: "The SI derived unit - one metre travelled in one second."
+      - name: "Kilometer per second"
+        symbol: "km/s"
+        id: "speed_kilometer_per_second"
+        guidance: "1000 m/s - orbital and escape speeds."
+      - name: "Kilometer per hour"
+        symbol: "km/h"
+        id: "speed_kilometer_per_hour"
+        guidance: "The road speed of every country that signs its limits in kilometres."
+      - name: "Mile per hour"
+        symbol: "mph"
+        id: "speed_mile_per_hour"
+        guidance: "Exactly 1.609344 km/h, through the 1959 mile - the road speed of the UK and the US."
+      - name: "Knot"
+        symbol: "kn"
+        id: "speed_knot"
+        guidance: "One nautical mile per hour - exactly 1.852 km/h, the speed of ships and aircraft."
+      - name: "Foot per second"
+        symbol: "ft/s"
+        id: "speed_foot_per_second"
+        guidance: "Exactly 0.3048 m/s - US engineering and ballistics."
+      - name: "Foot per minute"
+        symbol: "ft/min"
+        id: "speed_foot_per_minute"
+        guidance: "Air velocity in US ducts and fans, and elevator speeds."
+      - name: "Inch per second"
+        symbol: "in/s"
+        id: "speed_inch_per_second"
+        guidance: "Exactly 0.0254 m/s - US machine feeds and vibration velocity."
+      - name: "Inch per minute"
+        symbol: "in/min"
+        id: "speed_inch_per_minute"
+        guidance: "IPM - the feed rate a US milling or drilling machine is set in."
+      - name: "Speed of light"
+        symbol: "c"
+        id: "speed_light"
+        guidance: "Exactly 299792458 m/s - since 1983 the metre is defined through it."
+      - name: "Furlong per fortnight"
+        symbol: "fur/fortnight"
+        id: "speed_furlong_per_fortnight"
+        guidance: "220 yards in 14 days - the joke unit of British engineering, exact through the 1959 yard."
+  - name: "Pressure"
+    units:
+      - name: "Pascal"
+        symbol: "Pa"
+        id: "pressure_pascal"
+        guidance: "The SI derived unit - one newton spread over one square metre."
+      - name: "Hectopascal"
+        symbol: "hPa"
+        id: "pressure_hectopascal"
+        guidance: "100 Pa - the pressure a weather report prints."
+      - name: "Kilopascal"
+        symbol: "kPa"
+        id: "pressure_kilopascal"
+        guidance: "1000 Pa - building wind loads, water supply and gas pressures."
+      - name: "Megapascal"
+        symbol: "MPa"
+        id: "pressure_megapascal"
+        guidance: "1e6 Pa - the strength class of concrete and steel."
+      - name: "Gigapascal"
+        symbol: "GPa"
+        id: "pressure_gigapascal"
+        guidance: "1e9 Pa - Young's modulus and bulk modulus."
+      - name: "Bar"
+        symbol: "bar"
+        id: "pressure_bar"
+        guidance: "Defined as exactly 100000 Pa - tyre pressures outside the US."
+      - name: "Millibar"
+        symbol: "mbar"
+        id: "pressure_millibar"
+        guidance: "Exactly 100 Pa - the same size as a hectopascal, the older weather reading."
+      - name: "Standard atmosphere"
+        symbol: "atm"
+        id: "pressure_standard_atmosphere"
+        guidance: "Defined as exactly 101325 Pa - the reference condition of tables."
+      - name: "Torr"
+        symbol: "Torr"
+        id: "pressure_torr"
+        guidance: "Defined as exactly 1/760 of an atmosphere - the unit of high vacuum."
+      - name: "Millimeter of mercury (conventional)"
+        symbol: "mmHg"
+        id: "pressure_millimeter_mercury"
+        guidance: "A 1 mm column of mercury of 13595.1 kg/m3 under standard gravity - blood pressure."
+      - name: "Inch of mercury (conventional)"
+        symbol: "inHg"
+        id: "pressure_inch_mercury"
+        guidance: "25.4 of those millimetres - the US barometer and altimeter setting."
+      - name: "Pound-force per square inch"
+        symbol: "psi"
+        id: "pressure_psi"
+        guidance: "One pound-force on one square inch - US tyres, water pressure and material strength."
+      - name: "Pound-force per square foot"
+        symbol: "psf"
+        id: "pressure_pound_per_square_foot"
+        guidance: "A 144th of a psi - US floor loads and wind loads."
+      - name: "Kilogram-force per square centimeter"
+        symbol: "kgf/cm²"
+        id: "pressure_kilogram_force_per_square_centimeter"
+        guidance: "The technical atmosphere - 98066.5 Pa, still on European compressors and gauges."
+      - name: "Millimeter of water (conventional)"
+        symbol: "mmH2O"
+        id: "pressure_millimeter_water"
+        guidance: "A 1 mm column of water of 1000 kg/m3 under standard gravity - manometers and ducts."
+      - name: "Centimeter of water (conventional)"
+        symbol: "cmH2O"
+        id: "pressure_centimeter_water"
+        guidance: "10 of those millimetres - respiratory and filtration pressures."
+      - name: "Inch of water (conventional)"
+        symbol: "inH2O"
+        id: "pressure_inch_water"
+        guidance: "25.4 of those millimetres - the US unit for duct static pressure."
+  - name: "Power"
+    units:
+      - name: "Milliwatt"
+        symbol: "mW"
+        id: "power_milliwatt"
+        guidance: "0.001 W - a laser pointer, a hearing aid."
+      - name: "Watt"
+        symbol: "W"
+        id: "power_watt"
+        guidance: "The SI derived unit - one joule every second."
+      - name: "Kilowatt"
+        symbol: "kW"
+        id: "power_kilowatt"
+        guidance: "The rating an appliance label and a tariff are written in."
+      - name: "Megawatt"
+        symbol: "MW"
+        id: "power_megawatt"
+        guidance: "One wind turbine, one data hall."
+      - name: "Gigawatt"
+        symbol: "GW"
+        id: "power_gigawatt"
+        guidance: "A power station, a national grid region."
+      - name: "Terawatt"
+        symbol: "TW"
+        id: "power_terawatt"
+        guidance: "World electricity demand runs near 3 TW."
+      - name: "Volt-ampere"
+        symbol: "VA"
+        id: "power_volt_ampere"
+        guidance: "Apparent power - the same size as a watt, the number a UPS is sold by."
+      - name: "Erg per second"
+        symbol: "erg/s"
+        id: "power_erg_per_second"
+        guidance: "Exactly 1e-7 W - the CGS unit in older physics tables."
+      - name: "Foot-pound-force per second"
+        symbol: "ft-lbf/s"
+        id: "power_foot_pound_force_per_second"
+        guidance: "One pound-force through one foot each second - the base of the mechanical hp."
+      - name: "Horsepower (mechanical)"
+        symbol: "hp"
+        id: "power_horsepower_mechanical"
+        guidance: "Exactly 550 ft-lbf per second - the imperial horsepower of engine ratings."
+      - name: "Horsepower (metric)"
+        symbol: "PS"
+        id: "power_horsepower_metric"
+        guidance: "Exactly 75 kgf metres per second - the PS, cv, ch of European car ratings."
+      - name: "Horsepower (electric)"
+        symbol: "hp(E)"
+        id: "power_horsepower_electric"
+        guidance: "Defined as exactly 746 W - the rating of US electric motors."
+      - name: "Horsepower (boiler)"
+        symbol: "hp(S)"
+        id: "power_horsepower_boiler"
+        guidance: "Exactly 33475 BTU (IT) per hour - the steam-raising capacity of a boiler."
+      - name: "BTU (IT) per hour"
+        symbol: "BTU/h"
+        id: "power_btu_per_hour"
+        guidance: "The heating and cooling capacity on US equipment labels."
+      - name: "Ton of refrigeration"
+        symbol: "ton-ref"
+        id: "power_ton_of_refrigeration"
+        guidance: "Exactly 12000 BTU (IT) per hour - the size of a US air conditioner."
+      - name: "Calorie (IT) per hour"
+        symbol: "cal(IT)/h"
+        id: "power_calorie_it_per_hour"
+        guidance: "4.1868 J an hour - metabolic and heat-loss rates."
+      - name: "Kilocalorie (IT) per hour"
+        symbol: "kcal(IT)/h"
+        id: "power_kilocalorie_it_per_hour"
+        guidance: "Exactly 1.163 W - the heater rating of Europe and Asia."
+  - name: "Angle"
+    units:
+      - name: "Radian"
+        symbol: "rad"
+        id: "angle_radian"
+        guidance: "The SI derived unit - the angle an arc of one radius subtends."
+      - name: "Milliradian"
+        symbol: "mrad"
+        id: "angle_milliradian"
+        guidance: "0.001 rad - beam divergence, and the angular mil of shooting."
+      - name: "Degree"
+        symbol: "°"
+        id: "angle_degree"
+        guidance: "1/360 of a turn - the angle of maps, navigation and schoolwork."
+      - name: "Arcminute"
+        symbol: "′"
+        id: "angle_arcminute"
+        guidance: "1/60 of a degree - astronomical seeing, and one minute of latitude."
+      - name: "Arcsecond"
+        symbol: "″"
+        id: "angle_arcsecond"
+        guidance: "1/3600 of a degree - star positions and parallax."
+      - name: "Gradian"
+        symbol: "gon"
+        id: "angle_gradian"
+        guidance: "1/400 of a turn - the survey angle of calculators set to GRADE."
+      - name: "Turn"
+        symbol: "turn"
+        id: "angle_turn"
+        guidance: "One whole circle - 360 degrees, 2 pi radians."
+      - name: "Compass point"
+        symbol: "pt"
+        id: "angle_compass_point"
+        guidance: "1/32 of a turn - the 11.25 degree step of the compass rose."
+      - name: "NATO mil"
+        symbol: "mil"
+        id: "angle_nato_mil"
+        guidance: "1/6400 of a turn - the angular unit of guns and scopes."
+      - name: "Hour (right ascension)"
+        symbol: "h"
+        id: "angle_hour_angle"
+        guidance: "1/24 of a turn - the sky's clock, exactly 15 degrees."
+  - name: "Data Rate"
+    units:
+      - name: "Bit per second"
+        symbol: "bit/s"
+        id: "datarate_bit_per_second"
+        guidance: "The SI derived unit - one bit every second."
+      - name: "Kilobit per second"
+        symbol: "kbit/s"
+        id: "datarate_kilobit_per_second"
+        guidance: "1000 bit/s - a voice codec, the small print of a broadband ad."
+      - name: "Megabit per second"
+        symbol: "Mbit/s"
+        id: "datarate_megabit_per_second"
+        guidance: "1e6 bit/s - how carriers and drive specs count, 1000-based."
+      - name: "Gigabit per second"
+        symbol: "Gbit/s"
+        id: "datarate_gigabit_per_second"
+        guidance: "1e9 bit/s - a wired home line, one Ethernet generation."
+      - name: "Terabit per second"
+        symbol: "Tbit/s"
+        id: "datarate_terabit_per_second"
+        guidance: "1e12 bit/s - a submarine cable pair."
+      - name: "Kibibit per second"
+        symbol: "Kibit/s"
+        id: "datarate_kibibit_per_second"
+        guidance: "1024 bit/s - the 1024-based bit rate of software counters."
+      - name: "Mebibit per second"
+        symbol: "Mibit/s"
+        id: "datarate_mebibit_per_second"
+        guidance: "2^20 bit/s - what a 100 Mbit/s link really carries per second."
+      - name: "Gibibit per second"
+        symbol: "Gibit/s"
+        id: "datarate_gibibit_per_second"
+        guidance: "2^30 bit/s."
+      - name: "Tebibit per second"
+        symbol: "Tibit/s"
+        id: "datarate_tebibit_per_second"
+        guidance: "2^40 bit/s."
+      - name: "Byte per second"
+        symbol: "B/s"
+        id: "datarate_byte_per_second"
+        guidance: "8 bit/s - file copies count bytes, links count bits."
+      - name: "Kilobyte per second"
+        symbol: "kB/s"
+        id: "datarate_kilobyte_per_second"
+        guidance: "8000 bit/s."
+      - name: "Megabyte per second"
+        symbol: "MB/s"
+        id: "datarate_megabyte_per_second"
+        guidance: "8e6 bit/s - the number a file copy shows; a 1 Gbit/s link reaches about 119 of these."
+      - name: "Gigabyte per second"
+        symbol: "GB/s"
+        id: "datarate_gigabyte_per_second"
+        guidance: "8e9 bit/s - a SATA or PCIe lane."
+      - name: "Terabyte per second"
+        symbol: "TB/s"
+        id: "datarate_terabyte_per_second"
+        guidance: "8e12 bit/s - a data-centre fabric."
+      - name: "Kibibyte per second"
+        symbol: "KiB/s"
+        id: "datarate_kibibyte_per_second"
+        guidance: "8192 bit/s - the 1024-based byte of software."
+      - name: "Mebibyte per second"
+        symbol: "MiB/s"
+        id: "datarate_mebibyte_per_second"
+        guidance: "2^20 bytes per second - what a download manager shows for a MB/s figure."
+      - name: "Gibibyte per second"
+        symbol: "GiB/s"
+        id: "datarate_gibibyte_per_second"
+        guidance: "2^30 bytes per second."
+      - name: "Tebibyte per second"
+        symbol: "TiB/s"
+        id: "datarate_tebibyte_per_second"
+        guidance: "2^40 bytes per second."
+      - name: "STS-1 (OC-1)"
+        symbol: "STS-1"
+        id: "datarate_sts_1"
+        guidance: "Exactly 51.84 Mbit/s - the SONET frame of 810 bytes every 125 us."
+      - name: "STM-1 (OC-3)"
+        symbol: "STM-1"
+        id: "datarate_stm_1"
+        guidance: "Exactly three STS-1 - 155.52 Mbit/s, the SDH multiplex."
+  - name: "Mass Flow"
+    units:
+      - name: "Milligram per second"
+        symbol: "mg/s"
+        id: "massflow_milligram_per_second"
+        guidance: "0.000001 kg/s - dosing, printers, fuel injectors."
+      - name: "Gram per second"
+        symbol: "g/s"
+        id: "massflow_gram_per_second"
+        guidance: "0.001 kg/s - lab reactors and 3D printer extrusion."
+      - name: "Kilogram per second"
+        symbol: "kg/s"
+        id: "massflow_kilogram_per_second"
+        guidance: "The SI derived unit - one kilogram of matter every second."
+      - name: "Kilogram per minute"
+        symbol: "kg/min"
+        id: "massflow_kilogram_per_minute"
+        guidance: "Engine and compressor air flow."
+      - name: "Kilogram per hour"
+        symbol: "kg/h"
+        id: "massflow_kilogram_per_hour"
+        guidance: "The burner and dosing rating of metric countries."
+      - name: "Kilogram per day"
+        symbol: "kg/d"
+        id: "massflow_kilogram_per_day"
+        guidance: "Effluent and dosing over a day."
+      - name: "Gram per minute"
+        symbol: "g/min"
+        id: "massflow_gram_per_minute"
+        guidance: "Extrusion and coating lines."
+      - name: "Gram per hour"
+        symbol: "g/h"
+        id: "massflow_gram_per_hour"
+        guidance: "Low-emission and leak rates."
+      - name: "Tonne per second"
+        symbol: "t/s"
+        id: "massflow_tonne_per_second"
+        guidance: "1000 kg/s - a river, a conveyor at full load."
+      - name: "Tonne per minute"
+        symbol: "t/min"
+        id: "massflow_tonne_per_minute"
+        guidance: "Conveyor and mine hoist rates."
+      - name: "Tonne per hour"
+        symbol: "t/h"
+        id: "massflow_tonne_per_hour"
+        guidance: "The plant rating of metric countries - boilers, crushers, separators."
+      - name: "Tonne per day"
+        symbol: "t/d"
+        id: "massflow_tonne_per_day"
+        guidance: "A treatment plant or a mill's output."
+      - name: "Pound per second"
+        symbol: "lb/s"
+        id: "massflow_pound_per_second"
+        guidance: "Exactly 0.45359237 kg/s - US steam and propulsion tables."
+      - name: "Pound per minute"
+        symbol: "lb/min"
+        id: "massflow_pound_per_minute"
+        guidance: "US compressor and engine air flow."
+      - name: "Pound per hour"
+        symbol: "lb/h"
+        id: "massflow_pound_per_hour"
+        guidance: "The burner, boiler and injector rating of the US."
+      - name: "Ounce per minute"
+        symbol: "oz/min"
+        id: "massflow_ounce_per_minute"
+        guidance: "A 16th of a pound per minute - small dosing and spray rates."
+      - name: "Short ton per hour"
+        symbol: "short ton/h"
+        id: "massflow_short_ton_per_hour"
+        guidance: "2000 lb per hour - US plant and boiler capacity."
+      - name: "Short ton per day"
+        symbol: "short ton/d"
+        id: "massflow_short_ton_per_day"
+        guidance: "US treatment plant and milling output."
+      - name: "Long ton per hour"
+        symbol: "long ton/h"
+        id: "massflow_long_ton_per_hour"
+        guidance: "2240 lb per hour - older British and shipping figures."
+      - name: "Stone per day"
+        symbol: "stone/d"
+        id: "massflow_stone_per_day"
+        guidance: "14 lb per day - a British figure for intake and waste streams."
 # Conversion Formulas
 # Each conversion item has its own menu item in the "Unit Conversions" section.
 # X is the input value.
@@ -1801,3 +2201,578 @@ conversions:
         input_unit_id: "force_poundal"
         output_unit_id: "force_newton"
         formula: "x * 0.138254954376"
+
+  - name: "Speed Conversion"
+    icon: "ft.Icons.SPEED"
+    description: "Convert between metres per second, kilometres per hour, miles per hour, knots, feet per second, etc."
+    formulas:
+      # Metric speeds - the SI prefixes are exact, and an hour is exactly 3600
+      # seconds, so one kilometre per second is exactly 3600 kilometres per hour.
+      1:
+        type: "MD"
+        input_unit_id: "speed_millimeter_per_second"
+        output_unit_id: "speed_centimeter_per_second"
+        formula: "x / 10"
+      2:
+        type: "MD"
+        input_unit_id: "speed_centimeter_per_second"
+        output_unit_id: "speed_meter_per_second"
+        formula: "x / 100"
+      3:
+        type: "MD"
+        input_unit_id: "speed_meter_per_second"
+        output_unit_id: "speed_kilometer_per_second"
+        formula: "x / 1000"
+      4:
+        type: "MD"
+        input_unit_id: "speed_kilometer_per_second"
+        output_unit_id: "speed_kilometer_per_hour"
+        formula: "x * 3600"
+
+      # Imperial / US customary - the 1959 yard-and-pound agreement fixes the mile
+      # at 1609.344 m and the foot at 0.3048 m, so a mile per hour is exactly
+      # 1.609344 km/h and a foot per second exactly 0.3048 m/s. The smaller units
+      # are whole divisions of those.
+      5:
+        type: "MD"
+        input_unit_id: "speed_mile_per_hour"
+        output_unit_id: "speed_kilometer_per_hour"
+        formula: "x * 1.609344"
+      6:
+        type: "MD"
+        input_unit_id: "speed_foot_per_second"
+        output_unit_id: "speed_meter_per_second"
+        formula: "x * 0.3048"
+      7:
+        type: "MD"
+        input_unit_id: "speed_foot_per_minute"
+        output_unit_id: "speed_foot_per_second"
+        formula: "x / 60"
+      8:
+        type: "MD"
+        input_unit_id: "speed_inch_per_second"
+        output_unit_id: "speed_foot_per_second"
+        formula: "x / 12"
+      9:
+        type: "MD"
+        input_unit_id: "speed_inch_per_minute"
+        output_unit_id: "speed_inch_per_second"
+        formula: "x / 60"
+
+      # The knot is one nautical mile per hour and the international nautical mile
+      # is exactly 1852 m, so one knot is exactly 1.852 km/h.
+      10:
+        type: "MD"
+        input_unit_id: "speed_knot"
+        output_unit_id: "speed_kilometer_per_hour"
+        formula: "x * 1.852"
+
+      # Since 1983 the metre is defined through c, so the speed of light is exactly
+      # 299792458 m/s - exactly 299792.458 km/s.
+      11:
+        type: "MD"
+        input_unit_id: "speed_light"
+        output_unit_id: "speed_kilometer_per_second"
+        formula: "x * 299792.458"
+
+      # A furlong is 660 ft, exactly 201.168 m, and a fortnight exactly 14 days,
+      # 1209600 s. Chained rather than written as one factor: the quotient repeats.
+      12:
+        type: "MD"
+        input_unit_id: "speed_furlong_per_fortnight"
+        output_unit_id: "speed_meter_per_second"
+        formula: "x * 201.168 / 1209600"
+
+  - name: "Pressure Conversion"
+    icon: "ft.Icons.DASHBOARD"
+    description: "Convert between pascals, bar, psi, atmospheres, torr, mmHg, inches of water, etc."
+    formulas:
+      # Metric pressures - the SI prefixes are exact.
+      1:
+        type: "MD"
+        input_unit_id: "pressure_pascal"
+        output_unit_id: "pressure_hectopascal"
+        formula: "x / 100"
+      2:
+        type: "MD"
+        input_unit_id: "pressure_hectopascal"
+        output_unit_id: "pressure_kilopascal"
+        formula: "x / 10"
+      3:
+        type: "MD"
+        input_unit_id: "pressure_kilopascal"
+        output_unit_id: "pressure_megapascal"
+        formula: "x / 1000"
+      4:
+        type: "MD"
+        input_unit_id: "pressure_megapascal"
+        output_unit_id: "pressure_gigapascal"
+        formula: "x / 1000"
+
+      # The bar is defined as exactly 100000 Pa, so exactly 100 kPa; a millibar is a
+      # thousandth of a bar and therefore exactly the same size as a hectopascal.
+      5:
+        type: "MD"
+        input_unit_id: "pressure_bar"
+        output_unit_id: "pressure_kilopascal"
+        formula: "x * 100"
+      6:
+        type: "MD"
+        input_unit_id: "pressure_millibar"
+        output_unit_id: "pressure_bar"
+        formula: "x / 1000"
+
+      # The standard atmosphere is defined as exactly 101325 Pa and the torr as
+      # exactly 1/760 of it. The torr is chained through those two integers because
+      # 101325/760 has no exact decimal.
+      7:
+        type: "MD"
+        input_unit_id: "pressure_standard_atmosphere"
+        output_unit_id: "pressure_kilopascal"
+        formula: "x * 101.325"
+      8:
+        type: "MD"
+        input_unit_id: "pressure_torr"
+        output_unit_id: "pressure_pascal"
+        formula: "x * 101325 / 760"
+
+      # The conventional mercury column is the convention NIST prints: a column of
+      # mercury of 13595.1 kg/m3 under standard gravity, which is exactly
+      # 9.80665 m/s2. One millimetre of it is exactly 133.322387415 Pa, and an inch
+      # of it is 25.4 millimetres of it.
+      9:
+        type: "MD"
+        input_unit_id: "pressure_millimeter_mercury"
+        output_unit_id: "pressure_pascal"
+        formula: "x * 133.322387415"
+      10:
+        type: "MD"
+        input_unit_id: "pressure_inch_mercury"
+        output_unit_id: "pressure_millimeter_mercury"
+        formula: "x * 25.4"
+
+      # psi is one pound-force (exactly 4.4482216152605 N, the 1959 pound under
+      # standard gravity) on one square inch (exactly 0.00064516 m2). The single
+      # equivalent decimal, 6894.757293168361..., repeats and is past what the engine
+      # parses anyway, so the hop keeps both exact factors and divides on through to
+      # kilopascals; reversing it multiplies by each in turn.
+      11:
+        type: "MD"
+        input_unit_id: "pressure_psi"
+        output_unit_id: "pressure_kilopascal"
+        formula: "x * 4.4482216152605 / 0.00064516 / 1000"
+      12:
+        # 1 ft2 = 144 in2 exactly.
+        type: "MD"
+        input_unit_id: "pressure_pound_per_square_foot"
+        output_unit_id: "pressure_psi"
+        formula: "x / 144"
+
+      # The technical atmosphere: one kilogram-force (exactly 9.80665 N) on one
+      # square centimetre is exactly 98066.5 Pa, so exactly 98.0665 kPa.
+      13:
+        type: "MD"
+        input_unit_id: "pressure_kilogram_force_per_square_centimeter"
+        output_unit_id: "pressure_kilopascal"
+        formula: "x * 98.0665"
+
+      # The conventional water column: water of 1000 kg/m3 under the same standard
+      # gravity, so one millimetre of it is exactly 9.80665 Pa.
+      14:
+        type: "MD"
+        input_unit_id: "pressure_millimeter_water"
+        output_unit_id: "pressure_pascal"
+        formula: "x * 9.80665"
+      15:
+        type: "MD"
+        input_unit_id: "pressure_centimeter_water"
+        output_unit_id: "pressure_millimeter_water"
+        formula: "x * 10"
+      16:
+        type: "MD"
+        input_unit_id: "pressure_inch_water"
+        output_unit_id: "pressure_millimeter_water"
+        formula: "x * 25.4"
+
+  - name: "Power Conversion"
+    icon: "ft.Icons.POWER"
+    description: "Convert between watts, kilowatts, horsepower, BTU per hour, tons of refrigeration, etc."
+    formulas:
+      # Metric power - the SI prefixes are exact, and a volt-ampere is apparent
+      # power: numerically one watt, so the hop goes on to the milliwatt rather than
+      # carrying a literal 1.
+      1:
+        type: "MD"
+        input_unit_id: "power_milliwatt"
+        output_unit_id: "power_watt"
+        formula: "x / 1000"
+      2:
+        type: "MD"
+        input_unit_id: "power_watt"
+        output_unit_id: "power_kilowatt"
+        formula: "x / 1000"
+      3:
+        type: "MD"
+        input_unit_id: "power_kilowatt"
+        output_unit_id: "power_megawatt"
+        formula: "x / 1000"
+      4:
+        type: "MD"
+        input_unit_id: "power_megawatt"
+        output_unit_id: "power_gigawatt"
+        formula: "x / 1000"
+      5:
+        type: "MD"
+        input_unit_id: "power_gigawatt"
+        output_unit_id: "power_terawatt"
+        formula: "x / 1000"
+      6:
+        type: "MD"
+        input_unit_id: "power_volt_ampere"
+        output_unit_id: "power_milliwatt"
+        formula: "x * 1000"
+
+      # CGS - one erg is exactly 1e-7 J.
+      7:
+        type: "MD"
+        input_unit_id: "power_erg_per_second"
+        output_unit_id: "power_watt"
+        formula: "x / 10000000"
+
+      # The foot-pound-force per second is one pound-force (exactly
+      # 4.4482216152605 N) through one foot (exactly 0.3048 m) every second, and the
+      # mechanical horsepower is exactly 550 of them - the same two-literal form the
+      # Energy group uses, because the single equivalent decimal is too long.
+      8:
+        type: "MD"
+        input_unit_id: "power_foot_pound_force_per_second"
+        output_unit_id: "power_watt"
+        formula: "x * 4.4482216152605 * 0.3048"
+      9:
+        type: "MD"
+        input_unit_id: "power_horsepower_mechanical"
+        output_unit_id: "power_foot_pound_force_per_second"
+        formula: "x * 550"
+
+      # The metric horsepower is exactly 75 kilogram-force metres per second, and
+      # kilogram-force is exactly 9.80665 N, so it is exactly 735.49875 W. The
+      # electric horsepower is defined as exactly 746 W.
+      10:
+        type: "MD"
+        input_unit_id: "power_horsepower_metric"
+        output_unit_id: "power_watt"
+        formula: "x * 735.49875"
+      11:
+        type: "MD"
+        input_unit_id: "power_horsepower_electric"
+        output_unit_id: "power_watt"
+        formula: "x * 746"
+
+      # Heat rates - the International Table Btu is exactly 1055.05585262 J and an
+      # hour exactly 3600 s, the IT calorie exactly 4.1868 J. A refrigeration ton is
+      # exactly 12000 Btu (IT) per hour and a boiler horsepower exactly 33475 of them.
+      # Each hop is chained through exact integers; only the /3600 steps repeat.
+      12:
+        type: "MD"
+        input_unit_id: "power_btu_per_hour"
+        output_unit_id: "power_watt"
+        formula: "x * 1055.05585262 / 3600"
+      13:
+        type: "MD"
+        input_unit_id: "power_ton_of_refrigeration"
+        output_unit_id: "power_btu_per_hour"
+        formula: "x * 12000"
+      14:
+        type: "MD"
+        input_unit_id: "power_horsepower_boiler"
+        output_unit_id: "power_btu_per_hour"
+        formula: "x * 33475"
+      15:
+        type: "MD"
+        input_unit_id: "power_calorie_it_per_hour"
+        output_unit_id: "power_watt"
+        formula: "x * 4.1868 / 3600"
+      16:
+        type: "MD"
+        input_unit_id: "power_kilocalorie_it_per_hour"
+        output_unit_id: "power_calorie_it_per_hour"
+        formula: "x * 1000"
+
+  - name: "Angle Conversion"
+    icon: "ft.Icons.ROTATE_90_DEGREES_CW"
+    description: "Convert between degrees, radians, gradians, arcminutes, turns, milli-radians, etc."
+    formulas:
+      # Every customary and metric angle here is an exact fraction of a turn: 360
+      # degrees, 400 gradians, 32 compass points, 6400 NATO mils and 24 hours of
+      # right ascension to the circle, 60 arcminutes and 60 arcseconds to the degree.
+      1:
+        type: "MD"
+        input_unit_id: "angle_degree"
+        output_unit_id: "angle_arcminute"
+        formula: "x * 60"
+      2:
+        type: "MD"
+        input_unit_id: "angle_arcminute"
+        output_unit_id: "angle_arcsecond"
+        formula: "x * 60"
+      3:
+        type: "MD"
+        input_unit_id: "angle_degree"
+        output_unit_id: "angle_gradian"
+        formula: "x * 400 / 360"
+      4:
+        type: "MD"
+        input_unit_id: "angle_turn"
+        output_unit_id: "angle_degree"
+        formula: "x * 360"
+      5:
+        type: "MD"
+        input_unit_id: "angle_compass_point"
+        output_unit_id: "angle_turn"
+        formula: "x / 32"
+      6:
+        type: "MD"
+        input_unit_id: "angle_nato_mil"
+        output_unit_id: "angle_turn"
+        formula: "x / 6400"
+      7:
+        type: "MD"
+        input_unit_id: "angle_hour_angle"
+        output_unit_id: "angle_degree"
+        formula: "x * 15"
+
+      # A radian is 180/pi degrees, which has no decimal expansion at all, so the hop
+      # carries pi itself and the app's own computed pi does the work - adopting a
+      # longer pi on the Pi page makes these hops more accurate. Both directions are
+      # spelled out (UD, as the parsec hops are), because reversing a formula has to
+      # evaluate its constant part without the scientific constants table.
+      8:
+        type: "UD"
+        input_unit_id: "angle_radian"
+        output_unit_id: "angle_degree"
+        formula: "x * (180 / pi)"
+      9:
+        type: "UD"
+        input_unit_id: "angle_degree"
+        output_unit_id: "angle_radian"
+        formula: "x / (180 / pi)"
+      10:
+        type: "MD"
+        input_unit_id: "angle_milliradian"
+        output_unit_id: "angle_radian"
+        formula: "x / 1000"
+
+  - name: "Data Rate Conversion"
+    icon: "ft.Icons.DOWNLOAD"
+    description: "Convert between bits per second, bytes per second, kibibytes per second, Mbit/s, STS-1, etc."
+    formulas:
+      # IEC 80000-13: the decimal prefixes are powers of 1000, the binary ones powers
+      # of 1024, and a byte is exactly 8 bits. Every factor here is one of those
+      # exact integers.
+      1:
+        type: "MD"
+        input_unit_id: "datarate_bit_per_second"
+        output_unit_id: "datarate_kilobit_per_second"
+        formula: "x / 1000"
+      2:
+        type: "MD"
+        input_unit_id: "datarate_kilobit_per_second"
+        output_unit_id: "datarate_megabit_per_second"
+        formula: "x / 1000"
+      3:
+        type: "MD"
+        input_unit_id: "datarate_megabit_per_second"
+        output_unit_id: "datarate_gigabit_per_second"
+        formula: "x / 1000"
+      4:
+        type: "MD"
+        input_unit_id: "datarate_gigabit_per_second"
+        output_unit_id: "datarate_terabit_per_second"
+        formula: "x / 1000"
+      5:
+        type: "MD"
+        input_unit_id: "datarate_kibibit_per_second"
+        output_unit_id: "datarate_bit_per_second"
+        formula: "x * 1024"
+      6:
+        type: "MD"
+        input_unit_id: "datarate_mebibit_per_second"
+        output_unit_id: "datarate_kibibit_per_second"
+        formula: "x * 1024"
+      7:
+        type: "MD"
+        input_unit_id: "datarate_gibibit_per_second"
+        output_unit_id: "datarate_mebibit_per_second"
+        formula: "x * 1024"
+      8:
+        type: "MD"
+        input_unit_id: "datarate_tebibit_per_second"
+        output_unit_id: "datarate_gibibit_per_second"
+        formula: "x * 1024"
+      9:
+        type: "MD"
+        input_unit_id: "datarate_byte_per_second"
+        output_unit_id: "datarate_bit_per_second"
+        formula: "x * 8"
+      10:
+        type: "MD"
+        input_unit_id: "datarate_kilobyte_per_second"
+        output_unit_id: "datarate_byte_per_second"
+        formula: "x * 1000"
+      11:
+        type: "MD"
+        input_unit_id: "datarate_megabyte_per_second"
+        output_unit_id: "datarate_kilobyte_per_second"
+        formula: "x * 1000"
+      12:
+        type: "MD"
+        input_unit_id: "datarate_gigabyte_per_second"
+        output_unit_id: "datarate_megabyte_per_second"
+        formula: "x * 1000"
+      13:
+        type: "MD"
+        input_unit_id: "datarate_terabyte_per_second"
+        output_unit_id: "datarate_gigabyte_per_second"
+        formula: "x * 1000"
+      14:
+        type: "MD"
+        input_unit_id: "datarate_kibibyte_per_second"
+        output_unit_id: "datarate_kibibit_per_second"
+        formula: "x * 8"
+      15:
+        type: "MD"
+        input_unit_id: "datarate_mebibyte_per_second"
+        output_unit_id: "datarate_mebibit_per_second"
+        formula: "x * 8"
+      16:
+        type: "MD"
+        input_unit_id: "datarate_gibibyte_per_second"
+        output_unit_id: "datarate_gibibit_per_second"
+        formula: "x * 8"
+      17:
+        type: "MD"
+        input_unit_id: "datarate_tebibyte_per_second"
+        output_unit_id: "datarate_tebibit_per_second"
+        formula: "x * 8"
+
+      # SONET: an STS-1 frame is 810 bytes sent every 125 microseconds, which is
+      # exactly 51840000 bit/s, so exactly 51.84 Mbit/s. SDH's STM-1 (OC-3) is
+      # exactly three STS-1 - 155.52 Mbit/s.
+      18:
+        type: "MD"
+        input_unit_id: "datarate_sts_1"
+        output_unit_id: "datarate_megabit_per_second"
+        formula: "x * 51.84"
+      19:
+        type: "MD"
+        input_unit_id: "datarate_stm_1"
+        output_unit_id: "datarate_sts_1"
+        formula: "x * 3"
+
+  - name: "Mass Flow Conversion"
+    icon: "ft.Icons.WATER"
+    description: "Convert between kilograms per second, tonnes per hour, pounds per hour, short tons per day, etc."
+    formulas:
+      # Metric flows - the SI prefixes are exact, a minute is exactly 60 s, an hour
+      # exactly 60 minutes and a day exactly 24 hours, so every factor here is a
+      # whole-number multiplication or division.
+      1:
+        type: "MD"
+        input_unit_id: "massflow_milligram_per_second"
+        output_unit_id: "massflow_gram_per_second"
+        formula: "x / 1000"
+      2:
+        type: "MD"
+        input_unit_id: "massflow_gram_per_second"
+        output_unit_id: "massflow_kilogram_per_second"
+        formula: "x / 1000"
+      3:
+        type: "MD"
+        input_unit_id: "massflow_kilogram_per_second"
+        output_unit_id: "massflow_kilogram_per_minute"
+        formula: "x * 60"
+      4:
+        type: "MD"
+        input_unit_id: "massflow_kilogram_per_minute"
+        output_unit_id: "massflow_kilogram_per_hour"
+        formula: "x * 60"
+      5:
+        type: "MD"
+        input_unit_id: "massflow_kilogram_per_hour"
+        output_unit_id: "massflow_kilogram_per_day"
+        formula: "x * 24"
+      6:
+        type: "MD"
+        input_unit_id: "massflow_kilogram_per_second"
+        output_unit_id: "massflow_tonne_per_second"
+        formula: "x / 1000"
+      7:
+        type: "MD"
+        input_unit_id: "massflow_tonne_per_second"
+        output_unit_id: "massflow_tonne_per_minute"
+        formula: "x * 60"
+      8:
+        type: "MD"
+        input_unit_id: "massflow_tonne_per_minute"
+        output_unit_id: "massflow_tonne_per_hour"
+        formula: "x * 60"
+      9:
+        type: "MD"
+        input_unit_id: "massflow_tonne_per_hour"
+        output_unit_id: "massflow_tonne_per_day"
+        formula: "x * 24"
+      10:
+        type: "MD"
+        input_unit_id: "massflow_gram_per_minute"
+        output_unit_id: "massflow_gram_per_second"
+        formula: "x / 60"
+      11:
+        type: "MD"
+        input_unit_id: "massflow_gram_per_hour"
+        output_unit_id: "massflow_gram_per_minute"
+        formula: "x / 60"
+
+      # Customary flows - the 1959 yard-and-pound agreement fixes the pound at
+      # exactly 0.45359237 kg, so each of these is that exact number of kilograms
+      # over an exact number of seconds: an ounce is a sixteenth of a pound, a short
+      # ton 2000 pounds, a long ton 2240 and a stone 14.
+      12:
+        type: "MD"
+        input_unit_id: "massflow_pound_per_second"
+        output_unit_id: "massflow_kilogram_per_second"
+        formula: "x * 0.45359237"
+      13:
+        type: "MD"
+        input_unit_id: "massflow_pound_per_minute"
+        output_unit_id: "massflow_pound_per_second"
+        formula: "x / 60"
+      14:
+        type: "MD"
+        input_unit_id: "massflow_pound_per_hour"
+        output_unit_id: "massflow_pound_per_minute"
+        formula: "x / 60"
+      15:
+        type: "MD"
+        input_unit_id: "massflow_ounce_per_minute"
+        output_unit_id: "massflow_pound_per_minute"
+        formula: "x / 16"
+      16:
+        type: "MD"
+        input_unit_id: "massflow_short_ton_per_hour"
+        output_unit_id: "massflow_pound_per_hour"
+        formula: "x * 2000"
+      17:
+        type: "MD"
+        input_unit_id: "massflow_short_ton_per_day"
+        output_unit_id: "massflow_short_ton_per_hour"
+        formula: "x / 24"
+      18:
+        type: "MD"
+        input_unit_id: "massflow_long_ton_per_hour"
+        output_unit_id: "massflow_pound_per_hour"
+        formula: "x * 2240"
+      19:
+        type: "MD"
+        input_unit_id: "massflow_stone_per_day"
+        output_unit_id: "massflow_pound_per_hour"
+        formula: "x * 14 / 24"

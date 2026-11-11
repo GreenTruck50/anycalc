@@ -61,7 +61,9 @@ computes for itself.
   keys; a Settings switch puts them on the scientific pad **in place of** its
   variable keys, which puts the named variables out of use while they are up — and
   switching back to the variable keys takes the memory with them.
-- **Live unit conversions.** Choose a value and two units and the answer re-computes
+- **Live unit conversions.** Fifteen groups - length, time, temperature, data,
+  volume, area, weight, energy, force, speed, pressure, power, angle, data rate and
+  mass flow. Choose a value and two units and the answer re-computes
   on every keystroke, with the chain of hops the engine took shown under it.
 - **π, computed by the app itself.** Anywhere from 3 to 100 000 000 decimals on the
   Pi page, with a progress card, a digits-only search that says where a digit string
@@ -78,16 +80,20 @@ computes for itself.
 ## Unit conversions
 
 `src/assets/conversions.yaml` defines the groups (Length, Time, Temperature,
-Data, Volume, Area, Weight, Energy, Force), their units and the formula between
-each pair of units. The factors are the legal definitions themselves -
-1 lb = 0.45359237 kg, 1 grain = 0.00006479891 kg, 1 US gal = 231 in³,
-1 imperial gal = 4.54609 L, 1 in³ = 16.387064 cm³, 1 in = 25.4 mm,
-1 nautical mile = 1852 m, 1 cal (IT) = 4.1868 J, 1 Btu (IT) = 1055.05585262 J,
-1 kWh = 3.6 MJ, 1 kgf = 9.80665 N, 1 lbf = 4.4482216152605 N - so results stay
-exact as far as `Decimal` allows. The only hops that cannot be written exactly
-are the parsec (648000/π astronomical units) and the thermochemical Btu (its 5/9
-never ends as a decimal). The rules a new unit has to follow are in the
-"Volume and weight conversions" and "Energy and force conversions" sections of
+Data, Volume, Area, Weight, Energy, Force, Speed, Pressure, Power, Angle, Data
+Rate, Mass Flow), their units and the formula between each pair of units. The
+factors are the legal definitions themselves - 1 lb = 0.45359237 kg,
+1 grain = 0.00006479891 kg, 1 US gal = 231 in³, 1 imperial gal = 4.54609 L,
+1 in³ = 16.387064 cm³, 1 in = 25.4 mm, 1 nautical mile = 1852 m,
+1 cal (IT) = 4.1868 J, 1 Btu (IT) = 1055.05585262 J, 1 kWh = 3.6 MJ,
+1 kgf = 9.80665 N, 1 lbf = 4.4482216152605 N, 1 atm = 101325 Pa,
+1 PS = 735.49875 W, 1 STS-1 = 51.84 Mbit/s - so results stay exact as far as
+`Decimal` allows. The hops that cannot be written exactly are the parsec
+(648000/π astronomical units), the thermochemical Btu (its 5/9 never ends as a
+decimal) and the radian, which carries `pi` itself and so converts at whatever π
+the app is currently using. The rules a new unit has to follow are in the
+"Volume and weight conversions", "Energy and force conversions" and "Speed,
+pressure, power, angle, data rate and mass flow conversions" sections of
 `calculator_spec.md`.
 
 ## Pi calculation
