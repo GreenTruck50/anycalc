@@ -22,6 +22,7 @@ from conversions import (
     convert_units,
     format_conversion_value,
 )
+from dropdowns import searchable
 import styles
 
 
@@ -178,21 +179,32 @@ class ConversionView:
         # axis and the Row already spans the page. With that the box matches the
         # value and result fields at any window width instead of stopping short
         # at the length of its longest unit name.
-        self.source_dropdown = ft.Dropdown(
-            key="conversion-from",
-            label="From",
-            value=self.opening_pair()[0],
-            options=unit_options,
-            on_select=select_unit,
-            expand=True,
+        # Both boxes are searchable. The groups run to hundreds of units - the
+        # data file is 2778 lines - so Flutter's own filter does the finding, and
+        # the magnifier says the box can be typed in (see dropdowns.py).
+        self.source_dropdown = searchable(
+            ft.Dropdown(
+                key="conversion-from",
+                label="From",
+                value=self.opening_pair()[0],
+                options=unit_options,
+                on_select=select_unit,
+                expand=True,
+            ),
+            self.page,
+            search_icon=True,
         )
-        self.target_dropdown = ft.Dropdown(
-            key="conversion-to",
-            label="To",
-            value=self.opening_pair()[1],
-            options=unit_options,
-            on_select=select_unit,
-            expand=True,
+        self.target_dropdown = searchable(
+            ft.Dropdown(
+                key="conversion-to",
+                label="To",
+                value=self.opening_pair()[1],
+                options=unit_options,
+                on_select=select_unit,
+                expand=True,
+            ),
+            self.page,
+            search_icon=True,
         )
 
         def stretched(dropdown: ft.Dropdown) -> ft.Row:

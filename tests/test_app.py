@@ -13,11 +13,14 @@ knowing before adding a test here:
 * ``key`` only reaches some controls. The calculator's text buttons and the
   conversion form's fields are found with ``find_by_key``, but a
   ``NavigationDrawerDestination`` and a ``Dropdown``'s options never are - drawer
-  entries have to be tapped by their label text, and picking an arbitrary From/To
-  pair cannot be driven from a UI test at all, so the unit pairs are covered
-  instead by the exhaustive route tests in ``tests/test_conversion_engine.py``.
-  Reversing the pair that the page already opens on is reachable, through the
-  form's swap button (``conversion-swap``). A ``Switch`` is another control whose
+  entries have to be tapped by their label text. A searchable box can be driven by
+  typing a query and tapping what survives (the color step of
+  ``test_settings_applies_…`` does exactly that), and that is how the conversion
+  tests put a unit pair on the form - ``pick_unit`` types a unit's own label into
+  ``conversion-from`` / ``conversion-to`` and taps the surviving row, which reaches
+  any pair at all, while the swap button alone could only ever turn around whatever
+  the shared app-data file happened to leave there. The exhaustive route coverage
+  stays in ``tests/test_conversion_engine.py``. A ``Switch`` is another control whose
   key never resolves - ``find_by_key("settings-memory-keys")`` finds nothing. Its
   sentence is not even the switch's own label any more - a switch label is laid out
   on one line and gets cut off, so the words are a separate ``Text`` with its own
@@ -34,17 +37,25 @@ knowing before adding a test here:
   and a color name matching twice proves both color pickers list it). Matching is
   exact, never substring - ``find_by_text("MODE")`` finds nothing while the
   "REGULAR MODE" caption is on screen; ``find_by_text_containing`` is for that.
-  The menu has to be opened by tapping the dropdown first, and the row that is
-  actually on screen is **not** the ``.last`` match on Flet 1.1: 1.1 renders a
-  ``Dropdown`` as Material 3 ``DropdownMenu``, and the menu row now sits right
+  The menu used to have to be opened by tapping the dropdown first, and the row
+  that was actually on screen was **not** the ``.last`` match on Flet 1.1: 1.1
+  renders a ``Dropdown`` as Material 3 ``DropdownMenu``, and the menu row sat right
   after the open dropdown's own offstage copy - index ``1`` for the settings color
-  dropdowns, which is what ``test_settings_applies_…`` taps. Tapping ``.last``
-  there hits another dropdown's offstage copy and can land on a different row;
-  index 0 is an offstage copy too. Flet 1.1 paints all 32 palette entries into the
-  finder tree, but entries outside the menu's visible viewport are not tappable.
-  The picker entry is above that viewport when the menu opens on the default Blue
-  selection, so the drive-through selects a visible named color instead; the
-  settings unit tests cover the picker reveal. A dropdown hidden with
+  dropdowns. Tapping ``.last`` there hit another dropdown's offstage copy and could
+  land on a different row; index 0 was an offstage copy too. Flet 1.1 painted all 32
+  palette entries into the finder tree, but entries outside the menu's visible
+  viewport are not tappable - the picker entry is above that viewport when the menu
+  opens on the default Blue selection.
+  Every box is searchable now (``src/dropdowns.py``), and that is the better drive:
+  ``tester.enter_text`` on the dropdown's own key types into the box, Flutter prunes
+  the open menu to the entries whose label contains the query, and the row that
+  survives is the ``.last`` match - which is how ``test_settings_applies_…`` picks a
+  color without caring where its row falls. Typing moves the counts too: the query
+  takes the place of the copy the box displays, so the color that used to be
+  selected drops one match and the matched color gains one. An editable box can also
+  be left holding words that name no option, and the blur rule in ``dropdowns.py`` is
+  what puts a selection back in it - a UI test cannot see that rule, so it is covered
+  in ``tests/test_dropdown_filter.py``. A dropdown hidden with
   ``visible=False`` paints nothing, so none of its option texts are findable either
   - that is how the settings test reads the color dropdowns being hidden until the
   Custom theme is picked. Revealing a control *inside* a group that is already on
@@ -193,24 +204,43 @@ async def tap_swap(tester: TestDriver) -> None:
         await tester.pump_and_settle()
 
 
+async def pick_unit(tester: TestDriver, box_key: str, unit_id: str) -> None:
+    """Type a unit's own label into one unit box and tap what survives.
+
+    The box is searchable, so the query prunes the open menu to the entries whose
+    label contains it - a full unit label matches one - and the row that survives is
+    the ``.last`` match. This is what makes an arbitrary pair reachable from a UI
+    test at all: the swap button can only ever turn the pair that is already on the
+    form around, and the shared app-data file may hold any pair an earlier session
+    picked.
+    """
+
+    label = UNIT_LABELS[unit_id]
+    await tester.enter_text(await tester.find_by_key(box_key), label)
+    await tester.pump_and_settle()
+    found = await tester.find_by_text(label)
+    assert found.count >= 1, f"{label!r} is not offered by {box_key!r}"
+    await tester.tap(found.last)
+    await tester.pump_and_settle()
+
+
 async def set_unit_pair(
-    tester: TestDriver, first_id: str, second_id: str, attempts: int = 4
+    tester: TestDriver, first_id: str, second_id: str, attempts: int = 3
 ) -> None:
     """Put this unit pair on the conversion form that is open and showing a chain.
 
-    The pair is binary - either the wanted way round is on the dropdowns or its
-    mirror is - so pressing Swap until the chain names the wanted pair is enough,
-    and it also survives the test host swallowing a press: a press that never
-    reached the button simply leaves the other way round on screen, and the next
-    round presses again.
+    Picking both units is the drive; the loop is there because the host swallows a
+    pointer event that arrives just after the page has re-rendered, so a tap that
+    never landed simply leaves the chain naming something else and the next round
+    picks again.
     """
 
     wanted = hop_line(first_id, second_id)
     for _ in range(attempts):
         if (await tester.find_by_text(wanted)).count == 1:
             return
-        await tester.tap(await tester.find_by_key("conversion-swap"))
-        await tester.pump_and_settle()
+        await pick_unit(tester, "conversion-from", first_id)
+        await pick_unit(tester, "conversion-to", second_id)
     assert (await tester.find_by_text(wanted)).count == 1
 
 
@@ -226,9 +256,9 @@ async def open_conversion_page(
     A page reopens on the unit pair the last run left in the app-data directory,
     so a test that asserts a particular pair has to put that pair in place first -
     the same normalising ``show_memory_row`` does for the settings switch. Typing
-    the value makes the chain name the pair currently on screen, and the swap
-    button is the only pair change an app-host test can drive, so ``set_unit_pair``
-    turns a remembered pair around. Every conversion page test starts here.
+    the value makes the chain name the pair currently on screen, and both units are
+    chosen by typing their labels into the searchable boxes, so the normalising
+    works whatever the save holds. Every conversion page test starts here.
     """
 
     await open_page(tester, label)
@@ -481,14 +511,27 @@ async def test_settings_applies_as_it_is_picked_and_resets_to_defaults(
     assert await shown("Forest green") == 2
     assert await shown("Dark green") == 2
 
-    # The picker entry is above the menu's tappable viewport when it opens on
-    # Blue. Select a visible named color here; unit tests cover the picker reveal.
-    await tester.tap(await tester.find_by_key("settings-primary-color"))
+    # The box is searchable now, so the color is found by typing rather than by
+    # hoping its row falls inside the menu's tappable viewport. "Blue" is what the
+    # primary box shows after the reset, so it matches three times: listed by both
+    # color boxes and displayed by this one.
+    assert await shown("Blue") == 3
+    await tester.enter_text(
+        await tester.find_by_key("settings-primary-color"), "Violet"
+    )
     await tester.pump_and_settle()
-    await tester.tap((await tester.find_by_text("Violet")).at(1))
+    # The query prunes the open menu to the entries that contain it: "Violet" is
+    # now listed and matched, while "Blue" has lost both its menu copy and the
+    # copy the box used to display.
+    assert await shown("Violet") == 3
+    assert await shown("Blue") == 2
+    await tester.tap((await tester.find_by_text("Violet")).last)
     await tester.pump_and_settle()
     assert (await tester.find_by_text("Settings")).count == 1
+    # The pick landed, and the counts say so: Violet is listed by both boxes plus
+    # displayed by this one, Blue is only ever listed.
     assert await shown("Violet") == 3
+    assert await shown("Blue") == 2
 
     # Reset puts the default theme and colors back in the same open dialog.
     await tester.tap(await tester.find_by_key("settings-reset"))
@@ -580,15 +623,16 @@ async def test_a_conversion_page_reopens_on_the_units_it_was_left_on(
 ) -> None:
     """The page remembers the pair it was last left on and reopens on it.
 
-    A ``Dropdown``'s options cannot be picked from an app-host test at all (see the
-    module docstring), but the swap button changes the pair exactly like picking two
-    units does, so that is what drives this. The form is rebuilt from scratch when
-    the page reopens, so a reversed chain on it can only mean the app remembered.
+    Both units are chosen by typing their labels into the searchable boxes
+    (``set_unit_pair``), which is what makes an arbitrary pair reachable from a UI
+    test. The form is rebuilt from scratch when the page reopens, so a reversed
+    chain on it can only mean the app remembered.
 
-    The test ends by swapping back, leaving the group's default pair in the shared
-    app-data file. The other conversion tests normalise their own pair through
-    ``open_conversion_page``, so none of them depends on that - but a save left
-    holding a reversed pair is still a save no one chose.
+    The test ends by putting the group's default pair back, leaving the shared
+    app-data file holding a pair every other conversion test starts from. The other
+    conversion tests normalise their own pair through ``open_conversion_page``, so
+    none of them depends on that - but a save left holding a reversed pair is still
+    a save no one chose.
     """
 
     tester = flet_app.tester

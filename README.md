@@ -67,6 +67,10 @@ computes for itself.
   on every keystroke, with the chain of hops the engine took shown under it. Each
   page reopens on the two units you last left it on - and the currency page on the
   pair you last converted between - even after a restart.
+- **Every dropdown searches.** Type in a unit, currency, Pi or settings box and its
+  menu narrows to what matches — the unit lists run to thousands of lines, so typing
+  beats scrolling. A query that names exactly one option is picked when you leave the
+  box; a vague or meaningless one puts the old choice back.
 - **π, computed by the app itself.** Anywhere from 3 to 100 000 000 decimals on the
   Pi page, with a progress card, a digits-only search that says where a digit string
   appears, and a button that makes the finished run the π every calculation in the
@@ -349,6 +353,8 @@ src/                        the app (entry point: src/main.py)
                             as you scroll
   history_view.py           history cards and the history drawer
   variable_dialogs.py       the Set / Insert Variable dialogs
+  dropdowns.py              the search every dropdown offers, and the rule that
+                            settles a query left typed in
   assets/conversions.yaml   unit groups and the formulas between them
 tests/                      the test suite — host-side; src/ is what gets packaged
                             (every file is listed under Tests above)

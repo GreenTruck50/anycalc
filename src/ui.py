@@ -38,6 +38,7 @@ from conversion_view import ConversionView
 from conversions import load_conversion_config
 from currency_view import CurrencyConversionView
 from data_storage import AppDataStore, AppState
+from dropdowns import searchable
 from history_view import (
     build_history_card,
     build_history_drawer,
@@ -651,18 +652,21 @@ class AnycalcApp:
         until that entry is picked.
         """
 
-        self.settings_theme_dropdown = ft.Dropdown(
-            key="settings-theme-dropdown",
-            label="Theme",
-            value=self.selected_theme,
-            options=[
-                ft.DropdownOption(key=theme, text=theme)
-                for theme in (
-                    styles.SYSTEM_THEME_NAME,
-                    *(built_in.name for built_in in styles.THEMES),
-                )
-            ],
-            on_select=self.update_settings,
+        self.settings_theme_dropdown = searchable(
+            ft.Dropdown(
+                key="settings-theme-dropdown",
+                label="Theme",
+                value=self.selected_theme,
+                options=[
+                    ft.DropdownOption(key=theme, text=theme)
+                    for theme in (
+                        styles.SYSTEM_THEME_NAME,
+                        *(built_in.name for built_in in styles.THEMES),
+                    )
+                ],
+                on_select=self.update_settings,
+            ),
+            self.page,
         )
         (
             self.settings_primary_group,
@@ -745,25 +749,31 @@ class AnycalcApp:
             choices=SCIENTIFIC_THRESHOLD_CHOICES,
             power_labels=True,
         )
-        self.settings_precision_rounding = ft.Dropdown(
-            key="settings-precision-rounding",
-            label="Rounding",
-            value=self.precision.rounding,
-            options=[
-                ft.DropdownOption(key=mode, text=label)
-                for mode, label in ROUNDING_LABELS.items()
-            ],
-            on_select=self.update_precision,
+        self.settings_precision_rounding = searchable(
+            ft.Dropdown(
+                key="settings-precision-rounding",
+                label="Rounding",
+                value=self.precision.rounding,
+                options=[
+                    ft.DropdownOption(key=mode, text=label)
+                    for mode, label in ROUNDING_LABELS.items()
+                ],
+                on_select=self.update_precision,
+            ),
+            self.page,
         )
-        self.settings_history_length = ft.Dropdown(
-            key="settings-history-length",
-            label="History length",
-            value=str(self.history_limit),
-            options=[
-                ft.DropdownOption(key=str(choice), text=f"Keep {choice}")
-                for choice in HISTORY_LENGTH_CHOICES
-            ],
-            on_select=self.update_history_length,
+        self.settings_history_length = searchable(
+            ft.Dropdown(
+                key="settings-history-length",
+                label="History length",
+                value=str(self.history_limit),
+                options=[
+                    ft.DropdownOption(key=str(choice), text=f"Keep {choice}")
+                    for choice in HISTORY_LENGTH_CHOICES
+                ],
+                on_select=self.update_history_length,
+            ),
+            self.page,
         )
         self.settings_clear_history_button = ft.TextButton(
             key="settings-clear-history",
@@ -843,12 +853,15 @@ class AnycalcApp:
             self._color_dropdown_option(option, color)
             for option in styles.color_options()
         ]
-        dropdown = ft.Dropdown(
-            key=key,
-            label=label,
-            value=styles.CUSTOM_COLOR_KEY if uses_custom else color,
-            options=options,
-            on_select=self.update_settings,
+        dropdown = searchable(
+            ft.Dropdown(
+                key=key,
+                label=label,
+                value=styles.CUSTOM_COLOR_KEY if uses_custom else color,
+                options=options,
+                on_select=self.update_settings,
+            ),
+            self.page,
         )
         value_label = ft.Text(
             key=f"{key}-value",
@@ -988,18 +1001,21 @@ class AnycalcApp:
                 return f"1E+{choice} and 1E-{choice}"
             return str(choice)
 
-        return ft.Dropdown(
-            key=key,
-            label=label,
-            value="auto" if value is None else str(value),
-            options=[
-                ft.DropdownOption(
-                    key="auto" if choice is None else str(choice),
-                    text=option_label(choice),
-                )
-                for choice in choices
-            ],
-            on_select=self.update_precision,
+        return searchable(
+            ft.Dropdown(
+                key=key,
+                label=label,
+                value="auto" if value is None else str(value),
+                options=[
+                    ft.DropdownOption(
+                        key="auto" if choice is None else str(choice),
+                        text=option_label(choice),
+                    )
+                    for choice in choices
+                ],
+                on_select=self.update_precision,
+            ),
+            self.page,
         )
 
     @staticmethod

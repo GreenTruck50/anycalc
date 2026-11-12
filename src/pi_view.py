@@ -33,6 +33,7 @@ import flet as ft
 import pi
 import pi_value
 from config import DECIMAL_PRECISION
+from dropdowns import searchable
 from pi_value import PiComputation, PiProgress, format_duration
 import styles
 
@@ -307,19 +308,22 @@ class PiView(Generic[PageT]):
             on_click=self.open_current_digits,
         )
 
-        self.digits_dropdown = ft.Dropdown(
-            key="pi-digits",
-            label="Digits",
-            value=str(pi.DEFAULT_PROGRAM_DIGITS),
-            options=[
-                ft.DropdownOption(key=str(count), text=f"{count:,} digits")
-                for count in pi.PI_DIGIT_PRESETS
-            ],
-            on_select=self.refresh_plan,
-            # `expand` inside a Row is the horizontal axis: without it a Flutter
-            # dropdown sizes its box to its longest option and leaves the rest of
-            # the page empty - and whatever shares the Row with it.
-            expand=True,
+        self.digits_dropdown = searchable(
+            ft.Dropdown(
+                key="pi-digits",
+                label="Digits",
+                value=str(pi.DEFAULT_PROGRAM_DIGITS),
+                options=[
+                    ft.DropdownOption(key=str(count), text=f"{count:,} digits")
+                    for count in pi.PI_DIGIT_PRESETS
+                ],
+                on_select=self.refresh_plan,
+                # `expand` inside a Row is the horizontal axis: without it a Flutter
+                # dropdown sizes its box to its longest option and leaves the rest of
+                # the page empty - and whatever shares the Row with it.
+                expand=True,
+            ),
+            self.page,
         )
         self.digits_field = ft.TextField(
             key="pi-digits-exact",

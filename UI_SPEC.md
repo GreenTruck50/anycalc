@@ -149,6 +149,34 @@ the pad on screen does not carry — which is how `^`, `e` and `√` stay
 scientific-only. `Enter` / `=` press `=`, `Backspace` presses `⌫`, `Esc` /
 `Delete` press `AC`, and `Up` / `Down` walk the stored history into the display.
 
+## Searchable dropdowns
+
+Every `ft.Dropdown` in the app goes through `src/dropdowns.py` — `searchable()`
+turns on Flet's built-in filter (`enable_filter=True`) and the editable field that
+makes it reachable (`editable=True`; without it Flutter renders the field read-only
+and there is nothing to type). So a box can be searched by typing in it, and the
+menu narrows to the options whose label contains the query — a case-insensitive
+substring of the option `text`, which for a unit is `"<name> (<symbol>)"`, so names
+and symbols both match.
+
+| Where | Look |
+| --- | --- |
+| `conversion-from`, `conversion-to`, `currency-from`, `currency-to` | a `SEARCH` icon sits inside the field, because those lists are long enough to need searching |
+| `pi-digits`, the variable picker, every Settings box | no icon — a three-choice box still looks like a three-choice box |
+
+What happens when the box loses focus (`settle_typed_query()`):
+
+- a query matching exactly one option becomes that selection, and the dropdown's own
+  `on_select` handler runs for it, so the page re-converts, re-plans or re-themes
+  exactly as if the option had been tapped;
+- a query matching several options, or none, or nothing typed at all leaves the
+  selection alone and puts its words back in the field — `show_selection()` takes the
+  value away and hands it back with an update each, because the client rewrites the
+  field text only when the value *changes*.
+
+The live handlers stay on `on_select`; the blur rule is what turns a typed query into
+a pick.
+
 ## The conversion page — one layout for all fifteen groups
 
 `ConversionView.build()` returns the same `Column` for every group (Length, Time,
@@ -162,7 +190,7 @@ Top to bottom:
 | Title row | — | the group's icon (28 px, `ACCENT`) and `conversion["name"]`, 22 px bold |
 | Description | — | `conversion["description"]`, muted |
 | Value field | `conversion-value` | label "Value", numeric keyboard, autofocus, `on_change` re-converts |
-| From dropdown | `conversion-from` | label "From"; one option per unit, text `"<name> (<symbol>)"`, option `key` = unit id; `on_select` re-converts |
+| From dropdown | `conversion-from` | label "From", searchable with a `SEARCH` icon inside the field; one option per unit, text `"<name> (<symbol>)"`, option `key` = unit id; `on_select` re-converts |
 | Swap button | `conversion-swap` | `ft.OutlinedButton` "Swap units", `SWAP_HORIZ` icon, tooltip "Swap the From and To units" |
 | To dropdown | `conversion-to` | the same option list as From |
 | Guidance block | `conversion-guidance` | "UNIT GUIDANCE" (10 px) plus one line per selected unit that carries a guidance note in the YAML, duplicates dropped; hidden when neither unit has one |
@@ -189,7 +217,7 @@ stretching trick:
 | Title row | — | `CURRENCY_EXCHANGE` icon + "Currency Conversion", 22 px bold |
 | Description | — | "Convert using daily exchange rates, including supported cryptocurrencies and metals." |
 | Value field | `currency-value` | label "Value", numeric keyboard, autofocus, `on_change` re-converts |
-| From dropdown | `currency-from` | label "From", filled once the rate table arrives |
+| From dropdown | `currency-from` | label "From", searchable with a `SEARCH` icon inside the field, filled once the rate table arrives |
 | Swap button | `currency-swap` | "Swap currencies", `SWAP_HORIZ` icon |
 | To dropdown | `currency-to` | the same options as From |
 | Status row | `currency-status`, `currency-retry` | "Loading available currencies…" while fetching; on failure the reason plus a Retry button (hidden until then) |

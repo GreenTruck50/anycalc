@@ -9,6 +9,7 @@ import flet as ft
 from config import ERROR_INVALID_NUMBER, ERROR_NUMBER_OVERFLOW
 from conversions import format_conversion_value
 from currency_api import CurrencyApi, CurrencyApiError, CurrencyRates
+from dropdowns import searchable
 import styles
 
 
@@ -62,19 +63,29 @@ class CurrencyConversionView:
             lambda: self.result_field.value,
             tooltip="Copy converted value",
         )
-        self.source_dropdown = ft.Dropdown(
-            key="currency-from",
-            label="From",
-            options=[],
-            on_select=self.select_currency,
-            expand=True,
+        # The rate table carries hundreds of codes, so these boxes are searchable
+        # like the unit boxes are (see dropdowns.py).
+        self.source_dropdown = searchable(
+            ft.Dropdown(
+                key="currency-from",
+                label="From",
+                options=[],
+                on_select=self.select_currency,
+                expand=True,
+            ),
+            self.page,
+            search_icon=True,
         )
-        self.target_dropdown = ft.Dropdown(
-            key="currency-to",
-            label="To",
-            options=[],
-            on_select=self.select_currency,
-            expand=True,
+        self.target_dropdown = searchable(
+            ft.Dropdown(
+                key="currency-to",
+                label="To",
+                options=[],
+                on_select=self.select_currency,
+                expand=True,
+            ),
+            self.page,
+            search_icon=True,
         )
         self.status = ft.Text(
             "Loading available currencies…",

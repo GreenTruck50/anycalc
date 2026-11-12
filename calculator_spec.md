@@ -353,6 +353,9 @@ There should be a conversions.yaml file that says "There should be this tab with
   passed through unchanged, with no formula buttons.
 - Changing either unit dropdown re-converts the value that is already in the
   field, so a result and a chain that do not belong together are never shown.
+- Search both unit boxes instead of scrolling their menus: each filters its list as
+  it is typed in, and leaving the box settles what was typed (see "Searchable
+  dropdowns").
 
 ## Live result preview
 
@@ -727,6 +730,38 @@ There should be a conversions.yaml file that says "There should be this tab with
   leaves everything the dialog does not offer - the history and the active pi -
   untouched.
 
+## Searchable dropdowns
+
+- Make every dropdown in the app searchable - the two unit boxes, the two currency
+  boxes, the Pi digit-count box, the variable-name picker and each Settings box. The
+  unit menus are why it exists: the data file runs to 2778 lines of units and
+  scrolling one to find a unit is losing. A box with three choices behaves the same
+  way; only its list is shorter.
+- Use the control's own filter rather than an app-side option-list search. A
+  `Dropdown` with `enable_filter` and `editable` hands both straight to Flutter's
+  `DropdownMenu`, whose default predicate matches a case-insensitive substring of the
+  option's label - the option `text` in this app, so a unit's name *and* its symbol
+  are found and the query is never read as a regex. The predicate cannot be
+  replaced: Flet does not expose Flutter's `filterCallback`.
+- Ask for `editable` together with `enable_filter`. Without it the field cannot take
+  focus, Flutter renders it read-only, there is nothing to type, and the filter does
+  nothing at all.
+- Lead the boxes whose lists are long enough to need searching - the unit boxes and
+  the currency boxes - with a search icon inside the field. Leave the icon off the
+  short boxes so a three-choice settings box still looks like one.
+- Settle a typed query the moment the box loses focus. An editable field can be left
+  holding words that name no option while the choice behind them is still the old
+  one, and the control rewrites the field only when its value changes:
+  - a query matching exactly one option becomes that choice, and it counts as a
+    choice made - the page re-converts, re-plans or re-themes exactly as if the
+    option had been tapped;
+  - a query matching several options, or none of them, or nothing typed at all,
+    leaves the choice alone and puts that choice's words back in the field, so what
+    is on screen is always what is chosen.
+- Keep the live handlers - re-convert, re-plan, apply a setting - on the option-pick
+  event. The blur rule is what turns a query into a pick; it is not a second path
+  that has to be wired to the page.
+
 ## Saved app data
 
 - Save the selected theme, primary and secondary colors, up to
@@ -1000,8 +1035,11 @@ There should be a conversions.yaml file that says "There should be this tab with
   dropdowns and the result field.
 - Know the limits of the desktop test host before writing a UI test: a `key`
   only reaches ordinary controls, so drawer entries are tapped by their label
-  text and a dropdown's option list cannot be opened from a test at all (unit
-  switching is covered by engine tests instead); a control hidden with
+  text and a dropdown's options are never reachable by `key` at all. A searchable
+  box is driven by typing a query with `enter_text` and tapping the row that
+  survives - that is how the settings test picks a color and how the conversion
+  tests put any unit pair on the form (`pick_unit`), which the swap button alone
+  could not do; a control hidden with
   `visible = False` is still findable, so removal - not hiding - is what a test
   may assert; the host window cannot be resized from a test; and a numeric text
   field filters what a test can type, so half-typed numbers never reach it.

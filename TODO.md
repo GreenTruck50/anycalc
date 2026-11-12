@@ -59,8 +59,13 @@ Every item ends with its number in parentheses so it can be referred to by numbe
 
 ## Conversions & currency
 
-- [ ] Search / filter box over the unit menu - conversions.yaml is 2778 lines of units, scrolling is losing (33)
+- [x] Search / filter box over the unit menu - conversions.yaml is 2778 lines of units, scrolling is losing (33)
   - User choice: set enable_filter to true on all dropdown boxes in the app
+  - Done 2026-11-12: `src/dropdowns.py` (`searchable()` = `enable_filter` + `editable`,
+    applied at all eleven dropdown call sites) plus the blur rule that settles a query
+    left typed in. Covered by `tests/test_dropdown_filter.py`; the settings app-host
+    test now drives its color pick through the filter. Details in the 2026-11-12
+    changelog entry.
   - Researched 2026-11-10, not implemented. The menu is a plain `ft.Dropdown`, and
     Flet 1.1.2 already ships the filter - no app-side option-list juggling needed:
     `ft.Dropdown(enable_filter=True, editable=True)`, the recipe in Flet's own
@@ -134,6 +139,16 @@ Every item ends with its number in parentheses so it can be referred to by numbe
 - [ ] README's "Project layout" block lists src/ modules but not currency_view.py,
       currency_api.py, networking.py, data_storage.py or precision.py - the docs
       "Source layout" page covers all of them, so only README drifts (49)
+- [ ] Two `tests/test_styles.py` tests fail at HEAD (2f14611) with no app host, before
+      and after TODO 33: `test_reset_to_defaults_restores_default_theme_and_colors_immediately`
+      and `test_a_saved_custom_color_selects_the_custom_color_entry` expect the
+      secondary color box to hold a named color with no picker, but the Dark theme's
+      `key_operator` is `#303B50`, which is not one of the 32 named palette entries, so
+      the app selects "Custom color" and reveals a picker. Either the built-in themes'
+      accent / operator colors should be named palette entries - which is what
+      calculator_spec.md promises ("Each theme's own default accent and operator-key
+      color is itself one of those named entries") - or the spec and the tests should
+      follow the hexes. Decide, then fix the app or the tests (50)
 
 ## Desktop input
 

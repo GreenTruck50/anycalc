@@ -16,6 +16,7 @@ How `src/` is organised after the module split, and the packaging fact that deci
 | `variable_dialogs.py` | Set Variable / Insert Variable dialogs | `open_set_variable_dialog(app)`, `open_insert_variable_dialog(app)` |
 | `conversion_view.py` | The conversion entries and the live conversion form in the main content area | `ConversionView` |
 | `networking.py` | Reusable `urllib` JSON requests and the bounded in-memory TTL cache | JSON fetch and cache helpers |
+| `dropdowns.py` | The search every dropdown offers (`enable_filter` + `editable`) and the blur rule that settles a typed query | `searchable()`, `settle_typed_query()`, `show_selection()`, `has_filter()` |
 | `currency_api.py` | Exchange-API endpoints, fallback, currencies, and response validation | `CurrencyApi`, `CurrencyRates` |
 | `currency_view.py` | The live currency conversion form and its API loading state | `CurrencyConversionView` |
 | `pi.py` | Chudnovsky/binary-splitting pi calculation and the program's active pi | pi calculation and program-pi functions |

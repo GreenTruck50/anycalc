@@ -15,6 +15,7 @@ import flet as ft
 
 from calculate import calculate, is_number
 from config import VARIABLE_NAMES, VARIABLE_OPTIONS
+from dropdowns import searchable
 
 if TYPE_CHECKING:
     from ui import AnycalcApp
@@ -42,21 +43,28 @@ def open_set_variable_dialog(app: AnycalcApp) -> None:
     page = app.page
     variables = app.variables
 
-    name_picker = ft.Dropdown(
-        label="Variable",
-        value=next(
-            (name for name in ("x", "y", "z") if name not in variables),
-            "x",
+    # Searchable like every other box in the app. The list is three names long,
+    # so this one is about the rule rather than the reach: a typed query that
+    # matches nothing is put back rather than left hanging in the field. The
+    # enable_search this picker used to ask for is redundant once the menu
+    # filters - Flutter already scrolls to the single match.
+    name_picker = searchable(
+        ft.Dropdown(
+            label="Variable",
+            value=next(
+                (name for name in ("x", "y", "z") if name not in variables),
+                "x",
+            ),
+            options=[
+                ft.DropdownOption(
+                    key=symbol,
+                    text=f"{symbol} — {label}" if label != symbol else symbol,
+                )
+                for symbol, label in VARIABLE_OPTIONS
+            ],
+            expand=True,
         ),
-        options=[
-            ft.DropdownOption(
-                key=symbol,
-                text=f"{symbol} — {label}" if label != symbol else symbol,
-            )
-            for symbol, label in VARIABLE_OPTIONS
-        ],
-        enable_search=True,
-        expand=True,
+        page,
     )
     value_field = ft.TextField(
         label="Value",
