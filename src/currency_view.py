@@ -17,17 +17,30 @@ class _Page(Protocol):
 
 
 class CurrencyConversionView:
-    """The live amount-and-currency form."""
+    """The live amount-and-currency form.
+
+    :param page: the page the form is shown on (only used to update it).
+    :param make_copy_button: the app's shared copy-button factory.
+    :param api: the exchange-rate client, swappable for tests.
+    :param saved_pair: the (from, to) currency codes the user last chose, if the
+        app remembers them. A code the API no longer offers is ignored.
+    :param on_pair_changed: called with the two codes whenever the pair on screen
+        changes, so the app can remember it.
+    """
 
     def __init__(
         self,
         page: _Page,
         make_copy_button: Callable[..., ft.Control],
         api: CurrencyApi | None = None,
+        saved_pair: tuple[str, str] | None = None,
+        on_pair_changed: Callable[[str, str], None] | None = None,
     ) -> None:
         self.page = page
         self.make_copy_button = make_copy_button
         self.api = api or CurrencyApi()
+        self.saved_pair = saved_pair
+        self.on_pair_changed = on_pair_changed
         self.active = True
         self.request_token = 0
         self.currency_options: dict[str, str] = {}
@@ -53,14 +66,14 @@ class CurrencyConversionView:
             key="currency-from",
             label="From",
             options=[],
-            on_select=self.run_conversion,
+            on_select=self.select_currency,
             expand=True,
         )
         self.target_dropdown = ft.Dropdown(
             key="currency-to",
             label="To",
             options=[],
-            on_select=self.run_conversion,
+            on_select=self.select_currency,
             expand=True,
         )
         self.status = ft.Text(
@@ -138,6 +151,53 @@ class CurrencyConversionView:
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
         )
 
+    def opening_pair(
+        self, currencies: dict[str, str], options: list[ft.DropdownOption]
+    ) -> tuple[str, str]:
+        """Which two currencies the form starts on.
+
+        The pair the app remembered wins, but only while the API still offers both
+        codes: a currency that has dropped out must not leave a dropdown showing a
+        value its own option list does not contain. With no usable saved pair the
+        form opens on US dollar to euro, the pair most people want first.
+        """
+
+        if self.saved_pair is not None:
+            source, target = self.saved_pair
+            if source in currencies and target in currencies:
+                return source, target
+        # A DropdownOption's key is optional in Flet's own types, so the codes are
+        # narrowed to the real ones before either dropdown is set.
+        codes = [code for code in (option.key for option in options) if code]
+        source = "usd" if "usd" in currencies else (codes[0] if codes else "")
+        target = (
+            "eur"
+            if "eur" in currencies
+            else next((code for code in codes if code != source), source)
+        )
+        return source, target
+
+    def remember_pair(self) -> None:
+        """Offer the pair now on screen to the app, if it wants to remember it."""
+
+        if self.on_pair_changed is None:
+            return
+        source = self.source_dropdown.value
+        target = self.target_dropdown.value
+        if source is not None and target is not None:
+            self.on_pair_changed(source, target)
+
+    async def select_currency(self, e: Any = None) -> None:
+        """A currency picked from a dropdown: remember the new pair, re-convert.
+
+        This has to stay a coroutine: the page awaits an async ``on_select``
+        handler, and a plain wrapper around ``run_conversion`` would leave its
+        coroutine unscheduled.
+        """
+
+        self.remember_pair()
+        await self.run_conversion(e)
+
     async def load_currencies(self, e: Any = None) -> None:
         del e
         if not self.active:
@@ -171,14 +231,8 @@ class CurrencyConversionView:
         ]
         self.source_dropdown.options = options
         self.target_dropdown.options = options
-        self.source_dropdown.value = "usd" if "usd" in currencies else options[0].key
-        self.target_dropdown.value = (
-            "eur"
-            if "eur" in currencies
-            else next(
-                (option.key for option in options if option.key != self.source_dropdown.value),
-                self.source_dropdown.value,
-            )
+        self.source_dropdown.value, self.target_dropdown.value = self.opening_pair(
+            currencies, options
         )
         self.status.value = f"{len(currencies)} currencies available."
         self.status.color = styles.TEXT_MUTED
@@ -261,6 +315,8 @@ class CurrencyConversionView:
             self.target_dropdown.value,
             self.source_dropdown.value,
         )
+        # A swap is a choice of pair like any other, so it is remembered too.
+        self.remember_pair()
         await self.run_conversion(e)
 
     def deactivate(self) -> None:

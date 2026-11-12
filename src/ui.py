@@ -118,6 +118,12 @@ class AnycalcApp:
         self.conversion_view: ConversionView | None = None
         self.currency_view: CurrencyConversionView | None = None
 
+        # The units / currencies the user last chose, kept so the pages reopen on
+        # them. Conversion name -> (from unit id, to unit id); the currency page
+        # has the one pair. Both are persisted with the rest of the app state.
+        self.unit_pairs: dict[str, tuple[str, str]] = {}
+        self.currency_pair: tuple[str, str] | None = None
+
         # The pi page, built the first time it is opened.
         self.pi_view: PiView | None = None
 
@@ -447,6 +453,11 @@ class AnycalcApp:
             memory_keys_on_scientific=self.memory_keys_on_scientific,
             precision=self.precision,
             history_limit=self.history_limit,
+            unit_pairs=tuple(
+                (name, source, target)
+                for name, (source, target) in self.unit_pairs.items()
+            ),
+            currency_pair=self.currency_pair,
         )
 
     async def load_saved_data(self) -> None:
@@ -477,6 +488,13 @@ class AnycalcApp:
             self.memory_keys_on_scientific = state.memory_keys_on_scientific
             self.precision = state.precision
             self.rebuild_keypad()
+            # The pages have not been opened yet when a save is restored, so the
+            # pairs simply sit here until the first conversion or currency page
+            # asks what it should open on.
+            self.unit_pairs = {
+                name: (source, target) for name, source, target in state.unit_pairs
+            }
+            self.currency_pair = state.currency_pair
             if state.pi_text is not None and state.pi_digits is not None:
                 whole, separator, decimals = state.pi_text.partition(".")
                 if whole != "3" or not separator or len(decimals) != state.pi_digits:
@@ -1114,6 +1132,11 @@ class AnycalcApp:
         self.memory_recalled = False
         self.memory_keys_on_scientific = False
         self.precision = Precision()
+        # The remembered unit / currency pairs go back to the built-in defaults
+        # too; a page already on screen keeps showing what it shows until it is
+        # opened again.
+        self.unit_pairs.clear()
+        self.currency_pair = None
         self.selected_primary_color = defaults.accent
         self.selected_secondary_color = defaults.key_operator
         self.expression = ""
@@ -2195,6 +2218,10 @@ class AnycalcApp:
             units,
             self.conversion_unit_labels,
             self.clipboard.make_button,
+            saved_pair=self.unit_pairs.get(conversion["name"]),
+            on_units_changed=lambda source, target: self.remember_unit_pair(
+                conversion["name"], source, target
+            ),
         )
         self.content_area.controls = [self.conversion_view.build()]
         self.calculator_showing = False
@@ -2208,12 +2235,32 @@ class AnycalcApp:
         self.currency_view = CurrencyConversionView(
             self.page,
             self.clipboard.make_button,
+            saved_pair=self.currency_pair,
+            on_pair_changed=self.remember_currency_pair,
         )
         self.content_area.controls = [self.currency_view.build()]
         self.calculator_showing = False
         self.status.value = "CURRENCY CONVERSION"
         self.page.update()
         self.page.run_task(self.currency_view.load_currencies)
+
+    def remember_unit_pair(
+        self, conversion_name: str, source_unit_id: str, target_unit_id: str
+    ) -> None:
+        """Keep the units a conversion page is showing so it reopens on them."""
+
+        if self.unit_pairs.get(conversion_name) == (source_unit_id, target_unit_id):
+            return
+        self.unit_pairs[conversion_name] = (source_unit_id, target_unit_id)
+        self.page.run_task(self.save_data)
+
+    def remember_currency_pair(self, source_code: str, target_code: str) -> None:
+        """Keep the currencies the currency page is showing for next time."""
+
+        if self.currency_pair == (source_code, target_code):
+            return
+        self.currency_pair = (source_code, target_code)
+        self.page.run_task(self.save_data)
 
     def _deactivate_currency_view(self) -> None:
         if self.currency_view is not None:

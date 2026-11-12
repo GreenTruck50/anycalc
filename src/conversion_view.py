@@ -7,7 +7,9 @@ or of either unit re-runs them, so there is no Convert button - and the chain
 under the result shows every hop the engine took, with the formula it applied.
 
 The view owns nothing but its own controls; the app decides when the form goes
-into the content area.
+into the content area. The app also hands it the pair of units this entry used
+last time, and the view reports every change of that pair back - remembering is
+the app's job, choosing what to open on is this view's.
 """
 
 from decimal import Decimal, DivisionByZero, InvalidOperation, Overflow
@@ -31,6 +33,11 @@ class ConversionView:
     :param units: the unit group this entry converts between.
     :param unit_labels: unit id -> "Name (symbol)", for the chain cards.
     :param make_copy_button: the app's shared copy-button factory.
+    :param saved_pair: the (from, to) unit ids this page last used, if the app
+        remembers them. A pair naming a unit the group no longer has is ignored
+        and the page opens on its first two units instead.
+    :param on_units_changed: called with the two unit ids whenever the pair on
+        screen changes, so the app can remember it.
     """
 
     def __init__(
@@ -40,12 +47,34 @@ class ConversionView:
         units: list[dict[str, str]],
         unit_labels: dict[str, str],
         make_copy_button: Callable[..., ft.Control],
+        saved_pair: tuple[str, str] | None = None,
+        on_units_changed: Callable[[str, str], None] | None = None,
     ) -> None:
         self.page = page
         self.conversion = conversion
         self.units = units
         self.unit_labels = unit_labels
         self.make_copy_button = make_copy_button
+        self.saved_pair = saved_pair
+        self.on_units_changed = on_units_changed
+
+    def opening_pair(self) -> tuple[str, str]:
+        """Which two units the form starts on.
+
+        The pair the app remembered wins, but only if this group still has both
+        units: a unit that was renamed or dropped since the save must not open a
+        dropdown on a value its own option list does not offer.
+        """
+
+        first = self.units[0]["id"]
+        second = self.units[1]["id"] if len(self.units) > 1 else first
+        if self.saved_pair is None:
+            return first, second
+        source, target = self.saved_pair
+        known = {unit["id"] for unit in self.units}
+        if source in known and target in known:
+            return source, target
+        return first, second
 
     def build(self) -> ft.Column:
         """Assemble the form.
@@ -97,6 +126,22 @@ class ConversionView:
                 self.show_chain(outcome.steps)
             self.page.update()
 
+        def remember_pair() -> None:
+            """Offer the pair now on screen to the app, if it wants to remember it."""
+
+            if self.on_units_changed is None:
+                return
+            source = self.source_dropdown.value
+            target = self.target_dropdown.value
+            if source is not None and target is not None:
+                self.on_units_changed(source, target)
+
+        def select_unit(e) -> None:
+            """A unit picked from a dropdown: remember the new pair, re-convert."""
+
+            remember_pair()
+            run_conversion(e)
+
         self.input_field = ft.TextField(
             key="conversion-value",
             label="Value",
@@ -136,17 +181,17 @@ class ConversionView:
         self.source_dropdown = ft.Dropdown(
             key="conversion-from",
             label="From",
-            value=self.units[0]["id"],
+            value=self.opening_pair()[0],
             options=unit_options,
-            on_select=run_conversion,
+            on_select=select_unit,
             expand=True,
         )
         self.target_dropdown = ft.Dropdown(
             key="conversion-to",
             label="To",
-            value=self.units[1]["id"] if len(self.units) > 1 else self.units[0]["id"],
+            value=self.opening_pair()[1],
             options=unit_options,
-            on_select=run_conversion,
+            on_select=select_unit,
             expand=True,
         )
 
@@ -173,6 +218,8 @@ class ConversionView:
                 self.target_dropdown.value,
                 self.source_dropdown.value,
             )
+            # A swap is a choice of pair like any other, so it is remembered too.
+            remember_pair()
             # run_conversion clears its own event argument; this one is passed on.
             run_conversion(e)
 

@@ -64,7 +64,9 @@ computes for itself.
 - **Live unit conversions.** Fifteen groups - length, time, temperature, data,
   volume, area, weight, energy, force, speed, pressure, power, angle, data rate and
   mass flow. Choose a value and two units and the answer re-computes
-  on every keystroke, with the chain of hops the engine took shown under it.
+  on every keystroke, with the chain of hops the engine took shown under it. Each
+  page reopens on the two units you last left it on - and the currency page on the
+  pair you last converted between - even after a restart.
 - **π, computed by the app itself.** Anywhere from 3 to 100 000 000 decimals on the
   Pi page, with a progress card, a digits-only search that says where a digit string
   appears, and a button that makes the finished run the π every calculation in the
@@ -91,7 +93,11 @@ factors are the legal definitions themselves - 1 lb = 0.45359237 kg,
 `Decimal` allows. The hops that cannot be written exactly are the parsec
 (648000/π astronomical units), the thermochemical Btu (its 5/9 never ends as a
 decimal) and the radian, which carries `pi` itself and so converts at whatever π
-the app is currently using. The rules a new unit has to follow are in the
+the app is currently using. A page keeps the pair it was last left on: the app
+stores one unit pair per conversion plus the currency pair in its state file and
+re-applies them when the page opens. A saved unit that is no longer in the YAML, or
+a currency the API no longer offers, sends that page back to its default pair, and
+"Reset all app data" forgets them all. The rules a new unit has to follow are in the
 "Volume and weight conversions", "Energy and force conversions" and "Speed,
 pressure, power, angle, data rate and mass flow conversions" sections of
 `calculator_spec.md`.
@@ -304,7 +310,9 @@ mkdocs build --strict   # what CI runs
 
 `mkdocs build` writes `site/`, which is gitignored — it mirrors `docs/` word for word.
 `calculator_spec.md` stays the requirements document: the docs describe what the app
-is, that file says what it must be. `AGENTS.md` carries the working rules for this
+is, that file says what it must be. `UI_SPEC.md` beside it describes the screens as
+the code builds them — layout, controls and their `key` handles — and is written
+afterwards, never before. `AGENTS.md` carries the working rules for this
 repository, and `DOCUMENTATION_REMINDER.txt` is the pointer that the project notes live
 in `docs/` now.
 
@@ -313,6 +321,8 @@ in `docs/` now.
 ```
 pyproject.toml              metadata, dependencies, Flet build config, pytest config
 calculator_spec.md          the requirements document the app is built against
+UI_SPEC.md                  the screens as the code builds them (layout, controls,
+                            their key handles) — written after the code, not before
 mkdocs.yml                  docs site config and navigation
 docs/                       the prose documentation; published to GitHub Pages
 .github/workflows/docs.yml  builds docs/ with --strict and publishes it

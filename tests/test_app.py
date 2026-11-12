@@ -55,11 +55,15 @@ knowing before adding a test here:
   hiding them, so the caption assertions below read a child-list change.
 * ``flet test`` runs the real app against the real app-data directory
   (``…/.local/share/com.github.greentruck50.anycalc``, the same one ``flet run``
-  uses), and the app saves its theme, colors and history there. A test therefore
+  uses), and the app saves its theme, colors, history and the unit / currency pairs
+  its pages were last left on there. A test therefore
   must never assume it opens on the defaults - an earlier run, or the developer's
   own session, may have left other settings in that file - it has to put the
   state it goes on to assert into place first, which is why the settings test
-  taps "Reset to defaults" before it reads any dropdown.
+  taps "Reset to defaults" before it reads any dropdown, why ``show_memory_row``
+  normalises the memory-keys switch, and why every conversion page test opens its
+  page through ``open_conversion_page``, which puts the unit pair it asserts on
+  the form before the test reads anything.
 * A keypad key that exists in both the scientific rows and the regular rows is
   found *twice*, because scientific mode renders the regular rows underneath its
   own. The pad keeps every key exactly once (``(`` and ``)`` used to be
@@ -174,13 +178,81 @@ async def show_memory_row(tester: TestDriver, wanted: bool) -> None:
     assert (await tester.find_by_key("key-MCLR")).count == int(wanted)
 
 
+async def tap_swap(tester: TestDriver) -> None:
+    """Press the conversion form's swap button once.
+
+    The first pointer event the page receives after the app has replaced its
+    content area - or re-rendered the chain - is consumed by the test host rather
+    than reaching a control, so a press is dispatched twice and only the second is
+    expected to land. Measured on Flet 1.0.5: one tap after a re-render leaves the
+    page untouched, two taps turn the conversion around.
+    """
+
+    for _ in range(2):
+        await tester.tap(await tester.find_by_key("conversion-swap"))
+        await tester.pump_and_settle()
+
+
+async def set_unit_pair(
+    tester: TestDriver, first_id: str, second_id: str, attempts: int = 4
+) -> None:
+    """Put this unit pair on the conversion form that is open and showing a chain.
+
+    The pair is binary - either the wanted way round is on the dropdowns or its
+    mirror is - so pressing Swap until the chain names the wanted pair is enough,
+    and it also survives the test host swallowing a press: a press that never
+    reached the button simply leaves the other way round on screen, and the next
+    round presses again.
+    """
+
+    wanted = hop_line(first_id, second_id)
+    for _ in range(attempts):
+        if (await tester.find_by_text(wanted)).count == 1:
+            return
+        await tester.tap(await tester.find_by_key("conversion-swap"))
+        await tester.pump_and_settle()
+    assert (await tester.find_by_text(wanted)).count == 1
+
+
+async def open_conversion_page(
+    tester: TestDriver,
+    label: str,
+    first_id: str,
+    second_id: str,
+    value: str,
+) -> None:
+    """Open a conversion page, put this unit pair on it, and type ``value``.
+
+    A page reopens on the unit pair the last run left in the app-data directory,
+    so a test that asserts a particular pair has to put that pair in place first -
+    the same normalising ``show_memory_row`` does for the settings switch. Typing
+    the value makes the chain name the pair currently on screen, and the swap
+    button is the only pair change an app-host test can drive, so ``set_unit_pair``
+    turns a remembered pair around. Every conversion page test starts here.
+    """
+
+    await open_page(tester, label)
+    await tester.enter_text(await tester.find_by_key("conversion-value"), value)
+    await tester.pump_and_settle()
+    await set_unit_pair(tester, first_id, second_id)
+
+
 async def test_volume_conversion_page_converts_as_you_type(
     flet_app: ftt.FletTestApp,
 ) -> None:
     tester = flet_app.tester
     await tester.pump_and_settle()
 
-    await open_page(tester, "Volume Conversion")
+    # Put the page on the group's first two units, mm3 -> cm3, whatever an earlier
+    # run left in the app-data file, and type 1000: 1000 mm3 is exactly 1 cm3, so
+    # no rounding artifact may show up.
+    await open_conversion_page(
+        tester,
+        "Volume Conversion",
+        "volume_cubic_millimeter",
+        "volume_cubic_centimeter",
+        "1000",
+    )
 
     # The conversion form replaced the calculator in the content area.
     assert (await tester.find_by_key("conversion-value")).count == 1
@@ -190,11 +262,6 @@ async def test_volume_conversion_page_converts_as_you_type(
     assert (
         await tester.find_by_text("Converts as you type or change units")
     ).count == 1
-
-    # The page opens on the group's first two units, mm3 -> cm3, and 1000 mm3
-    # is exactly 1 cm3 - no rounding artifact may show up.
-    await tester.enter_text(await tester.find_by_key("conversion-value"), "1000")
-    await tester.pump_and_settle()
 
     assert (await tester.find_by_text("CHAIN OF OPERATIONS (1 step)")).count == 1
     assert (
@@ -218,12 +285,11 @@ async def test_weight_conversion_page_converts_as_you_type(
     tester = flet_app.tester
     await tester.pump_and_settle()
 
-    await open_page(tester, "Weight Conversion")
-    assert (await tester.find_by_key("conversion-value")).count == 1
-
     # ug -> mg is that group's default pair: 1 ug must read as exactly 0.001 mg.
-    await tester.enter_text(await tester.find_by_key("conversion-value"), "1")
-    await tester.pump_and_settle()
+    await open_conversion_page(
+        tester, "Weight Conversion", "weight_microgram", "weight_milligram", "1"
+    )
+    assert (await tester.find_by_key("conversion-value")).count == 1
 
     assert (await tester.find_by_text("1 → 0.001")).count == 1
     assert (
@@ -240,12 +306,15 @@ async def test_area_conversion_page_converts_as_you_type(
     tester = flet_app.tester
     await tester.pump_and_settle()
 
-    await open_page(tester, "Area Conversion")
-    assert (await tester.find_by_key("conversion-value")).count == 1
-
     # mm2 -> cm2 is that group's default pair: 100 mm2 must read as exactly 1 cm2.
-    await tester.enter_text(await tester.find_by_key("conversion-value"), "100")
-    await tester.pump_and_settle()
+    await open_conversion_page(
+        tester,
+        "Area Conversion",
+        "area_square_millimeter",
+        "area_square_centimeter",
+        "100",
+    )
+    assert (await tester.find_by_key("conversion-value")).count == 1
 
     assert (await tester.find_by_text("100 → 1")).count == 1
     assert (
@@ -261,12 +330,11 @@ async def test_energy_conversion_page_converts_as_you_type(
     tester = flet_app.tester
     await tester.pump_and_settle()
 
-    await open_page(tester, "Energy Conversion")
-    assert (await tester.find_by_key("conversion-value")).count == 1
-
     # joule -> kilojoule is that group's default pair: 1000 J must read as 1 kJ.
-    await tester.enter_text(await tester.find_by_key("conversion-value"), "1000")
-    await tester.pump_and_settle()
+    await open_conversion_page(
+        tester, "Energy Conversion", "energy_joule", "energy_kilojoule", "1000"
+    )
+    assert (await tester.find_by_key("conversion-value")).count == 1
 
     assert (await tester.find_by_text("1000 → 1")).count == 1
     assert (
@@ -292,12 +360,11 @@ async def test_force_conversion_page_converts_as_you_type(
     tester = flet_app.tester
     await tester.pump_and_settle()
 
-    await open_page(tester, "Force Conversion")
-    assert (await tester.find_by_key("conversion-value")).count == 1
-
     # newton -> kilonewton is that group's default pair: 1000 N must read as 1 kN.
-    await tester.enter_text(await tester.find_by_key("conversion-value"), "1000")
-    await tester.pump_and_settle()
+    await open_conversion_page(
+        tester, "Force Conversion", "force_newton", "force_kilonewton", "1000"
+    )
+    assert (await tester.find_by_key("conversion-value")).count == 1
 
     assert (await tester.find_by_text("1000 → 1")).count == 1
     assert (
@@ -445,9 +512,13 @@ async def test_editing_the_value_reconverts_and_clearing_it_stays_quiet(
     tester = flet_app.tester
     await tester.pump_and_settle()
 
-    await open_page(tester, "Volume Conversion")
-    await tester.enter_text(await tester.find_by_key("conversion-value"), "1000")
-    await tester.pump_and_settle()
+    await open_conversion_page(
+        tester,
+        "Volume Conversion",
+        "volume_cubic_millimeter",
+        "volume_cubic_centimeter",
+        "1000",
+    )
     assert (await tester.find_by_text("1000 → 1")).count == 1
 
     # Retyping replaces the whole field and re-converts in place.
@@ -468,21 +539,6 @@ async def test_editing_the_value_reconverts_and_clearing_it_stays_quiet(
     assert (await tester.find_by_text_containing("No conversion path")).count == 0
 
 
-async def tap_swap(tester: TestDriver) -> None:
-    """Press the conversion form's swap button once.
-
-    The first pointer event the page receives after the app has replaced its
-    content area - or re-rendered the chain - is consumed by the test host rather
-    than reaching a control, so a press is dispatched twice and only the second is
-    expected to land. Measured on Flet 1.0.5: one tap after a re-render leaves the
-    page untouched, two taps turn the conversion around.
-    """
-
-    for _ in range(2):
-        await tester.tap(await tester.find_by_key("conversion-swap"))
-        await tester.pump_and_settle()
-
-
 async def test_swap_button_turns_the_conversion_around(
     flet_app: ftt.FletTestApp,
 ) -> None:
@@ -491,17 +547,15 @@ async def test_swap_button_turns_the_conversion_around(
     tester = flet_app.tester
     await tester.pump_and_settle()
 
-    await open_page(tester, "Volume Conversion")
+    await open_conversion_page(
+        tester,
+        "Volume Conversion",
+        "volume_cubic_millimeter",
+        "volume_cubic_centimeter",
+        "1000",
+    )
     assert (await tester.find_by_key("conversion-swap")).count == 1
     assert (await tester.find_by_text("Swap units")).count == 1
-
-    await tester.enter_text(await tester.find_by_key("conversion-value"), "1000")
-    await tester.pump_and_settle()
-    assert (
-        await tester.find_by_text(
-            hop_line("volume_cubic_millimeter", "volume_cubic_centimeter")
-        )
-    ).count == 1
 
     await tap_swap(tester)
 
@@ -519,6 +573,63 @@ async def test_swap_button_turns_the_conversion_around(
     ).count == 0
     assert (await tester.find_by_text("1000 → 1000000")).count == 1
     assert (await tester.find_by_text("CHAIN OF OPERATIONS (1 step)")).count == 1
+
+
+async def test_a_conversion_page_reopens_on_the_units_it_was_left_on(
+    flet_app: ftt.FletTestApp,
+) -> None:
+    """The page remembers the pair it was last left on and reopens on it.
+
+    A ``Dropdown``'s options cannot be picked from an app-host test at all (see the
+    module docstring), but the swap button changes the pair exactly like picking two
+    units does, so that is what drives this. The form is rebuilt from scratch when
+    the page reopens, so a reversed chain on it can only mean the app remembered.
+
+    The test ends by swapping back, leaving the group's default pair in the shared
+    app-data file. The other conversion tests normalise their own pair through
+    ``open_conversion_page``, so none of them depends on that - but a save left
+    holding a reversed pair is still a save no one chose.
+    """
+
+    tester = flet_app.tester
+    await tester.pump_and_settle()
+
+    # Start from the group's default pair, whatever an earlier run left behind.
+    await open_conversion_page(
+        tester,
+        "Volume Conversion",
+        "volume_cubic_millimeter",
+        "volume_cubic_centimeter",
+        "1000",
+    )
+
+    # Choose the other pair - this is the choice the app has to remember.
+    await set_unit_pair(
+        tester, "volume_cubic_centimeter", "volume_cubic_millimeter"
+    )
+
+    # Leave the page and come back to it.
+    await open_page(tester, "Regular Calculator")
+    assert (await tester.find_by_key("conversion-value")).count == 0
+    await open_page(tester, "Volume Conversion")
+    assert (await tester.find_by_key("conversion-value")).count == 1
+    await tester.enter_text(await tester.find_by_key("conversion-value"), "1000")
+    await tester.pump_and_settle()
+    assert (
+        await tester.find_by_text(
+            hop_line("volume_cubic_centimeter", "volume_cubic_millimeter")
+        )
+    ).count == 1
+    assert (
+        await tester.find_by_text(
+            hop_line("volume_cubic_millimeter", "volume_cubic_centimeter")
+        )
+    ).count == 0
+
+    # Leave the group's default pair in the save for the tests that follow.
+    await set_unit_pair(
+        tester, "volume_cubic_millimeter", "volume_cubic_centimeter"
+    )
 
 
 async def test_drawer_switches_to_the_scientific_calculator(

@@ -108,6 +108,7 @@ Note: the From/To dropdowns have **no** `enable_search` (only the variable picke
 *   Probe text matching: a chain card's title and its value line both contain "→"; distinguish `1. Unit → Unit` from `2500 → 25` before filtering.
 *   Parallel tool batches run concurrently — never pair a UI probe with reading its output file in the same batch.
 *   `flet build` needs a few seconds to unpack the build template and the standalone Python before any error appears, and the build dir `build/` accumulates ~600 MB; a long-running `flet build` started from a tool batch must be backgrounded with its output redirected to a file.
+*   `flet test` runs the real app against the **real** app-data directory (`~/.local/share/anycalc/` on Linux) and nothing clears it between tests or runs, so whatever the app persists — history, settings, the remembered unit and currency pairs — leaks from one test into the next. That is the feature under test, not a quirk to ignore: a test that asserts what a page opens on must first put the state it expects in place (`show_memory_row()` normalises the scientific-pad switch, `open_conversion_page()` / `set_unit_pair()` normalise a conversion pair, and a test that changes a pair changes it back). Related: a `ft.Dropdown`'s options cannot be picked from an app-host test at all — only the Swap button changes a pair there — and the host swallows a pointer event that arrives just after the page has re-rendered, so a press has to be re-dispatched until its effect is visible on screen.
 
 ## Verified limits & constants
 

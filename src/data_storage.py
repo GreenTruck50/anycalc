@@ -1,4 +1,5 @@
-"""Persistence for the app's theme, selected colors, calculation history, and pi."""
+"""Persistence for the app's theme, selected colors, calculation history, pi, and
+the unit and currency pairs its pages last opened on."""
 
 import asyncio
 import json
@@ -27,6 +28,11 @@ class AppState:
     memory_keys_on_scientific: bool = False
     precision: Precision = Precision()
     history_limit: int = DEFAULT_HISTORY_LENGTH
+    # (conversion name, from unit id, to unit id) - one entry per conversion page
+    # the user has chosen units on. A tuple rather than a dict so the state stays
+    # hashable and JSON round-trips the way the history does.
+    unit_pairs: tuple[tuple[str, str, str], ...] = ()
+    currency_pair: Optional[tuple[str, str]] = None
 
 
 def _decode_json(serialized: str) -> object:
@@ -99,6 +105,34 @@ def decode_state(
         history_limit = DEFAULT_HISTORY_LENGTH
     history_limit = min(history_limit, MAX_HISTORY_ITEMS)
 
+    # The pairs are keyed by conversion name, so a save that names the same page
+    # twice keeps the last entry for it rather than the first.
+    remembered: dict[str, tuple[str, str]] = {}
+    saved_pairs = payload.get("unit_pairs")
+    if saved_pairs is None:
+        # A save from before the pages remembered their units.
+        saved_pairs = []
+    if not isinstance(saved_pairs, list):
+        raise ValueError("saved unit pairs are missing or invalid")
+    for entry in saved_pairs:
+        if (
+            not isinstance(entry, list)
+            or len(entry) != 3
+            or not all(isinstance(value, str) and value for value in entry)
+        ):
+            raise ValueError("saved unit pair contains an invalid entry")
+        remembered[entry[0]] = (entry[1], entry[2])
+
+    currency_pair = payload.get("currency_pair")
+    if currency_pair is not None:
+        if (
+            not isinstance(currency_pair, list)
+            or len(currency_pair) != 2
+            or not all(isinstance(code, str) and code for code in currency_pair)
+        ):
+            raise ValueError("saved currency pair is invalid")
+        currency_pair = (currency_pair[0], currency_pair[1])
+
     return AppState(
         theme=theme,
         history=tuple(checked_history[-history_limit:]),
@@ -109,6 +143,11 @@ def decode_state(
         memory_keys_on_scientific=memory_keys,
         precision=precision_from_payload(payload.get("precision")),
         history_limit=history_limit,
+        unit_pairs=tuple(
+            (name, source, target)
+            for name, (source, target) in remembered.items()
+        ),
+        currency_pair=currency_pair,
     )
 
 
@@ -125,6 +164,10 @@ def encode_state(state: AppState) -> str:
             "memory_keys_on_scientific": state.memory_keys_on_scientific,
             "precision": state.precision.as_payload(),
             "history_limit": state.history_limit,
+            "unit_pairs": [list(entry) for entry in state.unit_pairs],
+            "currency_pair": (
+                list(state.currency_pair) if state.currency_pair is not None else None
+            ),
         },
         separators=(",", ":"),
     )

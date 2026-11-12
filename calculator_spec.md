@@ -23,6 +23,16 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Offer a "Swap units" button on the form that exchanges the From and To
   selections and immediately re-converts the value already in the field, so
   turning a conversion around needs no dropdown interaction at all.
+- Remember the From/To pair each group was last left on and reopen that group's
+  page on it - across restarts too, since the pairs are saved with the rest of the
+  app data. Choosing either unit and pressing Swap are both choices of pair.
+- Keep one pair per conversion page: leaving Volume on litres → cubic metres says
+  nothing about what the Length page opens on.
+- Ignore a remembered pair that names a unit the data file no longer has - a unit
+  renamed or dropped since the save - and open on that group's first two units
+  rather than on a value the page's own dropdown does not offer.
+- Forget the remembered pairs on "Reset all app data"; a page already on screen
+  keeps showing what it shows until it is opened again.
 - Lay the conversion page out horizontally to the width of the content area: the
   value field, the two unit dropdowns, the swap button, the result field and the
   chain cards all stretch to the available width - the way the history cards in
@@ -58,6 +68,10 @@ There should be a conversions.yaml file that says "There should be this tab with
   its supported cryptocurrencies and metals. Default to USD → EUR when
   available; include a swap control, a read-only result with a copy button, and
   the date of the rates used.
+- Remember the From/To currency pair the page was last left on and reopen on it,
+  saved with the rest of the app data. Picking either currency and pressing the
+  swap control are both choices of pair. A remembered code the API no longer
+  offers is ignored, and the page falls back to USD → EUR.
 - Use a reusable `src/networking.py` JSON-over-HTTP client for API requests so
   future API integrations can share its `urllib` transport, timeout, validation
   errors and bounded in-memory TTL cache. Cache currency API responses for 24
@@ -721,6 +735,12 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Save with them whether the Scientific Calculator carries the memory keys, and
   everything the precision box holds. A save written before either existed reads
   back with the keys off and the precision automatic.
+- Save with them the unit pair of every conversion page the user has chosen units
+  on (conversion name plus its two unit IDs) and the currency page's pair. A save
+  written before either existed reads back with nothing remembered, which leaves
+  every page on its built-in default pair.
+- Drop both remembered pairs when the app data is reset - the stored keys go with
+  everything else, so the next start finds nothing.
 - Before enabling the app controls on startup, restore the saved history and
   theme. Restore the saved pi value and its decimal precision through the
   program-pi setter so subsequent calculations use the same pi as before

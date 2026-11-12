@@ -243,3 +243,92 @@ def test_encoder_writes_json_arrays_for_history() -> None:
     state = AppState("Dark", (("1+1", "2"),))
 
     assert json.loads(encode_state(state))["history"] == [["1+1", "2"]]
+
+
+# --- the remembered unit / currency pairs ------------------------------------
+
+
+def test_the_unit_and_currency_pairs_round_trip_with_the_rest() -> None:
+    state = AppState(
+        "Dark",
+        (),
+        unit_pairs=(
+            ("Volume Conversion", "volume_cubic_centimeter", "volume_cubic_meter"),
+            ("Speed Conversion", "speed_mile_per_hour", "speed_kilometer_per_hour"),
+        ),
+        currency_pair=("jpy", "chf"),
+    )
+
+    assert decode_state(encode_state(state)) == state
+
+
+def test_a_save_from_before_the_pairs_opens_nothing_remembered() -> None:
+    payload = json.loads(encode_state(AppState("Dark", ())))
+    del payload["unit_pairs"]
+    del payload["currency_pair"]
+
+    restored = decode_state(json.dumps(payload))
+
+    assert restored.unit_pairs == ()
+    assert restored.currency_pair is None
+
+
+def test_the_decoder_keeps_the_last_pair_saved_for_a_page() -> None:
+    serialized = json.dumps(
+        {
+            "version": 1,
+            "theme": "Dark",
+            "history": [],
+            "unit_pairs": [
+                ["Volume Conversion", "volume_milliliter", "volume_liter"],
+                ["Volume Conversion", "volume_liter", "volume_cubic_meter"],
+            ],
+        }
+    )
+
+    assert decode_state(serialized).unit_pairs == (
+        ("Volume Conversion", "volume_liter", "volume_cubic_meter"),
+    )
+
+
+def test_state_decoder_rejects_a_malformed_unit_pair() -> None:
+    serialized = json.dumps(
+        {
+            "version": 1,
+            "theme": "Dark",
+            "history": [],
+            "unit_pairs": [["Volume Conversion", "volume_liter"]],
+        }
+    )
+
+    with pytest.raises(ValueError, match="unit pair contains an invalid entry"):
+        decode_state(serialized)
+
+
+def test_state_decoder_rejects_a_malformed_currency_pair() -> None:
+    serialized = json.dumps(
+        {
+            "version": 1,
+            "theme": "Dark",
+            "history": [],
+            "currency_pair": ["usd"],
+        }
+    )
+
+    with pytest.raises(ValueError, match="currency pair is invalid"):
+        decode_state(serialized)
+
+
+def test_encoder_writes_json_arrays_for_the_pairs() -> None:
+    state = AppState(
+        "Dark",
+        (),
+        unit_pairs=(("Volume Conversion", "volume_liter", "volume_milliliter"),),
+        currency_pair=("usd", "eur"),
+    )
+    payload = json.loads(encode_state(state))
+
+    assert payload["unit_pairs"] == [
+        ["Volume Conversion", "volume_liter", "volume_milliliter"]
+    ]
+    assert payload["currency_pair"] == ["usd", "eur"]

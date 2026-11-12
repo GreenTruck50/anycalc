@@ -46,12 +46,21 @@ Every item ends with its number in parentheses so it can be referred to by numbe
 
 - [ ] Export / import app data as JSON (theme, colors, history, saved pi) - file picker on desktop, share sheet on mobile (29)
 - [ ] Persist named variables across restarts - saved state carries history but not variables (30)
-- [ ] Restore the last-used unit pair and currency pair on launch (31)
+- [x] Restore the last-used unit pair and currency pair on launch (31)
+  - Done 2026-11-11. Each conversion page keeps its own pair and the currency page
+    keeps its pair; both go into the saved app state and are re-applied when the
+    page opens. A pair naming a unit the YAML no longer has - or a currency the API
+    no longer offers - falls back to that page's built-in default pair, and "Reset
+    all app data" forgets them. Spec: `calculator_spec.md` (Unit conversions,
+    Currency conversion, Saved app data); tests: `tests/test_remembered_pairs.py`,
+    `tests/test_data_storage.py`, `tests/test_currency_view.py` and one app-host
+    test in `tests/test_app.py`.
 - [ ] Favourite / pinned unit pairs at the top of the conversions menu (32)
 
 ## Conversions & currency
 
-- [ ] Search / filter box over the unit menu - conversions.yaml is 1803 lines of units, scrolling is losing (33)
+- [ ] Search / filter box over the unit menu - conversions.yaml is 2778 lines of units, scrolling is losing (33)
+  - User choice: set enable_filter to true on all dropdown boxes in the app
   - Researched 2026-11-10, not implemented. The menu is a plain `ft.Dropdown`, and
     Flet 1.1.2 already ships the filter - no app-side option-list juggling needed:
     `ft.Dropdown(enable_filter=True, editable=True)`, the recipe in Flet's own
