@@ -2,7 +2,7 @@
 
 ``AnycalcApp`` owns the state that used to live in the closures of a single
 ``main(page)`` function - the expression on the display, whether the display
-rests on a result, the DEG/RAD setting, the named variables and the history - and
+rests on a result, the angle mode, the named variables and the history - and
 wires it to the pieces built elsewhere: the key rows (``src/keypad.py``), the
 conversion form (``src/conversion_view.py``), the history drawer
 (``src/history_view.py``), the variable dialogs (``src/variable_dialogs.py``) and
@@ -23,6 +23,10 @@ from flet_color_pickers import ColorPicker
 from calculate import calculate, is_number, toggle_sign
 from clipboard import ClipboardService
 from config import (
+    ANGLE_MODES,
+    ANGLE_MODE_LABELS,
+    ANGLE_MODE_NAMES,
+    DEFAULT_ANGLE_MODE,
     DEFAULT_HISTORY_LENGTH,
     DISPLAY_TEXT_SIZE,
     ERROR_MESSAGES,
@@ -89,6 +93,7 @@ class AnycalcApp:
     memory_keys_on_scientific: bool = False
     precision: Precision = Precision()
     history_limit: int = DEFAULT_HISTORY_LENGTH
+    angle_mode: str = DEFAULT_ANGLE_MODE
 
     def __init__(self, page: ft.Page) -> None:
         self.page = page
@@ -106,7 +111,7 @@ class AnycalcApp:
         # What the display holds: the expression, and whether it currently shows a
         # result rather than what the user typed.
         self.scientific = False
-        self.degrees = True
+        self.angle_mode = DEFAULT_ANGLE_MODE
         self.expression = ""
         self.result_mode = False
         self.variables: dict[str, Decimal] = {}
@@ -446,6 +451,7 @@ class AnycalcApp:
     def _state_snapshot(self, include_pi: bool = False) -> AppState:
         return AppState(
             theme=self.selected_theme,
+            angle_mode=self.angle_mode,
             history=tuple(self.history[-self.history_limit:]),
             pi_text=pi.program_pi_text() if include_pi else None,
             pi_digits=pi.program_pi_digits() if include_pi else None,
@@ -491,6 +497,9 @@ class AnycalcApp:
             self.refresh_history()
             self.memory_keys_on_scientific = state.memory_keys_on_scientific
             self.precision = state.precision
+            # The header's button has to read the mode the save was written in,
+            # and a live answer already on screen is recalculated for it.
+            self.set_angle_mode(state.angle_mode)
             self.rebuild_keypad()
             # The pages have not been opened yet when a save is restored, so the
             # pairs simply sit here until the first conversion or currency page
@@ -640,7 +649,7 @@ class AnycalcApp:
             ],
         )
 
-        self.angle_label = ft.Text("DEG")
+        self.angle_label = ft.Text(ANGLE_MODE_LABELS[self.angle_mode])
         self.angle_button = ft.TextButton(
             content=self.angle_label,
             on_click=self.toggle_angle,
@@ -733,6 +742,19 @@ class AnycalcApp:
             label=MEMORY_KEYS_LABEL,
             content=self.settings_memory_row,
         )
+        self.settings_angle_mode = searchable(
+            ft.Dropdown(
+                key="settings-angle-mode",
+                label="Angle mode",
+                value=self.angle_mode,
+                options=[
+                    ft.DropdownOption(key=mode, text=ANGLE_MODE_NAMES[mode])
+                    for mode in ANGLE_MODES
+                ],
+                on_select=self.update_angle_mode,
+            ),
+            self.page,
+        )
         # The precision box: how an answer is rounded and written out. Every
         # dropdown applies the moment it is picked, like the rest of the dialog.
         self.settings_precision_decimals = self._build_precision_dropdown(
@@ -794,6 +816,7 @@ class AnycalcApp:
             [
                 self.settings_theme_dropdown,
                 self.settings_memory_control,
+                self.settings_angle_mode,
                 self.settings_precision_decimals,
                 self.settings_precision_sig_figs,
                 self.settings_precision_scientific,
@@ -1153,6 +1176,7 @@ class AnycalcApp:
         self.memory_recalled = False
         self.memory_keys_on_scientific = False
         self.precision = Precision()
+        self.set_angle_mode(DEFAULT_ANGLE_MODE)
         # The remembered unit / currency pairs go back to the built-in defaults
         # too; a page already on screen keeps showing what it shows until it is
         # opened again.
@@ -1200,6 +1224,7 @@ class AnycalcApp:
         defaults = styles.DEFAULT_THEME
         self.settings_theme_dropdown.value = defaults.name
         self.settings_memory_switch.value = self.memory_keys_on_scientific
+        self.settings_angle_mode.value = self.angle_mode
         self.settings_history_length.value = str(self.history_limit)
         for dropdown, choice in (
             (self.settings_precision_decimals, self.precision.decimals),
@@ -2146,7 +2171,7 @@ class AnycalcApp:
         return calculate(
             expression,
             self.scientific,
-            self.degrees,
+            self.angle_mode,
             self.variable_context(),
         )
 
@@ -2189,11 +2214,46 @@ class AnycalcApp:
             self.variables[name] = value
 
     def toggle_angle(self, e) -> None:
+        """The header's angle button: on to the next mode it offers.
+
+        The button carries three modes, so a press walks degrees to radians to
+        gradians and round again - the order is ``config.ANGLE_MODES``.
+        """
+
         del e
-        self.degrees = not self.degrees
-        self.angle_label.value = "DEG" if self.degrees else "RAD"
-        self.refresh_preview()
+        index = ANGLE_MODES.index(self.angle_mode)
+        self.set_angle_mode(ANGLE_MODES[(index + 1) % len(ANGLE_MODES)])
         self.page.update()
+        self.page.run_task(self.save_data)
+
+    def set_angle_mode(self, mode: str) -> None:
+        """Move the app to an angle mode and show it on the header's button.
+
+        An angle already typed means something different in the new mode, so the
+        live answer is worked out again.
+        """
+
+        self.angle_mode = mode
+        self.angle_label.value = ANGLE_MODE_LABELS[mode]
+        self.refresh_preview()
+
+    def update_angle_mode(self, event: object) -> None:
+        """The Settings dropdown's choice, applied the instant it is made.
+
+        The dropdown names the mode the header's button shows, so picking here
+        turns the button as well - and the mode is saved, since it is kept
+        between runs.
+        """
+
+        del event
+        choice = self.settings_angle_mode.value
+        self.set_angle_mode(choice if choice in ANGLE_MODES else DEFAULT_ANGLE_MODE)
+        if self.settings_angle_mode.value != self.angle_mode:
+            # A choice the app does not offer falls back to the default; show
+            # that on the dropdown rather than the word the user just picked.
+            self.settings_angle_mode.value = self.angle_mode
+        self.page.update()
+        self.page.run_task(self.save_data)
 
     def clear_history(self, e) -> None:
         del e

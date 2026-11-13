@@ -362,7 +362,7 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Both calculators show the current answer under the expression box as a small
   grey number, and it updates on every change of the expression: keypad
   presses, typed edits, values inserted from history or from a variable, and
-  DEG/RAD switches.
+  angle-mode switches.
 - The preview stays hidden when there is nothing worth showing: an empty
   expression, a half-typed expression that cannot be evaluated yet, an
   expression that is already a single number, an error message, or a result that
@@ -574,13 +574,24 @@ There should be a conversions.yaml file that says "There should be this tab with
 
 ## Angle mode
 
-- The display's caption row carries a button that switches between `DEG` and
-  `RAD`; the label always states the mode currently in force, and the app starts
-  in `DEG`.
+- The display's caption row carries a button that walks the three angle modes -
+  `DEG`, `RAD` and `GRAD` - in that order and round again; the label always states
+  the mode currently in force, and the app starts in `DEG`.
+- Gradians ("gon") split a whole turn into 400 parts instead of 360, so
+  `sin(100)` is a whole `1` there where degrees need `90`.
+- Settings offers the same three modes under their full names - Degrees, Radians,
+  Gradians - in an "Angle mode" dropdown. It is one setting shown in two places:
+  picking a mode there moves the header's button to it, and walking the button to a
+  mode moves an open dropdown to it. Like every other setting, the choice applies
+  the instant it is made and is saved at once.
 - The mode applies to `sin`, `cos` and `tan`, to the live preview, and to the
   value entered in the Set Variable dialog, which is evaluated by the same engine.
 - Switching modes re-evaluates the live preview, so the answer under the display
   changes with it.
+- The mode is kept between runs (see "Saved app data"), and "Reset all app data"
+  puts it back to `DEG`.
+- The engine reads radians for any caller that names no mode - which is what the
+  conversion formulas and the Pi page do - so those never follow the pad's button.
 
 ## Named variables
 
@@ -693,6 +704,9 @@ There should be a conversions.yaml file that says "There should be this tab with
   Lime, Emerald, Teal, Turquoise, Cyan) and neutrals (Slate, Charcoal, Gray,
   Light gray). Each theme's own default accent and operator-key color is itself
   one of those named entries, which is what "Reset to defaults" selects.
+- Offer an "Angle mode" dropdown - Degrees, Radians, Gradians - that shows the mode
+  the app is on and applies a picked one the same instant, moving the header's angle
+  button with it. See "Angle mode".
 - Offer a precision box - decimal places, significant figures, scientific-notation
   threshold and rounding mode - as four dropdowns, each leading with "Automatic".
   See the "Answer precision" section for what each one does; like every other
@@ -722,9 +736,9 @@ There should be a conversions.yaml file that says "There should be this tab with
   acts; Cancel closes the prompt and changes nothing.
 - A reset puts the running app back to how it started: empty history, no variables,
   empty memory, the fallback pi, default theme and colors, automatic precision, the
-  memory keys off the scientific pad and the default history length. It then clears
-  what the app had stored and writes the fresh state back, so the next start finds
-  the same clean app.
+  memory keys off the scientific pad, degrees as the angle mode and the default
+  history length. It then clears what the app had stored and writes the fresh state
+  back, so the next start finds the same clean app.
 - Offer a "Clear history" button in Settings next to it, doing what the history
   drawer's button does.
 - Apply every settings choice the instant it is picked: the chosen theme or color
@@ -785,6 +799,8 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Save with them the named variables the Scientific Calculator was left holding,
   each as its name and its value written the way the engine wrote it. A save
   written before they were kept reads back with none.
+- Save with them the angle mode the app was left in. A save written before it was
+  kept, or one naming a mode the app does not offer, reads back as degrees.
 - Drop both remembered pairs and the saved variables when the app data is reset -
   the stored keys go with everything else, so the next start finds nothing.
 - Before enabling the app controls on startup, restore the saved history and
@@ -1192,9 +1208,10 @@ There should be a conversions.yaml file that says "There should be this tab with
   Flet. App behaviour must not live there.
 - Split the rest of `src/` by responsibility, one concern per module:
   - `config.py` - numeric limits, display sizes, variable names and options, the
-    error messages, and the path to `src/assets/conversions.yaml`;
+    angle modes, the error messages, and the path to `src/assets/conversions.yaml`;
   - `calculate.py` - the expression engine both pads sit on, including the two
-    meanings of `%` and the `±` sign change;
+    meanings of `%`, the `±` sign change and the angle modes `sin`/`cos`/`tan`
+    read their argument in;
   - `conversions.py` - the conversion configuration, route finding, formula
     application and the reported chain of hops;
   - `pi.py` - the pi computation itself (Chudnovsky + binary splitting), the

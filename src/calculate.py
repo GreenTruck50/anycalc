@@ -14,6 +14,10 @@
 :func:`toggle_sign` backs the ``±`` key, which edits the number the display
 rests on instead of appending an operator.
 
+``sin``/``cos``/``tan`` read their argument in the angle mode the caller names -
+``config.ANGLE_DEG``, ``config.ANGLE_RAD`` or ``config.ANGLE_GRAD`` - and default
+to radians for callers that name none.
+
 Everything here is a plain function over plain data - no Flet, no app host - so
 ``tests/test_calculator_engine.py`` runs it under bare pytest.
 """
@@ -26,6 +30,9 @@ from decimal import Decimal, DivisionByZero, InvalidOperation, Overflow
 from typing import TypeGuard
 
 from config import (
+    ANGLE_DEG,
+    ANGLE_GRAD,
+    ANGLE_RAD,
     ERROR_DIVIDE_BY_ZERO,
     ERROR_EXPONENT_TOO_LARGE,
     ERROR_EXPRESSION_TOO_LONG,
@@ -231,7 +238,7 @@ def _program_pi_value(pi_provider=None) -> Decimal:
     return value if isinstance(value, Decimal) else Decimal(str(value))
 
 
-def calculate(expression, scientific, degrees=False, variables=None, pi_provider=None):
+def calculate(expression, scientific, angle_mode=ANGLE_RAD, variables=None, pi_provider=None):
     binary_ops = {
         ast.Add: operator.add,
         ast.Sub: operator.sub,
@@ -247,8 +254,20 @@ def calculate(expression, scientific, degrees=False, variables=None, pi_provider
     }
 
     def trig(function):
+        """Read ``function``'s argument in the angle mode the call was made in.
+
+        The engine's own trig functions work in radians, so every other mode is
+        turned into radians first: degrees split a quarter turn into 90 parts,
+        gradians ("gon") split a whole turn into 400, so a gradian is pi/200
+        radians. A caller that names no mode gets radians - what the conversion
+        formulas and the Pi page have always evaluated in.
+        """
+
         def wrapped(value):
-            if degrees:
+            if angle_mode == ANGLE_GRAD:
+                # A gradian is a tenth of a degree, 400 of them to the turn.
+                value = math.radians(value) * 0.9
+            elif angle_mode == ANGLE_DEG:
                 value = math.radians(value)
             return function(value)
         return wrapped

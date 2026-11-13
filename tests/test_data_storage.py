@@ -2,7 +2,13 @@ import json
 
 import pytest
 
-from config import DEFAULT_HISTORY_LENGTH, MAX_HISTORY_ITEMS
+from config import (
+    ANGLE_DEG,
+    ANGLE_GRAD,
+    DEFAULT_ANGLE_MODE,
+    DEFAULT_HISTORY_LENGTH,
+    MAX_HISTORY_ITEMS,
+)
 from data_storage import (
     AppDataStore,
     AppState,
@@ -96,6 +102,31 @@ def test_a_save_from_before_the_history_setting_uses_the_default_length() -> Non
     restored = decode_state(json.dumps(payload))
 
     assert restored.history_limit == DEFAULT_HISTORY_LENGTH
+
+
+def test_the_angle_mode_round_trips_with_the_rest() -> None:
+    state = AppState(theme="Dark", history=(), angle_mode=ANGLE_GRAD)
+
+    assert json.loads(encode_state(state))["angle_mode"] == "grad"
+    assert decode_state(encode_state(state)).angle_mode == ANGLE_GRAD
+
+
+def test_a_save_from_before_the_angle_mode_was_kept_starts_on_degrees() -> None:
+    payload = json.loads(encode_state(AppState(theme="Dark", history=())))
+    del payload["angle_mode"]
+
+    restored = decode_state(json.dumps(payload))
+
+    assert restored.angle_mode == DEFAULT_ANGLE_MODE == ANGLE_DEG
+
+
+def test_a_saved_mode_the_app_does_not_offer_falls_back_to_degrees() -> None:
+    payload = json.loads(encode_state(AppState(theme="Dark", history=())))
+    payload["angle_mode"] = "turns"
+
+    restored = decode_state(json.dumps(payload))
+
+    assert restored.angle_mode == ANGLE_DEG
 
 
 def test_a_loaded_history_is_cut_to_the_saved_length() -> None:

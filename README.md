@@ -28,7 +28,9 @@ computes for itself.
 - **Two pads on one display.** The regular pad is the desk layout: `+ − × ÷`, `±`,
   and `%` as a desk-calculator percent (`200+10%` is `220`, `50%` is `0.5`,
   `200*10%` is `20`). The scientific pad contains the regular rows and adds the
-  function keys, where `%` is modulo (`9%2` is `1`), with a DEG/RAD angle mode.
+  function keys, where `%` is modulo (`9%2` is `1`), with an angle mode that walks
+  DEG → RAD → GRAD — gradians being the 400-parts-to-a-turn unit, so `sin(100)` is
+  `1` there. Settings offers the same three modes by name and remembers your pick.
 - **A live answer while you type.** Both pads show a muted preview under the
   expression that re-evaluates on every change, and `=` promotes it to the display.
 - **Decimal arithmetic.** The engine computes with `Decimal` at
@@ -335,7 +337,7 @@ docs/                       the prose documentation; published to GitHub Pages
 src/                        the app (entry point: src/main.py)
   main.py                   starts the app — it holds no behaviour of its own
   ui.py                     AnycalcApp: page setup, display state, keypad wiring,
-                            drawer navigation, DEG/RAD, variables, history
+                            drawer navigation, angle modes, variables, history
   calculate.py              the expression engine both pads sit on (Decimal math,
                             the two meanings of %, the ± sign change)
   conversions.py            the unit conversion engine (YAML config, route finding,

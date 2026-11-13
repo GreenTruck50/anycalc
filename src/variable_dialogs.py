@@ -109,7 +109,7 @@ def open_set_variable_dialog(app: AnycalcApp) -> None:
             value = calculate(
                 value_field.value,
                 scientific=True,
-                degrees=app.degrees,
+                angle_mode=app.angle_mode,
                 variables=variables,
             )
             assign_variable(value)

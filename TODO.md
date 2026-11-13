@@ -32,7 +32,15 @@ Every item ends with its number in parentheses so it can be referred to by numbe
 
 - [x] Precision box: decimal places, rounding mode (half-up / half-even / truncate) (21)
 - [ ] Number formatting: thousands separator style (comma / space / none) (22)
-- [ ] Default angle mode persisted in app state (deg / rad / grad is per-session today) (23)
+- [x] Default angle mode persisted in app state (deg / rad / grad is per-session today) (23)
+  - Done 2026-11-13. `AnycalcApp.angle_mode` (one of `config.ANGLE_MODES`) is saved with
+    the rest of the app state and restored on the next start; an older save or an
+    unknown mode reads back as degrees, and "Reset all app data" restores degrees too.
+    Gradians became a real third mode: the header button now cycles
+    `DEG → RAD → GRAD → DEG`, and Settings offers an "Angle mode" dropdown
+    (`settings-angle-mode`) with Degrees / Radians / Gradians that drives the same
+    setting. Spec: `calculator_spec.md` (Angle mode, App header, Saved app data);
+    tests: `tests/test_angle_mode.py` (15) and `tests/test_data_storage.py` (3).
 - [x] "Follow system theme" option - styles.THEMES is a fixed tuple with no auto mode (24)
 - [ ] Add more themes (25)
 - [x] History length setting (max 100) + "Clear history" + "Reset all app data" (with prompt for confirmation) in Settings (26)

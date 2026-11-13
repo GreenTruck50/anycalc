@@ -1,5 +1,6 @@
-"""Persistence for the app's theme, selected colors, calculation history, pi, the
-named variables, and the unit and currency pairs its pages last opened on."""
+"""Persistence for the app's theme, angle mode, selected colors, calculation
+history, pi, the named variables, and the unit and currency pairs its pages last
+opened on."""
 
 import asyncio
 import json
@@ -8,7 +9,12 @@ from typing import Optional
 
 import flet as ft
 
-from config import DEFAULT_HISTORY_LENGTH, MAX_HISTORY_ITEMS
+from config import (
+    ANGLE_MODES,
+    DEFAULT_ANGLE_MODE,
+    DEFAULT_HISTORY_LENGTH,
+    MAX_HISTORY_ITEMS,
+)
 from precision import Precision, precision_from_payload
 import styles
 
@@ -21,6 +27,8 @@ _STATE_VERSION = 1
 class AppState:
     theme: str
     history: tuple[tuple[str, str], ...]
+    # The mode sin/cos/tan read their argument in - one of config.ANGLE_MODES.
+    angle_mode: str = DEFAULT_ANGLE_MODE
     pi_text: Optional[str] = None
     pi_digits: Optional[int] = None
     primary_color: Optional[str] = None
@@ -97,6 +105,12 @@ def decode_state(
         if not isinstance(pi_digits, int) or isinstance(pi_digits, bool):
             raise ValueError("saved pi precision is invalid")
 
+    angle_mode = payload.get("angle_mode")
+    if not isinstance(angle_mode, str) or angle_mode not in ANGLE_MODES:
+        # A save from before the angle mode was kept, or one naming a mode the
+        # app does not offer at all.
+        angle_mode = DEFAULT_ANGLE_MODE
+
     memory_keys = payload.get("memory_keys_on_scientific")
     if not isinstance(memory_keys, bool):
         # A save from before the memory keys were a setting never asked for them.
@@ -159,6 +173,7 @@ def decode_state(
 
     return AppState(
         theme=theme,
+        angle_mode=angle_mode,
         history=tuple(checked_history[-history_limit:]),
         pi_text=pi_text,
         pi_digits=pi_digits,
@@ -185,6 +200,7 @@ def encode_state(state: AppState) -> str:
         {
             "version": _STATE_VERSION,
             "theme": state.theme,
+            "angle_mode": state.angle_mode,
             "history": state.history,
             "primary_color": state.primary_color,
             "secondary_color": state.secondary_color,

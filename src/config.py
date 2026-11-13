@@ -26,6 +26,22 @@ MAX_HISTORY_ITEMS = 100
 HISTORY_LENGTH_CHOICES = (10, 25, 50, 100)
 DEFAULT_HISTORY_LENGTH = 50
 
+# The angle modes sin/cos/tan read their argument as. The engine takes the id,
+# the display's header button shows the label, and the Settings dropdown shows
+# the name. The button cycles the modes in the order of ANGLE_MODES, so that
+# order is what the user sees.
+ANGLE_RAD = "rad"
+ANGLE_DEG = "deg"
+ANGLE_GRAD = "grad"
+ANGLE_MODES = (ANGLE_DEG, ANGLE_RAD, ANGLE_GRAD)
+ANGLE_MODE_LABELS = {ANGLE_DEG: "DEG", ANGLE_RAD: "RAD", ANGLE_GRAD: "GRAD"}
+ANGLE_MODE_NAMES = {
+    ANGLE_DEG: "Degrees",
+    ANGLE_RAD: "Radians",
+    ANGLE_GRAD: "Gradians",
+}
+DEFAULT_ANGLE_MODE = ANGLE_DEG
+
 # The main display line, and the small live answer shown under it while an
 # expression is being typed. The live answer is promoted to display size when
 # "=" is pressed, so both sizes are defined together.

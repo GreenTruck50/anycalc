@@ -5,11 +5,11 @@ How `src/` is organised after the module split, and the packaging fact that deci
 | Module | Owns | Entrypoints other modules use |
 | --- | --- | --- |
 | `main.py` | The entry only: `main(page)`, `run_app()`, the `__main__` guard | — |
-| `config.py` | Numeric limits (`DECIMAL_PRECISION`, `MAX_*`), display + live-preview sizes and the morph timing, the error messages, `VARIABLE_OPTIONS` / `VARIABLE_NAMES`, `CONVERSION_CONFIG_PATH`; sets the process-wide `Decimal` precision | constants; no Flet import |
-| `calculate.py` | The expression engine both pads sit on: preprocessing, the two meanings of `%`, the precedence ladder, `Decimal` evaluation | `calculate(text, scientific, degrees, variables)`, `is_number`, `toggle_sign`, `apply_percent_operators` |
+| `config.py` | Numeric limits (`DECIMAL_PRECISION`, `MAX_*`), display + live-preview sizes and the morph timing, the error messages, `VARIABLE_OPTIONS` / `VARIABLE_NAMES`, the angle modes (`ANGLE_MODES`, `ANGLE_MODE_LABELS`, `ANGLE_MODE_NAMES`), `CONVERSION_CONFIG_PATH`; sets the process-wide `Decimal` precision | constants; no Flet import |
+| `calculate.py` | The expression engine both pads sit on: preprocessing, the two meanings of `%`, the precedence ladder, the angle modes `sin`/`cos`/`tan` read, `Decimal` evaluation | `calculate(text, scientific, angle_mode, variables)`, `is_number`, `toggle_sign`, `apply_percent_operators` |
 | `conversions.py` | The conversion config, route finding (forward first, `MD` formulas may be inverted, `UD` never), formula application, the reported chain of hops | `load_conversion_config()`, `convert_units()`, `find_conversion_path()`, `format_conversion_value()`, `ConversionStep`, `ConversionOutcome` |
 | `styles.py` | The named themes (Dark, Light, Midnight, Forest, Sepia, High contrast, plus the user's Custom one), the named color palette, the "Custom color" entry and the active palette | `THEMES`, `CUSTOM_THEME_NAME`, `COLOR_OPTIONS`, `color_options()`, `custom_color_label()`, `picker_color()`, `DEFAULT_THEME`, `set_active_theme()` |
-| `data_storage.py` | Validated app-state snapshots (theme, colors, history, active pi, named variables, the remembered unit / currency pairs) in Flet SharedPreferences client storage | `AppDataStore`, `AppState` |
+| `data_storage.py` | Validated app-state snapshots (theme, angle mode, colors, history, active pi, named variables, the remembered unit / currency pairs) in Flet SharedPreferences client storage | `AppDataStore`, `AppState` |
 | `keypad.py` | Which keys each pad shows and how a key looks; the regular rows are part of the scientific pad | `REGULAR_ROWS`, `SCIENTIFIC_ROWS`, `DIALOG_KEYS`, `key_color()`, `make_key()` |
 | `clipboard.py` | The single `ft.Clipboard` behind every copy button | `ClipboardService` |
 | `history_view.py` | History card + history drawer and its calculator-scope notice | `build_history_card()`, `build_history_drawer()`, `history_notice_visible()` |
@@ -22,7 +22,7 @@ How `src/` is organised after the module split, and the packaging fact that deci
 | `pi.py` | Chudnovsky/binary-splitting pi calculation and the program's active pi | pi calculation and program-pi functions |
 | `pi_value.py` | Timed pi runs, progress reporting, cancellation, and adoption | `PiComputation`, `compute_pi()`, `adopt()` |
 | `pi_view.py` | Pi digit-count form, progress, result, adoption, digit search, and digits dialog | `PiView` |
-| `ui.py` | The app object: page setup, display state, theme switching and persistence, keypad dispatch, mode/content switching | `AnycalcApp` |
+| `ui.py` | The app object: page setup, display state, theme switching and persistence, angle mode, keypad dispatch, mode/content switching | `AnycalcApp` |
 
 Names in this table were corrected on 2026-10-24 against the actual source: the app class is `**AnycalcApp**` (earlier notes said `CalculatorApp`), the conversion call is `**convert_units()**` (not `convert()`), and the dialog functions are `**open_set_variable_dialog()**` **/** `**open_insert_variable_dialog()**` (not `prompt_variable()` / `insert_variable()`).
 

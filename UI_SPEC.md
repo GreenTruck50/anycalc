@@ -88,7 +88,7 @@ holding a `Column(alignment=SPACE_BETWEEN)`:
 
 1. Caption `ft.Row`: `ft.Text("EXPRESSION", 11px muted)`, a spacer, the display
    copy button (`clipboard.make_button`, tooltip "Copy displayed value"), and the
-   angle button (`ft.TextButton` labelled `DEG` / `RAD`).
+   angle button (`ft.TextButton` labelled `DEG` / `RAD` / `GRAD`, cycling the three).
 2. The display itself — `ft.TextField(key="display", value="0")`, right-aligned,
    `DISPLAY_TEXT_SIZE`, `NoInputBorder`, `content_padding=0`, `expand=True`.
    Typing in it edits the expression (`on_change`); `on_submit` (Enter) does what
@@ -287,6 +287,7 @@ and `settings-reset` ("Reset to defaults").
 | --- | --- |
 | Theme (System first, then the built-in palettes) | `settings-theme-dropdown` |
 | "Memory keys on the scientific pad (replaces the variable keys)" — a `Switch` beside a tappable label, wrapped in a `Semantics` node so a screen reader still gets the sentence | `settings-memory-keys` |
+| Angle mode ("Degrees / Radians / Gradians") | `settings-angle-mode` |
 | Decimal places / significant figures / scientific-notation threshold / rounding mode | `settings-precision-decimals`, `settings-precision-significant-figures`, `settings-precision-scientific-notation`, `settings-precision-rounding` |
 | History length ("Keep 10 / 25 / 50 / 100") | `settings-history-length` |
 | Clear history / Reset all app data (the latter opens a confirmation) | `settings-clear-history`, `settings-reset-all-data` |
