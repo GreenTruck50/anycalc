@@ -618,8 +618,16 @@ There should be a conversions.yaml file that says "There should be this tab with
   at least one variable has a value. The memory is listed on that same line while
   the pad is carrying the memory keys instead - the two can never be on screen
   together.
-- Variables live in the app for the session: they survive switching between the
-  two calculators, and nothing is kept between runs.
+- Variables are kept between runs: they survive switching between the two
+  calculators, closing the app, and opening it again.
+- A value is saved as the engine computed it, never as the display wrote it, so a
+  variable set to `1/3` comes back with every digit the engine holds rather than
+  the handful a screen shows.
+- A saved name the app no longer offers, or a saved value that no longer reads as
+  a finite number, is dropped when the saved state is read; whatever survives
+  comes back exactly as it was set.
+- Setting a variable and pressing "Clear Variables" each save the app state, so a
+  cleared variable is not back on the next start.
 
 ## Calculation history
 
@@ -774,8 +782,11 @@ There should be a conversions.yaml file that says "There should be this tab with
   on (conversion name plus its two unit IDs) and the currency page's pair. A save
   written before either existed reads back with nothing remembered, which leaves
   every page on its built-in default pair.
-- Drop both remembered pairs when the app data is reset - the stored keys go with
-  everything else, so the next start finds nothing.
+- Save with them the named variables the Scientific Calculator was left holding,
+  each as its name and its value written the way the engine wrote it. A save
+  written before they were kept reads back with none.
+- Drop both remembered pairs and the saved variables when the app data is reset -
+  the stored keys go with everything else, so the next start finds nothing.
 - Before enabling the app controls on startup, restore the saved history and
   theme. Restore the saved pi value and its decimal precision through the
   program-pi setter so subsequent calculations use the same pi as before

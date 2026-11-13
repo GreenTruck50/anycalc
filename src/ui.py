@@ -14,7 +14,7 @@ this, and the arithmetic itself never lives here - it is asked for from
 import asyncio
 import re
 from collections.abc import Callable
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import cast
 
 import flet as ft
@@ -459,6 +459,9 @@ class AnycalcApp:
                 for name, (source, target) in self.unit_pairs.items()
             ),
             currency_pair=self.currency_pair,
+            variables=tuple(
+                (name, str(value)) for name, value in self.variables.items()
+            ),
         )
 
     async def load_saved_data(self) -> None:
@@ -496,6 +499,8 @@ class AnycalcApp:
                 name: (source, target) for name, source, target in state.unit_pairs
             }
             self.currency_pair = state.currency_pair
+            self.restore_variables(state.variables)
+            self.refresh_variable_status()
             if state.pi_text is not None and state.pi_digits is not None:
                 whole, separator, decimals = state.pi_text.partition(".")
                 if whole != "3" or not separator or len(decimals) != state.pi_digits:
@@ -2150,7 +2155,8 @@ class AnycalcApp:
 
         Only the variables go. The expression, the memory and the history are the
         user's and stay where they are; a display already resting on a variable
-        re-evaluates and reports what it is worth now.
+        re-evaluates and reports what it is worth now. The variables are kept
+        between runs, so emptying them is a change worth saving.
         """
 
         del event
@@ -2158,6 +2164,29 @@ class AnycalcApp:
         self.refresh_variable_status()
         self.update_display()
         self.page.update()
+        self.page.run_task(self.save_data)
+
+    def restore_variables(self, saved: tuple[tuple[str, str], ...]) -> None:
+        """Put the variables a previous run left back, dropping what cannot come.
+
+        The save only vouches for the shape of an entry, so the app checks what it
+        means: a name the picker no longer offers is dropped, and so is a value
+        that no longer reads as a finite number. Whatever survives is exactly what
+        the last run had set - the value is stored as the engine wrote it, never as
+        the rounded text the display showed.
+        """
+
+        self.variables = {}
+        for name, text in saved:
+            if name not in VARIABLE_NAMES:
+                continue
+            try:
+                value = Decimal(text)
+            except InvalidOperation:
+                continue
+            if not value.is_finite():
+                continue
+            self.variables[name] = value
 
     def toggle_angle(self, e) -> None:
         del e

@@ -1,16 +1,23 @@
-"""Named variables: the Clear Variables key, and memory mode putting them out of use.
+"""Named variables: the Clear Variables key, memory mode, and the save.
 
 No app host is needed - ``pytest -k variables`` runs this on its own. The app is
 built over the shared page stub in ``tests/stub_page.py``; the variable dialogs
 themselves are exercised by the integration tests in ``tests/test_app.py``.
 """
 
+import json
+import types
 from decimal import Decimal
+from typing import cast
+
+import flet as ft
 
 from config import ERROR_VARIABLES_DISABLED
+from data_storage import decode_state, encode_state
 from keypad import VARIABLE_ROW
-from stub_page import build_app, switch_event
+from stub_page import build_app, fire, switch_event
 from ui import AnycalcApp
+from variable_dialogs import open_set_variable_dialog
 
 
 def set_variable(app: AnycalcApp, name: str, value: str) -> None:
@@ -184,3 +191,108 @@ def test_the_regular_pad_never_reports_the_memory_mode_error() -> None:
         assert str(error) != ERROR_VARIABLES_DISABLED
     else:
         raise AssertionError("the regular pad read a name it should not read")
+
+
+# --- the variables come back with the saved app data --------------------------
+
+
+def saved_state(app: AnycalcApp) -> str:
+    """What the app would write to client storage right now."""
+
+    return encode_state(app._state_snapshot())
+
+
+def test_the_saved_state_carries_the_named_variables() -> None:
+    app = build_app()
+    app.set_mode(1)
+    set_variable(app, "x", "4")
+    set_variable(app, "F", "12")
+
+    assert json.loads(saved_state(app))["variables"] == [["x", "4"], ["F", "12"]]
+
+
+def test_setting_a_variable_through_the_dialog_saves_it() -> None:
+    app = build_app()
+    app.set_mode(1)
+
+    open_set_variable_dialog(app)
+    dialog = cast(ft.AlertDialog, app.page.dialogs[-1])  # type: ignore[attr-defined]
+    value_field = cast(ft.TextField, cast(ft.Column, dialog.content).controls[1])
+    value_field.value = "42"
+    save = cast(ft.TextButton, dialog.actions[1])
+    fire(save.on_click, types.SimpleNamespace(control=save))
+
+    assert app.variables == {"x": Decimal("42")}
+    assert json.loads(saved_state(app))["variables"] == [["x", "42"]]
+
+
+def test_named_variables_come_back_into_a_fresh_app() -> None:
+    app = build_app()
+    app.set_mode(1)
+    set_variable(app, "x", "4")
+    set_variable(app, "F", "12")
+
+    restored = decode_state(saved_state(app))
+    fresh = build_app()
+    fresh.restore_variables(restored.variables)
+
+    assert fresh.variables == {"x": Decimal("4"), "F": Decimal("12")}
+
+
+def test_a_restored_variable_keeps_every_digit_the_engine_computed() -> None:
+    """The value is stored as the engine wrote it, not as the display showed it."""
+
+    app = build_app()
+    app.set_mode(1)
+    app.expression = "1/3"
+    app.handle_key("=")
+    app.variables["x"] = Decimal(app.expression)
+    assert len(app.expression) > 100  # the engine's own precision, not 15 digits
+
+    fresh = build_app()
+    fresh.restore_variables(decode_state(saved_state(app)).variables)
+
+    assert fresh.variables["x"] == Decimal(1) / Decimal(3)
+
+
+def test_a_restored_variable_is_usable_right_where_it_lands() -> None:
+    app = build_app()
+    app.set_mode(1)
+
+    app.restore_variables((("x", "4"),))
+    app.refresh_variable_status()
+    app.expression = "2*x"
+
+    assert app.variable_status.value == "x = 4"
+    assert app.variable_status.visible
+    assert app.preview_answer() == "8"
+
+
+def test_a_saved_name_the_app_no_longer_offers_is_dropped() -> None:
+    app = build_app()
+
+    app.restore_variables((("Ω", "5"), ("x", "4")))
+
+    assert app.variables == {"x": Decimal("4")}
+
+
+def test_a_saved_value_that_is_not_a_finite_number_is_dropped() -> None:
+    app = build_app()
+
+    app.restore_variables(
+        (("x", "banana"), ("y", "NaN"), ("z", "Infinity"), ("q", "7"))
+    )
+
+    assert app.variables == {"q": Decimal("7")}
+
+
+def test_clearing_the_variables_empties_the_saved_state_too() -> None:
+    app = build_app()
+    app.set_mode(1)
+    set_variable(app, "x", "3")
+    assert json.loads(saved_state(app))["variables"] == [["x", "3"]]
+
+    app.handle_key("Clear Variables")
+
+    assert json.loads(saved_state(app))["variables"] == []
+    assert "save_data" in app.page.tasks  # type: ignore[attr-defined]

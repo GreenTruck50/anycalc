@@ -1,5 +1,5 @@
-"""Persistence for the app's theme, selected colors, calculation history, pi, and
-the unit and currency pairs its pages last opened on."""
+"""Persistence for the app's theme, selected colors, calculation history, pi, the
+named variables, and the unit and currency pairs its pages last opened on."""
 
 import asyncio
 import json
@@ -33,6 +33,12 @@ class AppState:
     # hashable and JSON round-trips the way the history does.
     unit_pairs: tuple[tuple[str, str, str], ...] = ()
     currency_pair: Optional[tuple[str, str]] = None
+    # (variable name, value as text) - the named variables the scientific pad was
+    # left holding. A tuple rather than a dict so the state stays hashable and
+    # JSON round-trips the way the history does. Whether a name is one the app
+    # still offers, and whether its text is still a number, is the app's test -
+    # the same split the remembered unit pairs follow.
+    variables: tuple[tuple[str, str], ...] = ()
 
 
 def _decode_json(serialized: str) -> object:
@@ -133,6 +139,24 @@ def decode_state(
             raise ValueError("saved currency pair is invalid")
         currency_pair = (currency_pair[0], currency_pair[1])
 
+    # A name can be set once per save, so a save that names one twice keeps the
+    # last value written for it - the rule the unit pairs already follow.
+    saved_variables = payload.get("variables")
+    if saved_variables is None:
+        # A save from before the variables were kept between runs.
+        saved_variables = []
+    if not isinstance(saved_variables, list):
+        raise ValueError("saved variables are missing or invalid")
+    remembered_variables: dict[str, str] = {}
+    for entry in saved_variables:
+        if (
+            not isinstance(entry, list)
+            or len(entry) != 2
+            or not all(isinstance(value, str) and value for value in entry)
+        ):
+            raise ValueError("saved variables contain an invalid entry")
+        remembered_variables[entry[0]] = entry[1]
+
     return AppState(
         theme=theme,
         history=tuple(checked_history[-history_limit:]),
@@ -148,6 +172,9 @@ def decode_state(
             for name, (source, target) in remembered.items()
         ),
         currency_pair=currency_pair,
+        variables=tuple(
+            (name, value) for name, value in remembered_variables.items()
+        ),
     )
 
 
@@ -168,6 +195,7 @@ def encode_state(state: AppState) -> str:
             "currency_pair": (
                 list(state.currency_pair) if state.currency_pair is not None else None
             ),
+            "variables": [list(entry) for entry in state.variables],
         },
         separators=(",", ":"),
     )

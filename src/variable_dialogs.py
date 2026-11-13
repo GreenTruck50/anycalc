@@ -3,7 +3,8 @@
 Both dialogs are built on request and popped again on the spot, so they keep no
 state of their own - the values they read and write are the app's (``app.page``,
 ``app.variables``, ``app.expression``, ``app.result_mode``), which is also how
-they stay in step with the display after the dialog closes.
+they stay in step with the display after the dialog closes. Saving a variable asks
+the app to write its state, because named variables are kept between runs.
 """
 
 from __future__ import annotations
@@ -92,6 +93,9 @@ def open_set_variable_dialog(app: AnycalcApp) -> None:
         app.refresh_variable_status()
         app.refresh_preview()
         close_dialog(app, page)
+        # A named variable is kept between runs, so setting one is a change worth
+        # saving - the same moment the history saves itself.
+        page.run_task(app.save_data)
         page.update()
 
     def save_variable(e):

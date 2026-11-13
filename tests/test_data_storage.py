@@ -332,3 +332,70 @@ def test_encoder_writes_json_arrays_for_the_pairs() -> None:
         ["Volume Conversion", "volume_liter", "volume_milliliter"]
     ]
     assert payload["currency_pair"] == ["usd", "eur"]
+
+
+# --- the named variables ------------------------------------------------------
+
+
+def test_the_named_variables_round_trip_with_the_rest() -> None:
+    state = AppState(
+        "Dark", (), variables=(("x", "4"), ("F", "12"), ("μ", "0.3"))
+    )
+
+    assert decode_state(encode_state(state)) == state
+
+
+def test_a_save_from_before_the_variables_were_kept_carries_none() -> None:
+    payload = json.loads(encode_state(AppState("Dark", ())))
+    del payload["variables"]
+
+    restored = decode_state(json.dumps(payload))
+
+    assert restored.variables == ()
+
+
+def test_the_decoder_keeps_the_last_value_saved_for_a_name() -> None:
+    serialized = json.dumps(
+        {
+            "version": 1,
+            "theme": "Dark",
+            "history": [],
+            "variables": [["x", "3"], ["x", "4"]],
+        }
+    )
+
+    assert decode_state(serialized).variables == (("x", "4"),)
+
+
+def test_state_decoder_rejects_a_malformed_variable() -> None:
+    serialized = json.dumps(
+        {"version": 1, "theme": "Dark", "history": [], "variables": [["x"]]}
+    )
+
+    with pytest.raises(ValueError, match="variables contain an invalid entry"):
+        decode_state(serialized)
+
+
+def test_state_decoder_rejects_a_variable_that_is_not_a_pair() -> None:
+    serialized = json.dumps(
+        {"version": 1, "theme": "Dark", "history": [], "variables": ["x=4"]}
+    )
+
+    with pytest.raises(ValueError, match="variables contain an invalid entry"):
+        decode_state(serialized)
+
+
+def test_encoder_writes_json_arrays_for_the_variables() -> None:
+    state = AppState("Dark", (), variables=(("x", "4"),))
+
+    assert json.loads(encode_state(state))["variables"] == [["x", "4"]]
+
+
+def test_the_variables_are_saved_without_touching_the_saved_pi() -> None:
+    initial = AppState("Dark", (), pi_text="3.141592653589", pi_digits=12)
+    updated = AppState("Dark", (), variables=(("x", "4"),))
+
+    restored = decode_state(encode_state(updated), encode_pi(initial))
+
+    assert restored.variables == (("x", "4"),)
+    assert restored.pi_text == initial.pi_text

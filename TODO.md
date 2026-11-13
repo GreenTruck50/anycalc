@@ -45,7 +45,14 @@ Every item ends with its number in parentheses so it can be referred to by numbe
 ## Data & persistence
 
 - [ ] Export / import app data as JSON (theme, colors, history, saved pi) - file picker on desktop, share sheet on mobile (29)
-- [ ] Persist named variables across restarts - saved state carries history but not variables (30)
+- [x] Persist named variables across restarts - saved state carries history but not variables (30)
+  - Done 2026-11-13. `AppState.variables` (name plus the value as the engine wrote it)
+    joins the saved state and is restored before the controls are enabled; setting a
+    variable through the dialog and pressing "Clear Variables" both save, and "Reset
+    all app data" forgets them with everything else. A saved name the picker no longer
+    offers, or a value that no longer reads as a finite number, is dropped on read.
+    Spec: `calculator_spec.md` (Named variables, Saved app data); tests:
+    `tests/test_data_storage.py` (7) and `tests/test_variables.py` (8).
 - [x] Restore the last-used unit pair and currency pair on launch (31)
   - Done 2026-11-11. Each conversion page keeps its own pair and the currency page
     keeps its pair; both go into the saved app state and are re-applied when the

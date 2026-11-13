@@ -35,7 +35,9 @@ computes for itself.
   `config.DECIMAL_PRECISION` significant digits — the precision is set process-wide
   in `config.py` — rather than with binary floating point.
 - **Named variables.** Keep a result under a name in the Set Variable dialog and put
-  it back into an expression from the Insert Variable dialog.
+  it back into an expression from the Insert Variable dialog. They are saved with the
+  rest of your data, so the variables you set are still there next time you open
+  the app — with every digit the engine computed, not just what the display showed.
 - **History.** Every finished calculation becomes a card in the history drawer: tap
   its equation or its answer to put it back in the display, or copy it from the card.
 - **Your data, on your terms.** Settings chooses how many calculations the history
