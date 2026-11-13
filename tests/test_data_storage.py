@@ -85,6 +85,24 @@ def test_a_save_from_before_the_precision_box_leaves_it_automatic() -> None:
     assert decode_state(json.dumps(payload)).precision == Precision()
 
 
+def test_the_separator_round_trips_with_the_precision() -> None:
+    state = AppState(
+        theme="Dark", history=(), precision=Precision(grouping="underscore")
+    )
+
+    assert decode_state(encode_state(state)).precision.grouping == "underscore"
+
+
+def test_a_save_from_before_the_separator_leaves_it_on_commas() -> None:
+    payload = json.loads(encode_state(AppState(theme="Dark", history=())))
+    del payload["precision"]["grouping"]
+
+    restored = decode_state(json.dumps(payload))
+
+    assert restored.precision.grouping == "comma"
+    assert restored.precision == Precision()
+
+
 def test_the_history_length_round_trips_and_caps_at_the_ceiling() -> None:
     state = AppState(theme="Dark", history=(), history_limit=10)
 

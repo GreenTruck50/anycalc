@@ -31,7 +31,14 @@ Every item ends with its number in parentheses so it can be referred to by numbe
 ## Settings - extends item 7
 
 - [x] Precision box: decimal places, rounding mode (half-up / half-even / truncate) (21)
-- [ ] Number formatting: thousands separator style (comma / space / none) (22)
+- [x] Number formatting: thousands separator style (comma / space / underscore / none) (22)
+  - Done 2026-11-13. `precision.Precision.grouping` is one of `comma` (the default),
+    `space`, `underscore` or `none`, saved with the rest of the settings and restored
+    on the next start; Settings carries a `settings-precision-grouping` dropdown that
+    applies the moment a style is picked. Only the integer part of a fixed-notation
+    answer is grouped, scientific notation is not grouped at all, and the separators
+    are read back off the display (`strip_grouping`) so a grouped answer keeps working
+    in the next calculation, in history and in the memory keys.
 - [x] Default angle mode persisted in app state (deg / rad / grad is per-session today) (23)
   - Done 2026-11-13. `AnycalcApp.angle_mode` (one of `config.ANGLE_MODES`) is saved with
     the rest of the app state and restored on the next start; an older save or an

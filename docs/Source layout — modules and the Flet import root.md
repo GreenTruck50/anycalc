@@ -1,12 +1,13 @@
 How `src/` is organised after the module split, and the packaging fact that decides how the modules are allowed to import each other. Updated 2026-10-24 for the switch to the stock Flet import convention.
 
-## Module map (`src/`, 18 modules — there is no `__init__.py`)
+## Module map (`src/`, 20 modules — there is no `__init__.py`)
 
 | Module | Owns | Entrypoints other modules use |
 | --- | --- | --- |
 | `main.py` | The entry only: `main(page)`, `run_app()`, the `__main__` guard | — |
 | `config.py` | Numeric limits (`DECIMAL_PRECISION`, `MAX_*`), display + live-preview sizes and the morph timing, the error messages, `VARIABLE_OPTIONS` / `VARIABLE_NAMES`, the angle modes (`ANGLE_MODES`, `ANGLE_MODE_LABELS`, `ANGLE_MODE_NAMES`), `CONVERSION_CONFIG_PATH`; sets the process-wide `Decimal` precision | constants; no Flet import |
 | `calculate.py` | The expression engine both pads sit on: preprocessing, the two meanings of `%`, the precedence ladder, the angle modes `sin`/`cos`/`tan` read, `Decimal` evaluation | `calculate(text, scientific, angle_mode, variables)`, `is_number`, `toggle_sign`, `apply_percent_operators` |
+| `precision.py` | How an answer is written: the `Precision` choices (decimal places, significant figures, scientific-notation threshold, rounding mode, thousands separator), the `Decimal` rounding, grouping and un-grouping | `Precision`, `precision_from_payload()`, `round_answer()`, `format_answer()`, `apply_grouping()`, `strip_grouping()` |
 | `conversions.py` | The conversion config, route finding (forward first, `MD` formulas may be inverted, `UD` never), formula application, the reported chain of hops | `load_conversion_config()`, `convert_units()`, `find_conversion_path()`, `format_conversion_value()`, `ConversionStep`, `ConversionOutcome` |
 | `styles.py` | The named themes (Dark, Light, Midnight, Forest, Sepia, High contrast, plus the user's Custom one), the named color palette, the "Custom color" entry and the active palette | `THEMES`, `CUSTOM_THEME_NAME`, `COLOR_OPTIONS`, `color_options()`, `custom_color_label()`, `picker_color()`, `DEFAULT_THEME`, `set_active_theme()` |
 | `data_storage.py` | Validated app-state snapshots (theme, angle mode, colors, history, active pi, named variables, the remembered unit / currency pairs) in Flet SharedPreferences client storage | `AppDataStore`, `AppState` |
@@ -28,7 +29,7 @@ Names in this table were corrected on 2026-10-24 against the actual source: the 
 
 ## Dependency direction (one-way, so the engines stay testable)
 
-*   `config` ← `calculate`, `conversions`, and `data_storage`; `calculate` ← `conversions`.
+*   `config` ← `calculate`, `conversions`, and `data_storage`; `calculate` ← `conversions`; `precision` ← `calculate`, `data_storage`, `variable_dialogs`, and `ui`.
 *   `networking` ← `currency_api` ← `currency_view`; `pi` ← `pi_value` ← `pi_view`.
 *   engines + `styles`, `data_storage`, `keypad`, `clipboard`, `history_view`, `variable_dialogs`, `conversion_view`, `currency_view`, and `pi_view` ← `ui`.
 *   `main` ← `ui` only. Views and dialogs receive what they need (page, controls, callbacks, or the app object) instead of reaching into an app closure, which is what let the closure-based single file become a class plus plain functions.

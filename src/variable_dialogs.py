@@ -17,6 +17,7 @@ import flet as ft
 from calculate import calculate, is_number
 from config import VARIABLE_NAMES, VARIABLE_OPTIONS
 from dropdowns import searchable
+from precision import strip_grouping
 
 if TYPE_CHECKING:
     from ui import AnycalcApp
@@ -84,7 +85,7 @@ def open_set_variable_dialog(app: AnycalcApp) -> None:
             return
 
         try:
-            variables[name] = Decimal(value)
+            variables[name] = Decimal(strip_grouping(value))
         except InvalidOperation as error:
             value_field.error = f"Invalid number: {error}"
             page.update()

@@ -289,6 +289,7 @@ and `settings-reset` ("Reset to defaults").
 | "Memory keys on the scientific pad (replaces the variable keys)" — a `Switch` beside a tappable label, wrapped in a `Semantics` node so a screen reader still gets the sentence | `settings-memory-keys` |
 | Angle mode ("Degrees / Radians / Gradians") | `settings-angle-mode` |
 | Decimal places / significant figures / scientific-notation threshold / rounding mode | `settings-precision-decimals`, `settings-precision-significant-figures`, `settings-precision-scientific-notation`, `settings-precision-rounding` |
+| Thousands separator ("Comma (1,234,567)" / "Space (1 234 567)" / "Underscore (1_234_567)" / "None (1234567)") | `settings-precision-grouping` |
 | History length ("Keep 10 / 25 / 50 / 100") | `settings-history-length` |
 | Clear history / Reset all app data (the latter opens a confirmation) | `settings-clear-history`, `settings-reset-all-data` |
 | Primary and secondary color — only for the Custom theme; each is a dropdown whose "Custom color" entry reveals a color picker | `settings-primary-color…`, `settings-secondary-color…` (`-group`, `-value`, `-picker`) |

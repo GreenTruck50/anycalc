@@ -15,7 +15,7 @@ import pytest
 import pi
 import styles
 from config import DEFAULT_HISTORY_LENGTH, MAX_HISTORY_ITEMS
-from precision import Precision
+from precision import GROUPING_MODES, Precision
 from stub_page import build_app, fire, switch_event
 
 
@@ -165,6 +165,8 @@ def test_reset_throws_everything_away_and_restores_the_defaults() -> None:
     app.update_memory_keys_setting(switch_event(True))
     app.settings_precision_decimals.value = "4"
     app.update_precision(None)
+    app.settings_precision_grouping.value = "space"
+    app.update_precision(None)
     app.apply_theme("Light")
     pi.set_program_pi(Decimal("3.14159"), 5, decimals="14159")
 
@@ -190,6 +192,8 @@ def test_the_reset_leaves_the_open_settings_dialog_showing_the_defaults() -> Non
     app.update_history_length(None)
     app.settings_precision_decimals.value = "4"
     app.update_precision(None)
+    app.settings_precision_grouping.value = "underscore"
+    app.update_precision(None)
     app.update_memory_keys_setting(switch_event(True))
 
     app.reset_app_data()
@@ -197,8 +201,19 @@ def test_the_reset_leaves_the_open_settings_dialog_showing_the_defaults() -> Non
     assert app.settings_history_length.value == str(DEFAULT_HISTORY_LENGTH)
     assert app.settings_precision_decimals.value == "auto"
     assert app.settings_precision_rounding.value == "half-up"
+    assert app.settings_precision_grouping.value == "comma"
     assert app.settings_memory_switch.value is False
     assert app.settings_theme_dropdown.value == styles.DEFAULT_THEME.name
+
+
+def test_the_settings_dialog_holds_the_separator_under_its_own_key() -> None:
+    app = build_app()
+    app.build_settings_dialog()
+
+    dropdown = find_settings_control(app, "settings-precision-grouping")
+
+    assert dropdown.value == "comma"
+    assert [option.key for option in dropdown.options] == list(GROUPING_MODES)
 
 
 def test_the_reset_forgets_the_saved_pi_and_writes_the_empty_state_back() -> None:

@@ -63,13 +63,17 @@ import pi_value
 from pi_view import PiView
 from precision import (
     DECIMAL_PLACE_CHOICES,
+    DEFAULT_GROUPING,
     DEFAULT_ROUNDING,
+    GROUPING_LABELS,
+    GROUPING_MODES,
     ROUNDING_LABELS,
     ROUNDING_MODES,
     SCIENTIFIC_THRESHOLD_CHOICES,
     SIGNIFICANT_FIGURE_CHOICES,
     Precision,
     format_answer,
+    strip_grouping,
 )
 import styles
 from variable_dialogs import open_insert_variable_dialog, open_set_variable_dialog
@@ -789,6 +793,19 @@ class AnycalcApp:
             ),
             self.page,
         )
+        self.settings_precision_grouping = searchable(
+            ft.Dropdown(
+                key="settings-precision-grouping",
+                label="Thousands separator",
+                value=self.precision.grouping,
+                options=[
+                    ft.DropdownOption(key=mode, text=GROUPING_LABELS[mode])
+                    for mode in GROUPING_MODES
+                ],
+                on_select=self.update_precision,
+            ),
+            self.page,
+        )
         self.settings_history_length = searchable(
             ft.Dropdown(
                 key="settings-history-length",
@@ -821,6 +838,7 @@ class AnycalcApp:
                 self.settings_precision_sig_figs,
                 self.settings_precision_scientific,
                 self.settings_precision_rounding,
+                self.settings_precision_grouping,
                 self.settings_history_length,
                 ft.Row(
                     [
@@ -1070,6 +1088,9 @@ class AnycalcApp:
         rounding = self.settings_precision_rounding.value
         if not isinstance(rounding, str) or rounding not in ROUNDING_MODES:
             rounding = DEFAULT_ROUNDING
+        grouping = self.settings_precision_grouping.value
+        if not isinstance(grouping, str) or grouping not in GROUPING_MODES:
+            grouping = DEFAULT_GROUPING
         self.precision = Precision(
             decimals=self._precision_choice(self.settings_precision_decimals),
             sig_figs=self._precision_choice(self.settings_precision_sig_figs),
@@ -1077,6 +1098,7 @@ class AnycalcApp:
                 self.settings_precision_scientific
             ),
             rounding=rounding,
+            grouping=grouping,
         )
         self.apply_precision()
         self.page.run_task(self.save_data)
@@ -1085,7 +1107,11 @@ class AnycalcApp:
         """Re-show what is already on the display under the new precision."""
 
         if self.result_mode and is_number(self.expression):
-            self.expression = format_answer(self.expression, self.precision)
+            # The text on screen may already carry separators; the answer is
+            # written out again from the plain number underneath it.
+            self.expression = format_answer(
+                strip_grouping(self.expression), self.precision
+            )
         self.update_display()
 
     def format_result(self, answer: str) -> str:
@@ -1233,6 +1259,7 @@ class AnycalcApp:
         ):
             dropdown.value = "auto" if choice is None else str(choice)
         self.settings_precision_rounding.value = self.precision.rounding
+        self.settings_precision_grouping.value = self.precision.grouping
         self._sync_color_settings()
         self._update_settings_dialog()
 
@@ -1821,8 +1848,18 @@ class AnycalcApp:
                 # The two pads read "%" differently, and "±" has to agree: on the
                 # regular pad "200+10%" ends on a number, on the scientific pad
                 # "200+10%" ends on an operator still waiting for one.
-                self.expression = toggle_sign(
-                    self.expression, percent_is_modulo=self.scientific
+                # The sign edit works on the number itself, so any thousands
+                # separators the display wrote come off first - and a result goes
+                # back through the formatter so it keeps the style the settings ask
+                # for.
+                toggled = toggle_sign(
+                    strip_grouping(self.expression),
+                    percent_is_modulo=self.scientific,
+                )
+                self.expression = (
+                    self.format_result(toggled)
+                    if self.result_mode and is_number(toggled)
+                    else toggled
                 )
             self.update_display()
             return

@@ -47,13 +47,19 @@ from config import (
     MAX_EXPONENT,
 )
 from pi import program_pi
+from precision import strip_grouping
 
 
 def is_number(value) -> bool:
-    """Whether a value reads as a finite number (the display holds text)."""
+    """Whether a value reads as a finite number (the display holds text).
+
+    The display's own text may carry thousands separators, which are a way of
+    writing a number rather than part of it - see ``precision.strip_grouping``.
+    """
 
     try:
-        return Decimal(value).is_finite()
+        text = strip_grouping(value) if isinstance(value, str) else value
+        return Decimal(text).is_finite()
     except InvalidOperation:
         return False
 
@@ -414,6 +420,11 @@ def calculate(expression, scientific, angle_mode=ANGLE_RAD, variables=None, pi_p
 
     if not expression.strip():
         return "0"
+
+    # Thousands separators are how the display writes a number, not how it is
+    # calculated: after "=" the answer becomes the expression the next key
+    # continues, and a history card tapped back in holds the same text.
+    expression = strip_grouping(expression)
 
     if len(expression) > MAX_EXPRESSION_LENGTH:
         raise ValueError(ERROR_EXPRESSION_TOO_LONG)

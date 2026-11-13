@@ -56,8 +56,12 @@ computes for itself.
   Up and Down arrows walk past calculations back into the display.
 - **Answer precision.** A precision box in Settings rounds and writes every answer:
   decimal places (kept literally — `2` at two places reads `2.00`), significant
-  figures, a scientific-notation threshold, and half-up / half-even / truncate.
-  Each entry starts at Automatic, which leaves the exact `Decimal` answer alone.
+  figures, a scientific-notation threshold, half-up / half-even / truncate, and a
+  thousands separator for large answers — comma `1,234,567` by default, or spaces,
+  underscores, or none at all. Each of the first four starts at Automatic, which
+  leaves the exact `Decimal` answer alone. Grouping is only how an answer is
+  written: the app reads its own display back, so an answer like `1,234` carries
+  straight on into the next calculation.
 - **A calculator memory.** `M+` and `M-` add or subtract what the display rests on,
   `MRC` puts that number back into the expression — and clears the memory when
   pressed again right after — `MCLR` empties it outright, and the line under the

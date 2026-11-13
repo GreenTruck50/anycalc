@@ -482,8 +482,9 @@ There should be a conversions.yaml file that says "There should be this tab with
 ## Answer precision
 
 - The settings dialog carries a precision box: decimal places, significant
-  figures, a scientific-notation threshold and a rounding mode. Every one of them
-  starts at "Automatic", which leaves an answer exactly as the engine computed it.
+  figures, a scientific-notation threshold, a rounding mode and a thousands
+  separator. The first four start at "Automatic", which leaves an answer exactly
+  as the engine computed it.
 - Decimal places run 0 to 12 and are kept literally: `2` asked for at two decimal
   places reads `2.00`. Significant figures run 1 to 12 and count from the first
   non-zero digit, so `123456` at three figures reads `123000`. When both are set,
@@ -503,8 +504,21 @@ There should be a conversions.yaml file that says "There should be this tab with
   way every other setting applies the instant it is chosen.
 - A precision that leaves nothing behind reads as plain `0` rather than `-0` or
   `0.00`.
+- A large answer is written in groups of three. The separator is a setting with
+  four styles - comma `1,234,567` (the default), space `1 234 567`, underscore
+  `1_234_567` and none at all `1234567` - and only the integer part is grouped,
+  never the digits after the point. Four digits or fewer is left alone, and an
+  answer written in scientific notation is not grouped at all, an exponent having
+  no integer part to separate.
+- The separators are a way of writing a number, not part of one: anything the app
+  reads back off the display - the answer that becomes the expression after `=`, a
+  history card tapped into it, the number a memory or variable key takes - is read
+  with them taken out, so `1,234+1` calculates as `1234+1`. A separator only counts
+  as grouping when a full group of three follows it, which leaves the comma between
+  two function arguments (`max(1,2)`) alone.
 - The precision is saved with the rest of the settings; a save written before the
-  box existed reads back fully automatic.
+  box existed reads back fully automatic, and one written before the separator
+  existed reads back with it on commas.
 
 ## Calculator memory
 
@@ -708,9 +722,12 @@ There should be a conversions.yaml file that says "There should be this tab with
   the app is on and applies a picked one the same instant, moving the header's angle
   button with it. See "Angle mode".
 - Offer a precision box - decimal places, significant figures, scientific-notation
-  threshold and rounding mode - as four dropdowns, each leading with "Automatic".
-  See the "Answer precision" section for what each one does; like every other
-  setting they apply the moment one is picked and are saved at once.
+  threshold, rounding mode and thousands separator - as five dropdowns. The first
+  four each lead with "Automatic"; the separator names its style with a sample
+  number, "Comma (1,234,567)", "Space (1 234 567)", "Underscore (1_234_567)" and
+  "None (1234567)", and starts on comma. See the "Answer precision" section for
+  what each one does; like every other setting they apply the moment one is picked
+  and are saved at once.
 - Offer a "Memory keys on the scientific pad" switch. The Regular Calculator
   always carries the memory keys; the switch decides whether the Scientific
   Calculator carries them *instead of* its variable keys - one row, the two sets
@@ -735,10 +752,11 @@ There should be a conversions.yaml file that says "There should be this tab with
   calculator memory, the adopted pi and every setting - and only its Reset action
   acts; Cancel closes the prompt and changes nothing.
 - A reset puts the running app back to how it started: empty history, no variables,
-  empty memory, the fallback pi, default theme and colors, automatic precision, the
-  memory keys off the scientific pad, degrees as the angle mode and the default
-  history length. It then clears what the app had stored and writes the fresh state
-  back, so the next start finds the same clean app.
+  empty memory, the fallback pi, default theme and colors, automatic precision with
+  the thousands separator back on commas, the memory keys off the scientific pad,
+  degrees as the angle mode and the default history length. It then clears what the
+  app had stored and writes the fresh state back, so the next start finds the same
+  clean app.
 - Offer a "Clear history" button in Settings next to it, doing what the history
   drawer's button does.
 - Apply every settings choice the instant it is picked: the chosen theme or color
@@ -790,8 +808,9 @@ There should be a conversions.yaml file that says "There should be this tab with
   `config.MAX_HISTORY_ITEMS` calculation-history entries, and the exact pi
   currently used by calculations between app launches.
 - Save with them whether the Scientific Calculator carries the memory keys, and
-  everything the precision box holds. A save written before either existed reads
-  back with the keys off and the precision automatic.
+  everything the precision box holds, the thousands separator with it. A save
+  written before either existed reads back with the keys off, the precision
+  automatic and the separator on commas.
 - Save with them the unit pair of every conversion page the user has chosen units
   on (conversion name plus its two unit IDs) and the currency page's pair. A save
   written before either existed reads back with nothing remembered, which leaves
