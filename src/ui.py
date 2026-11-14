@@ -63,17 +63,18 @@ import pi
 import pi_value
 from pi_view import PiView
 from precision import (
-    DECIMAL_PLACE_CHOICES,
     DEFAULT_GROUPING,
+    DEFAULT_PRECISION_DIGITS,
     DEFAULT_ROUNDING,
     GROUPING_LABELS,
     GROUPING_MODES,
+    PRECISION_DIGIT_CHOICES,
     ROUNDING_LABELS,
     ROUNDING_MODES,
     SCIENTIFIC_THRESHOLD_CHOICES,
-    SIGNIFICANT_FIGURE_CHOICES,
     Precision,
     format_answer,
+    set_engine_precision,
     strip_grouping,
 )
 import styles
@@ -514,6 +515,9 @@ class AnycalcApp:
             self.refresh_history()
             self.memory_keys_on_scientific = state.memory_keys_on_scientific
             self.precision = state.precision
+            # The saved digit count is what this process calculates at, so it goes
+            # on the Decimal context before anything else gets a chance to compute.
+            set_engine_precision(self.precision.digits, self.precision.rounding)
             # The header's button has to read the mode the save was written in,
             # and a live answer already on screen is recalculated for it.
             self.set_angle_mode(state.angle_mode)
@@ -776,19 +780,15 @@ class AnycalcApp:
             ),
             self.page,
         )
-        # The precision box: how an answer is rounded and written out. Every
-        # dropdown applies the moment it is picked, like the rest of the dialog.
-        self.settings_precision_decimals = self._build_precision_dropdown(
-            key="settings-precision-decimals",
-            label="Decimal places",
-            value=self.precision.decimals,
-            choices=DECIMAL_PLACE_CHOICES,
-        )
-        self.settings_precision_sig_figs = self._build_precision_dropdown(
-            key="settings-precision-significant-figures",
-            label="Significant figures",
-            value=self.precision.sig_figs,
-            choices=SIGNIFICANT_FIGURE_CHOICES,
+        # The precision box: how many significant digits a calculation works with,
+        # and how an answer is written out. Every dropdown applies the moment it is
+        # picked, like the rest of the dialog.
+        self.settings_precision_digits = self._build_precision_dropdown(
+            key="settings-precision-digits",
+            label="Precision (Significant Digits)",
+            value=self.precision.digits,
+            choices=PRECISION_DIGIT_CHOICES,
+            automatic=False,
         )
         self.settings_precision_scientific = self._build_precision_dropdown(
             key="settings-precision-scientific-notation",
@@ -851,8 +851,7 @@ class AnycalcApp:
                 self.settings_theme_dropdown,
                 self.settings_memory_control,
                 self.settings_angle_mode,
-                self.settings_precision_decimals,
-                self.settings_precision_sig_figs,
+                self.settings_precision_digits,
                 self.settings_precision_scientific,
                 self.settings_precision_rounding,
                 self.settings_precision_grouping,
@@ -1050,11 +1049,15 @@ class AnycalcApp:
         value: int | None,
         choices: tuple[int | None, ...],
         power_labels: bool = False,
+        automatic: bool = True,
     ) -> ft.Dropdown:
-        """One precision dropdown: "Automatic" plus the listed choices.
+        """One precision dropdown: the listed choices, led by "Automatic".
 
-        The threshold dropdown labels its choices as the powers of ten they
-        stand for; the decimal-place and significant-figure dropdowns just count.
+        The threshold dropdown labels its choices as the powers of ten they stand
+        for; the digits dropdown just counts. ``automatic=False`` drops the
+        "Automatic" entry, which only makes sense for a choice that always has a
+        value - the digit count, since the arithmetic always computes at some
+        number of significant digits.
         """
 
         def option_label(choice: int | None) -> str:
@@ -1075,6 +1078,7 @@ class AnycalcApp:
                         text=option_label(choice),
                     )
                     for choice in choices
+                    if automatic or choice is not None
                 ],
                 on_select=self.update_precision,
             ),
@@ -1093,12 +1097,31 @@ class AnycalcApp:
         except ValueError:
             return None
 
+    @classmethod
+    def _precision_digits(cls, dropdown: ft.Dropdown) -> int:
+        """The digit count a digits dropdown stands for.
+
+        There is no automatic entry to fall back on, so anything the control holds
+        that is not a listed count - a value left by an older dialog, a hand-set
+        one - lands on the default the app starts with.
+        """
+
+        choice = cls._precision_choice(dropdown)
+        if choice is None or choice not in PRECISION_DIGIT_CHOICES:
+            return DEFAULT_PRECISION_DIGITS
+        return choice
+
     def update_precision(self, event: object) -> None:
         """Apply the precision the dialog's precision box now holds.
 
-        Like every other setting there is no Apply button: the answer on screen is
-        re-shown under the new precision the moment a choice is made, and the
-        choice is saved with the rest of the settings.
+        Like every other setting there is no Apply button. The digit count moves the
+        Decimal context the app calculates in, so it decides how many significant
+        digits the next calculation produces - and since the display writes its
+        number at that same context, an answer already sitting there is cut to it as
+        well. Raising the count cannot give back digits the shorter arithmetic threw
+        away: nothing keeps them. The separator and the scientific-notation
+        threshold are ways of writing a number, so they re-show what is on screen.
+        Either way the choice is saved with the rest of the settings.
         """
 
         del event
@@ -1109,14 +1132,14 @@ class AnycalcApp:
         if not isinstance(grouping, str) or grouping not in GROUPING_MODES:
             grouping = DEFAULT_GROUPING
         self.precision = Precision(
-            decimals=self._precision_choice(self.settings_precision_decimals),
-            sig_figs=self._precision_choice(self.settings_precision_sig_figs),
+            digits=self._precision_digits(self.settings_precision_digits),
             sci_threshold=self._precision_choice(
                 self.settings_precision_scientific
             ),
             rounding=rounding,
             grouping=grouping,
         )
+        set_engine_precision(self.precision.digits, self.precision.rounding)
         self.apply_precision()
         self.page.run_task(self.save_data)
 
@@ -1219,6 +1242,9 @@ class AnycalcApp:
         self.memory_recalled = False
         self.memory_keys_on_scientific = False
         self.precision = Precision()
+        # The context goes back with the setting: a reset that only moved the
+        # dropdown would leave the next calculation deep or shallow by accident.
+        set_engine_precision(self.precision.digits, self.precision.rounding)
         self.set_angle_mode(DEFAULT_ANGLE_MODE)
         # The remembered unit / currency pairs go back to the built-in defaults
         # too, and so does the exchange data the currency page falls back on -
@@ -1272,12 +1298,11 @@ class AnycalcApp:
         self.settings_memory_switch.value = self.memory_keys_on_scientific
         self.settings_angle_mode.value = self.angle_mode
         self.settings_history_length.value = str(self.history_limit)
-        for dropdown, choice in (
-            (self.settings_precision_decimals, self.precision.decimals),
-            (self.settings_precision_sig_figs, self.precision.sig_figs),
-            (self.settings_precision_scientific, self.precision.sci_threshold),
-        ):
-            dropdown.value = "auto" if choice is None else str(choice)
+        self.settings_precision_digits.value = str(self.precision.digits)
+        sci_threshold = self.precision.sci_threshold
+        self.settings_precision_scientific.value = (
+            "auto" if sci_threshold is None else str(sci_threshold)
+        )
         self.settings_precision_rounding.value = self.precision.rounding
         self.settings_precision_grouping.value = self.precision.grouping
         self._sync_color_settings()

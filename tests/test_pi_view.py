@@ -22,6 +22,7 @@ import asyncio
 import inspect
 import threading
 import time
+from decimal import DefaultContext, Decimal, getcontext, localcontext
 from typing import Awaitable, Callable, Generator, Optional, TypeAlias, cast
 from unittest.mock import patch
 
@@ -31,7 +32,7 @@ import pytest
 import pi
 import pi_value
 from calculate import calculate
-from config import DECIMAL_PRECISION
+from precision import engine_precision, set_engine_precision
 from pi_view import (
     DIALOG_BATCH_DECIMALS,
     DIALOG_LOAD_AHEAD_PIXELS,
@@ -63,6 +64,41 @@ PI_DECIMALS = (
     "891227938183011949129833673362440656643086021394946395224737"
     "190702179860943702770539217176293176752384674818467669405132"
 )
+
+
+@pytest.fixture(autouse=True)
+def restore_decimal_context():
+    """Put both Decimal contexts back the way the test found them.
+
+    Two tests here move the precision the whole process calculates at, and the
+    suite shares one interpreter.
+    """
+
+    live = (getcontext().prec, getcontext().rounding)
+    default = (DefaultContext.prec, DefaultContext.rounding)
+    yield
+    for context, (digits, mode) in (
+        (getcontext(), live),
+        (DefaultContext, default),
+    ):
+        context.prec = digits
+        context.rounding = mode
+
+
+def pi_at_precision(decimals: int) -> str:
+    """pi written to `decimals` decimal places, rounded - not cut - at that place.
+
+    The digits come from the table above, so the expectation never comes from this
+    repository either.
+    """
+
+    with localcontext() as context:
+        context.prec = decimals + 3
+        return str(
+            Decimal(f"3.{PI_DECIMALS[: decimals + 1]}").quantize(
+                Decimal(1).scaleb(-decimals)
+            )
+        )
 
 
 class StubPage:
@@ -371,9 +407,12 @@ def test_adopting_makes_the_run_the_pi_every_calculation_uses(view: PiView) -> N
         find_by_key(view.build(), "pi-status").value
     )
 
-    # The pads really do multiply by it - all 60 decimals, since 60 fit inside the
-    # engine's Decimal context.
-    assert calculate("pi", scientific=True) == f"3.{PI_DECIMALS[:60]}"
+    # The pads really do multiply by it. At the app's twelve-digit default an answer
+    # stops at eleven decimals of it - put the box on fifty and fifty reach it.
+    assert calculate("pi", scientific=True) == pi_at_precision(engine_precision() - 1)
+
+    set_engine_precision(50)
+    assert calculate("pi", scientific=True) == pi_at_precision(49)
 
     run_to_completion(view, "100")
     assert view.adopt_button.visible is True
@@ -385,8 +424,8 @@ def test_a_pi_longer_than_the_context_only_reaches_it_as_far_as_the_context_goes
     """The limit the page has to warn about, shown rather than asserted silently.
 
     Adopting a 600-decimal pi stores and shows all 600 decimals, but a calculation
-    runs at :data:`config.DECIMAL_PRECISION` significant digits - one of which goes
-    to the ``3`` - so an answer stops at 499 decimals. A person who adopts a
+    runs at the precision the Settings box sets - twelve by default, one of which
+    goes to the ``3`` - so an answer stops at eleven decimals. A person who adopts a
     hundred thousand decimals has to be told that, or the button looks broken.
     """
 
@@ -397,11 +436,11 @@ def test_a_pi_longer_than_the_context_only_reaches_it_as_far_as_the_context_goes
 
     assert persisted == [True]
     assert pi.program_pi_digits() == 600
-    usable = DECIMAL_PRECISION - 1
+    usable = engine_precision() - 1
 
     # What an answer actually uses - shorter than the adopted number, and still the
     # right digits as far as it goes.
-    assert calculate("pi", scientific=True) == f"3.{PI_DECIMALS[:usable]}"
+    assert calculate("pi", scientific=True) == pi_at_precision(usable)
 
     # And the page says so, in the card about the program's own pi and again in the
     # status line the adoption just wrote.
@@ -414,9 +453,11 @@ def test_a_pi_longer_than_the_context_only_reaches_it_as_far_as_the_context_goes
     ("available", "expect"),
     [
         (3, "all 3 of these decimals reach an answer"),
-        (12, "all 12 of these decimals reach an answer"),
-        (499, "all 499 of these decimals reach an answer"),
-        (500, "uses the first 499 of these 500 decimals"),
+        (10, "all 10 of these decimals reach an answer"),
+        # The default precision is twelve significant digits, one of which goes to
+        # the whole part - so twelve decimals are one more than an answer can use.
+        (11, "all 11 of these decimals reach an answer"),
+        (12, "uses the first 11 of these 12 decimals"),
         (1_000_000, "never multiplied"),
     ],
 )
@@ -427,15 +468,15 @@ def test_the_precision_notice_says_what_the_app_can_use(
 
     text = precision_notice(available)
     assert expect in text
-    assert f"{DECIMAL_PRECISION} significant digits" in text
+    assert f"{engine_precision()} significant digits" in text
 
 
 def test_the_page_shows_the_precision_it_calculates_with(view: PiView) -> None:
     """The notice is on the page before anything is computed, not only after."""
 
     notice = find_by_key(view.build(), "pi-precision")
-    assert f"{DECIMAL_PRECISION} significant digits" in notice.value
-    assert "all 12 of these decimals" in notice.value
+    assert f"{engine_precision()} significant digits" in notice.value
+    assert f"{pi.program_pi_digits():,} decimals" in notice.value
 
 
 def test_every_input_spans_the_page(view: PiView) -> None:

@@ -22,12 +22,12 @@ to the app's own pi instead.
 
 One group's paths can also be exact overall and still round on the way: a
 per-day flow converted through per-hour divides by 24, and 1/24 repeats. Those
-pairs are allowed the last few digits of the engine's 500-digit answer; see
-:func:`agrees_to_significant_digits`.
+pairs are allowed the last few digits of the 500-digit answer this file computes
+at (see ``ENGINE_DEPTH``); see :func:`agrees_to_significant_digits`.
 """
 
 import itertools
-from decimal import Decimal
+from decimal import DefaultContext, Decimal, getcontext
 from fractions import Fraction
 
 import pytest
@@ -42,6 +42,34 @@ from conversions import (
     load_conversion_config,
 )
 from pi import program_pi, program_pi_digits
+
+# The depth this file does its arithmetic at. The app itself runs at whatever the
+# Settings precision box sets - twelve significant digits by default - but the
+# exactness sweep below compares whole terminating decimals hundreds of digits
+# long, and "a long factor chain keeps its significant digits" is a statement
+# about the arithmetic rather than about the default. What the app shows at
+# twelve digits is test_precision.py's business.
+ENGINE_DEPTH = 500
+
+
+@pytest.fixture(autouse=True)
+def deep_engine_context():
+    """Pin the Decimal context to :data:`ENGINE_DEPTH` for every test here."""
+
+    live = (getcontext().prec, getcontext().rounding)
+    default = (DefaultContext.prec, DefaultContext.rounding)
+    getcontext().prec = ENGINE_DEPTH
+    DefaultContext.prec = ENGINE_DEPTH
+    try:
+        yield
+    finally:
+        for context, (digits, mode) in (
+            (getcontext(), live),
+            (DefaultContext, default),
+        ):
+            context.prec = digits
+            context.rounding = mode
+
 
 UNIT_GROUPS, CONVERSIONS = load_conversion_config()
 UNITS_BY_GROUP = {group["name"]: group["units"] for group in UNIT_GROUPS}
@@ -498,7 +526,7 @@ def test_every_terminating_factor_is_exact(
     can land a hair off even when the pair's own factor terminates, because the
     path the graph picks can divide by a number that does not terminate on the
     way - a per-day flow going through per-hour divides by 24, and 1/24 repeats.
-    The engine works at ``DECIMAL_PRECISION`` (500) significant digits, so what
+    This file computes at ``ENGINE_DEPTH`` (500) significant digits, so what
     that costs is one unit in the last place of the 500-digit answer and nothing
     above it: 34 of the six groups' terminating pairs come out like that (five in
     Speed, twenty-nine in Mass Flow), every one of them agreeing with the defined

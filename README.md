@@ -33,9 +33,9 @@ computes for itself.
   `1` there. Settings offers the same three modes by name and remembers your pick.
 - **A live answer while you type.** Both pads show a muted preview under the
   expression that re-evaluates on every change, and `=` promotes it to the display.
-- **Decimal arithmetic.** The engine computes with `Decimal` at
-  `config.DECIMAL_PRECISION` significant digits — the precision is set process-wide
-  in `config.py` — rather than with binary floating point.
+- **Decimal arithmetic.** The engine computes with `Decimal` at as many
+  significant digits as the Settings precision box asks for — twelve by default,
+  anywhere from 1 to 5000 — rather than with binary floating point.
 - **Named variables.** Keep a result under a name in the Set Variable dialog and put
   it back into an expression from the Insert Variable dialog. They are saved with the
   rest of your data, so the variables you set are still there next time you open
@@ -54,14 +54,13 @@ computes for itself.
   `+ - * / ( ) %`, `.` and `,`, plus `^` and `e` on the scientific pad, with
   `Enter` (or `=`) for `=`, `Backspace` for `⌫` and `Esc` (or `Delete`) for `AC`.
   Up and Down arrows walk past calculations back into the display.
-- **Answer precision.** A precision box in Settings rounds and writes every answer:
-  decimal places (kept literally — `2` at two places reads `2.00`), significant
-  figures, a scientific-notation threshold, half-up / half-even / truncate, and a
-  thousands separator for large answers — comma `1,234,567` by default, or spaces,
-  underscores, or none at all. Each of the first four starts at Automatic, which
-  leaves the exact `Decimal` answer alone. Grouping is only how an answer is
-  written: the app reads its own display back, so an answer like `1,234` carries
-  straight on into the next calculation.
+- **Answer precision.** A precision box in Settings decides how many significant
+  digits the app calculates with — 1 to 5000, twelve by default — and how an
+  answer is written: a scientific-notation threshold, half-up / half-even /
+  truncate rounding, and a thousands separator for large answers — comma
+  `1,234,567` by default, or spaces, underscores, or none at all. Grouping is
+  only how an answer is written: the app reads its own display back, so an answer
+  like `1,234` carries straight on into the next calculation.
 - **A calculator memory.** `M+` and `M-` add or subtract what the display rests on,
   `MRC` puts that number back into the expression — and clears the memory when
   pressed again right after — `MCLR` empties it outright, and the line under the
@@ -351,10 +350,10 @@ src/                        the app (entry point: src/main.py)
                             drawer navigation, angle modes, variables, history
   calculate.py              the expression engine both pads sit on (Decimal math,
                             the two meanings of %, the ± sign change)
-  precision.py              how an answer is rounded and written out (decimal places,
-                            significant figures, scientific-notation threshold, rounding
-                            mode, the thousands separator, and reading a grouped
-                            display back)
+  precision.py              how many digits the app calculates at, and how an answer
+                            is written out (the Decimal context, the scientific-notation
+                            threshold, the rounding mode, the thousands separator, and
+                            reading a grouped display back)
   conversions.py            the unit conversion engine (YAML config, route finding,
                             formula application, the chain of hops)
   currency_api.py           the exchange-API endpoints, the fallback provider, the

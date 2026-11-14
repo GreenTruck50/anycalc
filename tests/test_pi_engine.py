@@ -8,7 +8,7 @@ algorithm - a second opinion, not the same code twice.
 """
 
 import math
-from decimal import Decimal
+from decimal import DefaultContext, Decimal, getcontext, localcontext
 from importlib import import_module
 from typing import cast
 
@@ -17,12 +17,36 @@ import pytest
 import pi
 import pi_value
 from calculate import calculate
-from config import DECIMAL_PRECISION
 
 # The first 60 decimals of pi, written out rather than computed, so the small runs
 # have a truth that does not come from this repository.
 PI_DECIMALS = "1415926535897932384626433832795028841971693993751058209749445923"
 gmpy2 = import_module("gmpy2")
+
+# The depth these tests compute at. The app runs at whatever the Settings precision
+# box sets - twelve significant digits by default - but a hundred-thousand-digit pi
+# and the "the context is the ceiling" rule below are only visible at depth; the
+# default is test_precision.py's business.
+ENGINE_DEPTH = 500
+
+
+@pytest.fixture(autouse=True)
+def deep_engine_context():
+    """Pin the Decimal context to :data:`ENGINE_DEPTH` for every test here."""
+
+    live = (getcontext().prec, getcontext().rounding)
+    default = (DefaultContext.prec, DefaultContext.rounding)
+    getcontext().prec = ENGINE_DEPTH
+    DefaultContext.prec = ENGINE_DEPTH
+    try:
+        yield
+    finally:
+        for context, (digits, mode) in (
+            (getcontext(), live),
+            (DefaultContext, default),
+        ):
+            context.prec = digits
+            context.rounding = mode
 
 
 def mpfr_pi_decimals(decimals: int) -> str:
@@ -391,20 +415,29 @@ def test_a_calculation_reaches_the_programs_pi_only_as_far_as_the_engine_goes() 
     """The Decimal context is the ceiling, not the decimals that were computed.
 
     Adopting a longer pi does make the pads calculate with it - but every expression
-    is evaluated at ``DECIMAL_PRECISION`` significant digits, one of which goes to the
-    ``3``, so a pi with more decimals than that shows through as only
-    ``DECIMAL_PRECISION - 1`` of them. That is the calculator's own precision, and it
-    is what the spec states. A pi shorter than the context is not enough to show this,
-    which is why the adopted run is twice as long as the context.
+    is evaluated at the app's precision, one significant digit of which goes to the
+    ``3``, so a pi with more decimals than that shows through as only that many
+    minus one of them. That is the calculator's own precision, and it is what the
+    spec states. A pi shorter than the context is not enough to show this, which is
+    why the adopted run is twice as long as the context.
     """
 
-    pi_value.adopt(pi_value.compute_pi(2 * DECIMAL_PRECISION))
-    assert pi.program_pi_digits() == 2 * DECIMAL_PRECISION
+    pi_value.adopt(pi_value.compute_pi(2 * ENGINE_DEPTH))
+    assert pi.program_pi_digits() == 2 * ENGINE_DEPTH
     shown = calculate("pi", scientific=True)
 
     significant = len(shown.replace(".", "").lstrip("0"))
-    assert significant == DECIMAL_PRECISION, "the context caps it, not the run"
-    assert shown == f"3.{mpfr_pi_decimals(DECIMAL_PRECISION - 1)}"
+    assert significant == ENGINE_DEPTH, "the context caps it, not the run"
+
+    # MPFR's pi, rounded - not cut - at the last digit an answer can carry.
+    with localcontext() as context:
+        context.prec = ENGINE_DEPTH + 3
+        expected = str(
+            Decimal(f"3.{mpfr_pi_decimals(ENGINE_DEPTH)}").quantize(
+                Decimal(1).scaleb(-(ENGINE_DEPTH - 1))
+            )
+        )
+    assert shown == expected
 
 
 def test_a_computation_can_be_shown_as_a_leading_slice() -> None:

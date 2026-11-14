@@ -74,13 +74,13 @@ def test_the_precision_round_trips_with_the_rest() -> None:
     state = AppState(
         theme="Dark",
         history=(),
-        precision=Precision(decimals=3, sig_figs=None, rounding="truncate"),
+        precision=Precision(digits=50, rounding="truncate"),
     )
 
     assert decode_state(encode_state(state)).precision == state.precision
 
 
-def test_a_save_from_before_the_precision_box_leaves_it_automatic() -> None:
+def test_a_save_from_before_the_precision_box_starts_the_default_precision() -> None:
     payload = json.loads(encode_state(AppState(theme="Dark", history=())))
     del payload["precision"]
 

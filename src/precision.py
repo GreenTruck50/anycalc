@@ -1,11 +1,20 @@
-"""How a calculated answer is rounded and written out.
+"""How many digits the app computes with, and how an answer is written out.
 
-The engine hands back the exact answer as text - an integer, or every decimal the
-calculation context holds with the trailing zeros trimmed. This module is what
-turns that into the number the display shows once the user has asked for a
-precision: a fixed number of decimal places, a number of significant figures, a
-switch into scientific notation past some size, which way a half rounds, and how
-a large answer is broken into groups of three.
+Two things live here because they are the same decision seen from either side.
+
+*The engine side.* :func:`set_engine_precision` moves the Decimal context the
+whole process calculates in - how many significant digits a calculation works
+with, and which way a tied digit rounds there. The Settings box "Precision
+(Significant Digits)" is the only thing that asks for it, and the answer the
+engine hands back already carries at most that many significant digits: every
+Decimal operation rounds to the context, so nothing here has to cut an answer
+down afterwards.
+
+*The display side.* The engine hands back its answer as text - an integer, or
+every decimal the context holds with the trailing zeros trimmed.
+:func:`format_answer` turns that into what the display shows: a switch into
+scientific notation past some size, and how a large answer is broken into groups
+of three.
 
 Grouping is a display style, so it has to be readable again: :func:`strip_grouping`
 takes the separators back out of text the app feeds to the engine - the answer that
@@ -20,12 +29,16 @@ without an app.
 import re
 from dataclasses import dataclass
 from decimal import (
+    DefaultContext,
     ROUND_DOWN,
     ROUND_HALF_EVEN,
     ROUND_HALF_UP,
     Decimal,
     InvalidOperation,
+    getcontext,
 )
+
+from config import DECIMAL_PRECISION
 
 # The rounding the settings offer, in the order the dialog lists them, with the
 # Decimal rounding constant each one stands for.
@@ -41,10 +54,18 @@ ROUNDING_LABELS = {
 }
 DEFAULT_ROUNDING = "half-up"
 
-# What each precision dropdown offers. None is the "Automatic" entry: the answer
-# is left exactly as the engine computed it.
-DECIMAL_PLACE_CHOICES = (None, *range(0, 13))
-SIGNIFICANT_FIGURE_CHOICES = (None, *range(1, 13))
+# What the "Precision (Significant Digits)" box offers. The count is how many
+# significant digits a calculation works with, so the short end is a pocket
+# calculator and the long end is what lets a hundred-thousand-digit pi actually be
+# multiplied. There is no "Automatic" entry: the context always computes at some
+# number of digits, and DEFAULT_PRECISION_DIGITS is where an app starts.
+PRECISION_DIGIT_CHOICES = (
+    1, 2, 3, 5, 8, 12, 50, 100, 200, 300, 400, 500, 1000, 5000,
+)
+DEFAULT_PRECISION_DIGITS = DECIMAL_PRECISION
+
+# What the scientific-notation dropdown offers. None is the "Automatic" entry: the
+# answer keeps the plain digits the engine writes.
 # The size at which an answer switches to scientific notation, written as the
 # power of ten it starts at: 6 means 1E-6 and 1E+6 and anything beyond.
 SCIENTIFIC_THRESHOLD_CHOICES = (None, 3, 6, 9, 12)
@@ -83,10 +104,15 @@ GROUPED_DIGITS = re.compile(
 
 @dataclass(frozen=True)
 class Precision:
-    """The precision the user asked for; every field left None means automatic."""
+    """What the user asked the app to compute with and how to write it out.
 
-    decimals: int | None = None
-    sig_figs: int | None = None
+    ``digits`` is the Decimal context's precision - how many significant digits a
+    calculation works with - and it is the one choice that is never automatic.
+    ``sci_threshold`` left None means an answer keeps the plain digits the engine
+    writes.
+    """
+
+    digits: int = DEFAULT_PRECISION_DIGITS
     sci_threshold: int | None = None
     rounding: str = DEFAULT_ROUNDING
     grouping: str = DEFAULT_GROUPING
@@ -95,8 +121,7 @@ class Precision:
         """The plain dict this is saved as."""
 
         return {
-            "decimals": self.decimals,
-            "sig_figs": self.sig_figs,
+            "digits": self.digits,
             "sci_threshold": self.sci_threshold,
             "rounding": self.rounding,
             "grouping": self.grouping,
@@ -113,6 +138,21 @@ def _clean_choice(value: object, choices: tuple[int | None, ...]) -> int | None:
     return value if isinstance(value, int) and value in choices else None
 
 
+def _clean_digits(value: object, legacy: object) -> int:
+    """The digits choice, or the default when the saved value is not one.
+
+    A save written before this box existed carries ``sig_figs`` - the same kind of
+    count, from a narrower list - so a value that is still a listed choice carries
+    over instead of being thrown away. ``decimals``, which this box replaced, is
+    simply gone.
+    """
+
+    for candidate in (value, legacy):
+        if isinstance(candidate, int) and candidate in PRECISION_DIGIT_CHOICES:
+            return candidate
+    return DEFAULT_PRECISION_DIGITS
+
+
 def precision_from_payload(payload: object) -> Precision:
     """Read the saved precision, defaulting anything missing or unusable."""
 
@@ -121,10 +161,7 @@ def precision_from_payload(payload: object) -> Precision:
     rounding = payload.get("rounding")
     grouping = payload.get("grouping")
     return Precision(
-        decimals=_clean_choice(payload.get("decimals"), DECIMAL_PLACE_CHOICES),
-        sig_figs=_clean_choice(
-            payload.get("sig_figs"), SIGNIFICANT_FIGURE_CHOICES
-        ),
+        digits=_clean_digits(payload.get("digits"), payload.get("sig_figs")),
         sci_threshold=_clean_choice(
             payload.get("sci_threshold"), SCIENTIFIC_THRESHOLD_CHOICES
         ),
@@ -141,36 +178,39 @@ def precision_from_payload(payload: object) -> Precision:
     )
 
 
-def _rounding_constant(precision: Precision) -> str:
-    return ROUNDING_MODES.get(precision.rounding, ROUNDING_MODES[DEFAULT_ROUNDING])
+def _rounding_constant(mode: str) -> str:
+    return ROUNDING_MODES.get(mode, ROUNDING_MODES[DEFAULT_ROUNDING])
 
 
-def round_answer(value: Decimal, precision: Precision) -> Decimal:
-    """Cut an answer to the requested precision.
+def set_engine_precision(
+    digits: int,
+    rounding: str = DEFAULT_ROUNDING,
+) -> None:
+    """Move the Decimal context every calculation in the process runs in.
 
-    Decimal places win over significant figures when both are asked for - a fixed
-    number of places is the plainer promise of the two - and neither is applied
-    when both are automatic.
+    A count no dropdown offers - an older save, a hand-edited one - lands on the
+    default rather than leaving the context at a size the user cannot ask for. The
+    rounding mode travels with it, so the tie-breaking the settings promise is the
+    tie-breaking the arithmetic itself uses.
+
+    Two contexts are written on purpose. A thread created later copies
+    ``DefaultContext`` rather than the running thread's context, and Flet does not
+    keep every event handler on one thread, so a change that reached only
+    ``getcontext()`` would apply to some calculations and not to others.
     """
 
-    if not value.is_finite():
-        return value
+    if not isinstance(digits, int) or digits not in PRECISION_DIGIT_CHOICES:
+        digits = DEFAULT_PRECISION_DIGITS
+    mode = _rounding_constant(rounding)
+    for context in (getcontext(), DefaultContext):
+        context.prec = digits
+        context.rounding = mode
 
-    if precision.decimals is not None:
-        quantum = Decimal(1).scaleb(-precision.decimals)
-    elif precision.sig_figs is not None:
-        if value == 0:
-            return Decimal(0)
-        quantum = Decimal(1).scaleb(value.adjusted() - precision.sig_figs + 1)
-    else:
-        return value
 
-    try:
-        return value.quantize(quantum, rounding=_rounding_constant(precision))
-    except (InvalidOperation, ValueError):
-        # A number too big for the arithmetic context to hold at that quantum is
-        # better shown unrounded than not shown at all.
-        return value
+def engine_precision() -> int:
+    """How many significant digits calculations run at right now."""
+
+    return getcontext().prec
 
 
 def apply_grouping(text: str, grouping: str) -> str:
@@ -215,8 +255,11 @@ def strip_grouping(text: str) -> str:
 def format_answer(answer: str, precision: Precision) -> str:
     """The text the display shows for one calculated answer.
 
-    Anything that is not a number - every error message the engine can raise -
-    comes back untouched, so this never hides what went wrong.
+    The answer arrives with the digits the engine computed - every operation
+    already rounds to the Decimal context - so this only decides how those digits
+    are written: scientific notation past the chosen size, and the thousands
+    separator. Anything that is not a number - every error message the engine can
+    raise - comes back untouched, so this never hides what went wrong.
     """
 
     try:
@@ -226,9 +269,8 @@ def format_answer(answer: str, precision: Precision) -> str:
     if not value.is_finite():
         return answer
 
-    value = round_answer(value, precision)
     if value == 0:
-        # Both "-0" and "0.00" with nothing left in them read as plain zero.
+        # Both "-0" and a "-0.000" that rounded away read as plain zero.
         return "0"
 
     threshold = precision.sci_threshold
@@ -239,9 +281,6 @@ def format_answer(answer: str, precision: Precision) -> str:
             # answer keeps its digits to themselves.
             return format(value.normalize(), "E")
 
-    if precision.decimals is not None:
-        # A fixed number of decimal places keeps them, trailing zeros and all.
-        return apply_grouping(format(value, "f"), precision.grouping)
     if value == value.to_integral_value():
         return apply_grouping(format(value, "f"), precision.grouping)
     return apply_grouping(format(value.normalize(), "f"), precision.grouping)

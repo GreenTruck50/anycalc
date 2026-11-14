@@ -1,5 +1,5 @@
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, localcontext
 
 import pytest
 
@@ -42,8 +42,14 @@ def test_rates_use_minified_endpoint_and_keep_decimal_precision() -> None:
 
     result = api.get_rates("USD")
     assert result.date == "2026-11-03"
+    # The published rate is kept exactly as the API wrote it - eighteen digits, no
+    # truncation on the way in. What arithmetic does with it is the app's precision
+    # decision (see test_precision.py), so the exact product is shown at a context
+    # deep enough to hold it.
     assert result.rates["eur"] == Decimal("0.912345678901234567")
-    assert result.rates["eur"] * Decimal("100") == Decimal("91.234567890123456700")
+    with localcontext() as context:
+        context.prec = 30
+        assert result.rates["eur"] * Decimal("100") == Decimal("91.234567890123456700")
     assert api.get_rates("usd") == result
     assert calls == [f"{PRIMARY}v1/currencies/usd.min.json"]
 

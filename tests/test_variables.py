@@ -15,6 +15,7 @@ import flet as ft
 from config import ERROR_VARIABLES_DISABLED
 from data_storage import decode_state, encode_state
 from keypad import VARIABLE_ROW
+from precision import DEFAULT_PRECISION_DIGITS, set_engine_precision
 from stub_page import build_app, fire, switch_event
 from ui import AnycalcApp
 from variable_dialogs import open_set_variable_dialog
@@ -240,19 +241,24 @@ def test_named_variables_come_back_into_a_fresh_app() -> None:
 
 
 def test_a_restored_variable_keeps_every_digit_the_engine_computed() -> None:
-    """The value is stored as the engine wrote it, not as the display showed it."""
+    """The value is stored as the engine wrote it - at whatever precision the app
+    was running at - and nothing shortens it on the way through storage."""
 
     app = build_app()
-    app.set_mode(1)
-    app.expression = "1/3"
-    app.handle_key("=")
-    app.variables["x"] = Decimal(app.expression)
-    assert len(app.expression) > 100  # the engine's own precision, not 15 digits
+    set_engine_precision(50)
+    try:
+        app.set_mode(1)
+        app.expression = "1/3"
+        app.handle_key("=")
+        app.variables["x"] = Decimal(app.expression)
+        assert len(app.expression) > 40  # the engine's precision, not 15 digits
 
-    fresh = build_app()
-    fresh.restore_variables(decode_state(saved_state(app)).variables)
+        fresh = build_app()
+        fresh.restore_variables(decode_state(saved_state(app)).variables)
 
-    assert fresh.variables["x"] == Decimal(1) / Decimal(3)
+        assert fresh.variables["x"] == Decimal(1) / Decimal(3)
+    finally:
+        set_engine_precision(DEFAULT_PRECISION_DIGITS)
 
 
 def test_a_restored_variable_is_usable_right_where_it_lands() -> None:

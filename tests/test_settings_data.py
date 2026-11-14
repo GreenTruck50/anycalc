@@ -7,7 +7,7 @@ controls are fired the way the page fires them.
 
 import math
 import types
-from decimal import Decimal
+from decimal import DefaultContext, Decimal, getcontext
 from typing import Any
 
 import pytest
@@ -15,7 +15,7 @@ import pytest
 import pi
 import styles
 from config import DEFAULT_HISTORY_LENGTH, MAX_HISTORY_ITEMS
-from precision import GROUPING_MODES, Precision
+from precision import DEFAULT_PRECISION_DIGITS, GROUPING_MODES, Precision
 from stub_page import build_app, fire, switch_event
 
 
@@ -28,6 +28,21 @@ def _leave_the_live_theme_as_found():
         yield
     finally:
         styles.set_active_theme(before.name)
+
+
+@pytest.fixture(autouse=True)
+def _leave_the_decimal_context_as_found():
+    """Put back the precision a settings pick moved, for both contexts."""
+
+    live = (getcontext().prec, getcontext().rounding)
+    default = (DefaultContext.prec, DefaultContext.rounding)
+    yield
+    for context, (digits, mode) in (
+        (getcontext(), live),
+        (DefaultContext, default),
+    ):
+        context.prec = digits
+        context.rounding = mode
 
 
 def find_settings_control(app, key: str) -> Any:
@@ -163,7 +178,7 @@ def test_reset_throws_everything_away_and_restores_the_defaults() -> None:
     app.handle_key("M+")
     app.set_mode(1)
     app.update_memory_keys_setting(switch_event(True))
-    app.settings_precision_decimals.value = "4"
+    app.settings_precision_digits.value = "50"
     app.update_precision(None)
     app.settings_precision_grouping.value = "space"
     app.update_precision(None)
@@ -190,7 +205,7 @@ def test_the_reset_leaves_the_open_settings_dialog_showing_the_defaults() -> Non
     app.build_settings_dialog()
     find_settings_control(app, "settings-history-length").value = "10"
     app.update_history_length(None)
-    app.settings_precision_decimals.value = "4"
+    app.settings_precision_digits.value = "50"
     app.update_precision(None)
     app.settings_precision_grouping.value = "underscore"
     app.update_precision(None)
@@ -199,7 +214,7 @@ def test_the_reset_leaves_the_open_settings_dialog_showing_the_defaults() -> Non
     app.reset_app_data()
 
     assert app.settings_history_length.value == str(DEFAULT_HISTORY_LENGTH)
-    assert app.settings_precision_decimals.value == "auto"
+    assert app.settings_precision_digits.value == str(DEFAULT_PRECISION_DIGITS)
     assert app.settings_precision_rounding.value == "half-up"
     assert app.settings_precision_grouping.value == "comma"
     assert app.settings_memory_switch.value is False

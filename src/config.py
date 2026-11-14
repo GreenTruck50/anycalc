@@ -9,8 +9,12 @@ Flet, which is what lets the engines be imported (and tested) without an app.
 from decimal import getcontext
 from pathlib import Path
 
-# Display precision for Decimal calculations
-DECIMAL_PRECISION = 500
+# How many significant digits a calculation works with. This is the Decimal
+# context the whole process computes in, so it is also how many digits an answer
+# can have: the Settings box "Precision (Significant Digits)" moves it at
+# runtime (see `precision.set_engine_precision`), and this is what an app starts
+# on and what a reset puts back.
+DECIMAL_PRECISION = 12
 
 # Maximum absolute exponent value for power operations
 MAX_EXPONENT = 5000
@@ -122,7 +126,7 @@ ERROR_MESSAGES = (
     "Error"
 )
 
-# Use high precision for big numbers
+# Use the configured precision for every calculation in the process.
 getcontext().prec = DECIMAL_PRECISION
 
 # The unit data ships next to the modules that read it, which is also the path

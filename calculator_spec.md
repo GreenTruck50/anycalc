@@ -472,9 +472,10 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Both pads sit on one engine (`src/calculate.py`): an expression is parsed with
   `ast` and evaluated on `Decimal` values, so the precedence is the ordinary
   PEMDAS/BODMAS one and nothing is rounded through a float on the way.
-- Every calculation runs at `config.DECIMAL_PRECISION` significant digits (500
-  today). The Decimal context is process-wide, so it is set once in `config.py`
-  and both engines reach it from there.
+- Every calculation runs at the precision the Settings box sets - twelve
+  significant digits by default, and the box offers 1 up to 5000. The Decimal
+  context is process-wide, so one pick reaches every calculation the app makes;
+  `config.DECIMAL_PRECISION` is where an app starts, not where it is fixed.
 - `^` is the power key and reaches the parser as `**`; an exponent past
   `config.MAX_EXPONENT` reports "Exponent too large", and an expression longer
   than `config.MAX_EXPRESSION_LENGTH` reports "Expression too long".
@@ -497,29 +498,37 @@ There should be a conversions.yaml file that says "There should be this tab with
 
 ## Answer precision
 
-- The settings dialog carries a precision box: decimal places, significant
-  figures, a scientific-notation threshold, a rounding mode and a thousands
-  separator. The first four start at "Automatic", which leaves an answer exactly
-  as the engine computed it.
-- Decimal places run 0 to 12 and are kept literally: `2` asked for at two decimal
-  places reads `2.00`. Significant figures run 1 to 12 and count from the first
-  non-zero digit, so `123456` at three figures reads `123000`. When both are set,
-  decimal places win.
-- Rounding is half-up (the default), half-even or truncate. It is the same rule
-  either side of zero: half-even sends a lone `.5` to the even neighbour
-  (`2.5` → `2`, `-2.5` → `-2`) and truncate cuts towards zero (`-0.9` → `0`).
-- The scientific-notation threshold is a power of ten. At `1E+6 and 1E-6` an
-  answer of a million, or of a millionth, is written `1E+6` / `1E-6`, and
-  everything between stays in ordinary digits. Automatic keeps the plain digits
-  the engine writes.
-- The precision shapes what the user is shown - the live preview, the answer after
-  `=`, and the answer kept on the history card - and nothing else: the engine
-  still computes at `config.DECIMAL_PRECISION`, and an error message is shown
-  exactly as the engine wrote it.
-- Picking a precision re-shapes the answer already sitting on the display, the
-  way every other setting applies the instant it is chosen.
-- A precision that leaves nothing behind reads as plain `0` rather than `-0` or
-  `0.00`.
+- The settings dialog carries a precision box: a digit count, a
+  scientific-notation threshold, a rounding mode and a thousands separator.
+- **"Precision (Significant Digits)"** is how many significant digits a
+  calculation works with. It offers 1, 2, 3, 5, 8, 12, 50, 100, 200, 300, 400,
+  500, 1000 and 5000, and starts on 12. It has no "Automatic" entry: the
+  arithmetic always runs at some number of digits. Picking one moves the
+  process-wide Decimal context, so it is the precision of every calculation the
+  app makes from then on - conversions, currency, variables, a pi the app adopted
+  - not only of the pad that is on screen.
+- Because the answer arrives with at most that many significant digits, nothing
+  rounds it afterwards: the digits shown are the digits computed. Cutting the
+  count cuts an answer already on the display too, since the display writes its
+  number at the same context; raising it cannot bring back digits the shorter
+  arithmetic threw away.
+- Rounding is half-up (the default), half-even or truncate, and it is the rule
+  the arithmetic itself uses - a tie inside a calculation breaks that way, not
+  just a tie on the way to the display. It is the same rule either side of zero:
+  half-even sends a lone `.5` to the even neighbour (`2.5` → `2`, `-2.5` → `-2`)
+  and truncate cuts towards zero (`-0.9` → `0`).
+- The scientific-notation threshold is a power of ten and starts at
+  "Automatic". At `1E+6 and 1E-6` an answer of a million, or of a millionth, is
+  written `1E+6` / `1E-6`, and everything between stays in ordinary digits.
+  Automatic keeps the plain digits the engine writes.
+- The two writing choices shape what the user is shown - the live preview, the
+  answer after `=`, and the answer kept on the history card - and nothing else;
+  an error message is shown exactly as the engine wrote it.
+- Every one of them applies the instant it is chosen, like every other setting:
+  the digit count moves the context the next calculation runs at and re-cuts the
+  answer already on the display, and a separator or a threshold rewrites that
+  answer on the spot.
+- An answer that leaves nothing behind reads as plain `0` rather than `-0`.
 - A large answer is written in groups of three. The separator is a setting with
   four styles - comma `1,234,567` (the default), space `1 234 567`, underscore
   `1_234_567` and none at all `1234567` - and only the integer part is grouped,
@@ -532,9 +541,11 @@ There should be a conversions.yaml file that says "There should be this tab with
   with them taken out, so `1,234+1` calculates as `1234+1`. A separator only counts
   as grouping when a full group of three follows it, which leaves the comma between
   two function arguments (`max(1,2)`) alone.
-- The precision is saved with the rest of the settings; a save written before the
-  box existed reads back fully automatic, and one written before the separator
-  existed reads back with it on commas.
+- The precision is saved with the rest of the settings and put back on the
+  Decimal context when the app starts. A save written before the digit-count box
+  existed carries its old significant-figures count over when that number is
+  still on offer and otherwise starts at the default; one written before the
+  separator existed reads back with it on commas.
 
 ## Calculator memory
 
@@ -737,13 +748,15 @@ There should be a conversions.yaml file that says "There should be this tab with
 - Offer an "Angle mode" dropdown - Degrees, Radians, Gradians - that shows the mode
   the app is on and applies a picked one the same instant, moving the header's angle
   button with it. See "Angle mode".
-- Offer a precision box - decimal places, significant figures, scientific-notation
-  threshold, rounding mode and thousands separator - as five dropdowns. The first
-  four each lead with "Automatic"; the separator names its style with a sample
-  number, "Comma (1,234,567)", "Space (1 234 567)", "Underscore (1_234_567)" and
-  "None (1234567)", and starts on comma. See the "Answer precision" section for
-  what each one does; like every other setting they apply the moment one is picked
-  and are saved at once.
+- Offer a precision box - a digit count, a scientific-notation threshold, a
+  rounding mode and a thousands separator - as four dropdowns. The first is
+  labelled "Precision (Significant Digits)" and offers 1, 2, 3, 5, 8, 12, 50,
+  100, 200, 300, 400, 500, 1000 and 5000 starting on 12, with no "Automatic"
+  entry; the threshold leads with "Automatic"; the separator names its style with
+  a sample number, "Comma (1,234,567)", "Space (1 234 567)", "Underscore
+  (1_234_567)" and "None (1234567)", and starts on comma. See the "Answer
+  precision" section for what each one does; like every other setting they apply
+  the moment one is picked and are saved at once.
 - Offer a "Memory keys on the scientific pad" switch. The Regular Calculator
   always carries the memory keys; the switch decides whether the Scientific
   Calculator carries them *instead of* its variable keys - one row, the two sets
@@ -768,9 +781,9 @@ There should be a conversions.yaml file that says "There should be this tab with
   calculator memory, the adopted pi and every setting - and only its Reset action
   acts; Cancel closes the prompt and changes nothing.
 - A reset puts the running app back to how it started: empty history, no variables,
-  empty memory, the fallback pi, default theme and colors, automatic precision with
-  the thousands separator back on commas, the memory keys off the scientific pad,
-  degrees as the angle mode and the default history length. It then clears what the
+  empty memory, the fallback pi, default theme and colors, the default precision
+  with the thousands separator back on commas, the memory keys off the scientific
+  pad, degrees as the angle mode and the default history length. It then clears what the
   app had stored and writes the fresh state back, so the next start finds the same
   clean app.
 - Offer a "Clear history" button in Settings next to it, doing what the history
@@ -996,11 +1009,12 @@ There should be a conversions.yaml file that says "There should be this tab with
   adopted; hide it after adoption succeeds, and show it again when a later run
   completes.
 - Say out loud what the app's Decimal precision means for a pi the whole program
-  uses: every calculation runs at `config.DECIMAL_PRECISION` significant digits,
-  one of which is spent on the `3`, so a computed pi longer than that is stored and
-  shown in full but only its first `DECIMAL_PRECISION - 1` decimals ever reach an
-  answer. State it on the page and again where an adoption reports itself, or a
-  hundred thousand adopted decimals looks like it changed nothing at all.
+  uses: every calculation runs at the precision the Settings box sets - twelve
+  significant digits by default - one of which is spent on the `3`, so a computed
+  pi longer than that is stored and shown in full but only its first
+  `precision - 1` decimals ever reach an answer. State it on the page and again
+  where an adoption reports itself, or a hundred thousand adopted decimals looks
+  like it changed nothing at all.
 - Give every input on the page a row of its own that it can stretch across: two
   inputs sharing one row each take their own intrinsic width and together overflow
   the page, which on a phone leaves the second one off screen and unreachable.

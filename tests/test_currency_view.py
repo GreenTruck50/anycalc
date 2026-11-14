@@ -78,7 +78,8 @@ async def test_currency_view_loads_and_converts_using_rates_date() -> None:
     view.input_field.value = "100"
     await view.run_conversion()
 
-    assert view.result_field.value == "91.2345678901234567"
+    # 100 x 0.912345678901234567 at the app's twelve-significant-digit default.
+    assert view.result_field.value == "91.2345678901"
     assert view.rate_date.value == "Rates as of 2026-11-03"
     assert view.rate_date.visible is True
     assert view.staleness.visible is True

@@ -32,9 +32,9 @@ import flet as ft
 
 import pi
 import pi_value
-from config import DECIMAL_PRECISION
 from dropdowns import searchable
 from pi_value import PiComputation, PiProgress, format_duration
+from precision import engine_precision
 import styles
 
 # How much of a finished run the result card shows; the rest is in the dialog.
@@ -94,23 +94,25 @@ def percent_text(percent: float) -> str:
 def precision_notice(available: int) -> str:
     """What the app's Decimal precision means for a pi the whole program uses.
 
-    Every calculation in this app runs at :data:`config.DECIMAL_PRECISION`
-    significant digits. A computed pi is stored and shown in full however long it
-    is, but a pi longer than that context only reaches an answer as far as the
-    context goes - and pi is ``3.`` something, so one significant digit is spent on
-    the whole part and ``DECIMAL_PRECISION - 1`` decimals are what a calculation
-    can actually multiply with. Without this said out loud, adopting a hundred
-    thousand decimals looks like it did nothing to a long expression at all.
+    Every calculation in this app runs at the precision the Settings box sets -
+    :func:`precision.engine_precision` reads what that is right now, since the box
+    moves it. A computed pi is stored and shown in full however long it is, but a
+    pi longer than the context only reaches an answer as far as the context goes -
+    and pi is ``3.`` something, so one significant digit is spent on the whole part
+    and one fewer decimal than that is what a calculation can actually multiply
+    with. Without this said out loud, adopting a hundred thousand decimals looks
+    like it did nothing to a long expression at all.
     """
 
-    usable = DECIMAL_PRECISION - 1
+    precision = engine_precision()
+    usable = precision - 1
     if available <= usable:
         return (
-            f"Calculations run at {DECIMAL_PRECISION} significant digits, so all "
+            f"Calculations run at {precision} significant digits, so all "
             f"{available:,} of these decimals reach an answer."
         )
     return (
-        f"Calculations run at {DECIMAL_PRECISION} significant digits, so an answer "
+        f"Calculations run at {precision} significant digits, so an answer "
         f"uses the first {usable:,} of these {available:,} decimals - the rest are "
         "stored and shown, but never multiplied."
     )
@@ -835,7 +837,7 @@ class PiView(Generic[PageT]):
         self.adopt_button.visible = False
         self.refresh_current()
         digits = pi.program_pi_digits()
-        usable = DECIMAL_PRECISION - 1
+        usable = engine_precision() - 1
         reached = (
             "every decimal of it reaches an answer"
             if digits <= usable
@@ -843,7 +845,7 @@ class PiView(Generic[PageT]):
         )
         self.status_text.value = (
             f"the program now calculates with pi to {digits:,} decimals - "
-            f"{reached} at the app's {DECIMAL_PRECISION}-digit precision"
+            f"{reached} at the app's {engine_precision()}-digit precision"
         )
         self.page.update()
         if self.on_program_pi_changed is not None:
