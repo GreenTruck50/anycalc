@@ -29,6 +29,24 @@ Commit identity: always use the identity already configured in `.git/config` and
 
 Commit messages carry **no attribution trailers**: never `Co-Authored-By:`, `Generated with`, `Signed-off-by` or any AI / agent signature. Precedent: two commits from 2026-10-27 shipped with a bogus `111801513+greentruck50@…` author and a `Co-Authored-By: Claude` trailer and had to be rewritten. If it happens again, ask first, then fix metadata-only: make a backup branch, rewrite author/committer and drop the trailer, confirm `git diff <backup> main` is empty, and `git push --force-with-lease`. Never cite the superseded commits by SHA in a tracked file - an abbreviated SHA still resolves to the object, and the pre-rewrite objects carried a real personal name in their author field, so a SHA in this file is a link to data that was scrubbed everywhere else.
 
+## Tool-call notes
+
+The shell tool (`run_commands`) takes one JSON object whose only key is `commands`,
+whose value is a **flat JSON array of complete command strings**, each self-contained
+and each starting with the workspace `cd` — never a string that holds the array text,
+and no heredocs. `["cd <ws> && pwd", "cd <ws> && ls -a"]`. Every call starts in a fresh
+shell at the workspace root, so a bare `cd ..` is a no-op.
+
+`✖ Invalid input` is the tool wrapper refusing the call before any shell sees it (a
+refused call echoes no `[{"query": ...}]`); it comes in windows and is not about the
+command text, so do the file work first and retry the shell later rather than
+re-quoting the payload. A "completion could not be observed" result usually means the
+payload left the interactive shell at a `dquote>` continuation prompt — an unbalanced
+quote, almost always from nesting quotes inside `python3 -c "..."`. Keep the shell
+string single-quoted and use double quotes freely inside it, or write the script to a
+file with the editor tool and run the file. Full notes, including how to recover from
+`dquote>`: `.clinerules/tool-calls.md`.
+
 ## Killing processes
 
 **Never pattern-kill**: no `pkill`, no `pkill -f <pattern>`, no `killall`. Those match whole command lines and can hit processes that were never meant to be targeted - on 2026-10-27 a `pkill -f 'less'` meant to close a stray pager killed the user's own terminal chain and logged them out of the session. To stop a process: identify the exact PID first (`pgrep -a <exact name>`, the PID printed by `nohup … &` / `echo $!`, or the job id the tool reported), confirm what it is with `ps -p <pid> -o pid,ppid,args`, then `kill <pid>` - and `kill -9 <pid>` only if that same specific PID ignores `SIGTERM`. Prefer waiting for a command to finish or time out over killing it, and never kill shells, terminal emulators, the IDE, session managers, display managers or anything whose parent chain includes them.
