@@ -32,9 +32,10 @@ else:
 
 try:
     from tqdm import tqdm
-    HAS_TQDM = True
 except ImportError:
-    HAS_TQDM = False
+    # tqdm is optional - it is not a dependency, so a phone artifact has no bar to
+    # draw. Binding the name to None keeps every use site a plain None check.
+    tqdm = None
 
 # Turning a huge integer into a string is what shows the digits, and CPython
 # refuses past 4300 digits unless the guard is lifted. Any real digit count needs
@@ -156,7 +157,7 @@ def pi_chudnovsky(
 
     pbar = None
     shown_work = 0.0
-    if listening and HAS_TQDM and __name__ == "__main__":
+    if listening and tqdm is not None and __name__ == "__main__":
         pbar = tqdm(total=work_total, desc="Computing π", unit="w")
 
     def stop_check(phase: str) -> None:
