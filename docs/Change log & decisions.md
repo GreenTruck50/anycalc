@@ -818,3 +818,13 @@ The Android emulator window repeatedly triggered an "is not responding" dialog w
 **Validation:** `pytest -q -k styles` → 22 passed (was 20 passed, 2 failed). `pytest -q -k "settings or theme or color or system_theme"` → 51 passed. `pytest -q --ignore=tests/test_app.py` → 631 passed, no failures: the app-host-free suite is green end to end for the first time since this pair appeared. `pyright src tests` reports only the pre-existing `src/pi.py:160` "tqdm is possibly unbound".
 
 **Docs:** no requirements wording moved — `calculator_spec.md` already promised named theme defaults and a picker revealed by the "Custom color" entry, and that is what the code does. `UI_SPEC.md`'s color row now records the mechanism: the group hides behind `visible`, the caption and the picker by being in or out of the row's column. TODO 50 is ticked with the corrected diagnosis in its note.
+
+## 2026-11-14 — README's project layout block caught up with `src/`
+
+**Asked for:** TODO 49. The docs page "Source layout" has kept pace with the module split, but README's own tree block had not: it named 15 of the 20 modules in `src/` and never mentioned `precision.py`, `data_storage.py`, `networking.py`, `currency_api.py` or `currency_view.py` — three of them shipped in the split itself, one of them with TODO 22 the day before.
+
+**What moved.** Each of the five got a line, placed next to the module it supports rather than appended at the end of the block: `precision.py` under `calculate.py`, because it is how an answer from that engine gets written out; `currency_api.py` and `networking.py` under `conversions.py`, being the other conversion engine and the transport the unit and currency pages share; `data_storage.py` under `config.py`, the other half of what the app keeps; `currency_view.py` under `conversion_view.py`. The block now names all 20 modules, which is what `ls src/*.py | wc -l` counts.
+
+**One claim dropped.** The block's `tests/` line said "every file is listed under Tests above". That stopped being true a while ago — the suite is 25 files and the Tests section describes the layers rather than each file. Rather than list 25 files in two places, the line now points at the layers.
+
+**Validation:** documentation only, so no test run was called for; the check was the module count above. `mkdocs.yml`'s nav covers `docs/` alone, so the published site and the `mkdocs build --strict` workflow are untouched by a README edit. TODO 49 is ticked.

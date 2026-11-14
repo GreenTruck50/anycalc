@@ -173,9 +173,16 @@ Every item ends with its number in parentheses so it can be referred to by numbe
 - [ ] Issue + PR templates and a label taxonomy (.github/ISSUE_TEMPLATE does not exist) (44)
 - [ ] README screenshots per theme + a short pi GIF; mkdocs.yml has no search plugin and a 5-item nav over 5 large docs pages (45)
 - [ ] ruff + pyright/mypy strict + pre-commit as dev extras (46)
-- [ ] README's "Project layout" block lists src/ modules but not currency_view.py,
+- [x] README's "Project layout" block lists src/ modules but not currency_view.py,
       currency_api.py, networking.py, data_storage.py or precision.py - the docs
       "Source layout" page covers all of them, so only README drifts (49)
+  - Done 2026-11-14. All five are in the block with a line each, placed next to the
+    module they support: `precision.py` after `calculate.py`, `currency_api.py` and
+    `networking.py` after `conversions.py`, `data_storage.py` after `config.py`,
+    `currency_view.py` after `conversion_view.py`. The block now names all 20 modules
+    in `src/` (`ls src/*.py | wc -l` = 20). The block's `tests/` line claimed every
+    test file was listed under Tests above, which stopped being true as the suite grew
+    past 25 files; it now points at the layers instead of making that claim.
 - [x] Two `tests/test_styles.py` tests failed with no app host:
       `test_reset_to_defaults_restores_default_theme_and_colors_immediately` and
       `test_a_saved_custom_color_selects_the_custom_color_entry` (50)

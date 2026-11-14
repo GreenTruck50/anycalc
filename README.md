@@ -351,18 +351,33 @@ src/                        the app (entry point: src/main.py)
                             drawer navigation, angle modes, variables, history
   calculate.py              the expression engine both pads sit on (Decimal math,
                             the two meanings of %, the ± sign change)
+  precision.py              how an answer is rounded and written out (decimal places,
+                            significant figures, scientific-notation threshold, rounding
+                            mode, the thousands separator, and reading a grouped
+                            display back)
   conversions.py            the unit conversion engine (YAML config, route finding,
                             formula application, the chain of hops)
+  currency_api.py           the exchange-API endpoints, the fallback provider, the
+                            response validation and the saved rate table the offline
+                            path prices itself off
+  networking.py             reusable urllib JSON requests and the bounded in-memory
+                            TTL cache they share
   pi.py                     the pi computation (Chudnovsky + binary splitting) and
                             the one pi the program calculates with
   pi_value.py               a pi run packaged for the page — timing, progress
                             numbers, adopting a finished run
   config.py                 numeric limits, display sizes, variable names/options,
                             error messages, the path to the unit data
+  data_storage.py           the validated app-state snapshot in client storage (theme,
+                            angle mode, colors, history, the active pi, variables,
+                            remembered unit / currency pairs) plus the currency list
+                            and rate table under their own key
   styles.py                 the colour palette
   clipboard.py              the one clipboard service behind every copy button
   keypad.py                 which keys each pad shows and how a key looks
   conversion_view.py        the live conversion form and its chain cards
+  currency_view.py          the currency form, its "Rates as of" line and staleness
+                            badge, and its offline fallback onto saved rates
   pi_view.py                the pi page — digit choice, progress card, "use this
                             value", digit search, the digits popup that loads more
                             as you scroll
@@ -372,7 +387,8 @@ src/                        the app (entry point: src/main.py)
                             settles a query left typed in
   assets/conversions.yaml   unit groups and the formulas between them
 tests/                      the test suite — host-side; src/ is what gets packaged
-                            (every file is listed under Tests above)
+                            (the layers and what each file covers are described under
+                            Tests above)
 ```
 
 Only sources and project configuration are tracked: `build/`, `site/`, the caches and
