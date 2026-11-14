@@ -316,7 +316,7 @@ and `settings-reset` ("Reset to defaults").
 | Thousands separator ("Comma (1,234,567)" / "Space (1 234 567)" / "Underscore (1_234_567)" / "None (1234567)") | `settings-precision-grouping` |
 | History length ("Keep 10 / 25 / 50 / 100") | `settings-history-length` |
 | Clear history / Reset all app data (the latter opens a confirmation) | `settings-clear-history`, `settings-reset-all-data` |
-| Primary and secondary color — only for the Custom theme; each is a dropdown whose "Custom color" entry reveals a color picker | `settings-primary-color…`, `settings-secondary-color…` (`-group`, `-value`, `-picker`) |
+| Primary and secondary color — only for the Custom theme; each is a dropdown whose "Custom color" entry reveals a color picker. The group hides behind `visible`; the caption and the picker are shown by being in that row's `Column` and hidden by being taken out of it, so their own `visible` flag stays `True` either way | `settings-primary-color…`, `settings-secondary-color…` (`-group`, `-value`, `-picker`) |
 
 ## Test handles
 

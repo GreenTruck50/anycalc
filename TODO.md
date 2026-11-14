@@ -176,16 +176,22 @@ Every item ends with its number in parentheses so it can be referred to by numbe
 - [ ] README's "Project layout" block lists src/ modules but not currency_view.py,
       currency_api.py, networking.py, data_storage.py or precision.py - the docs
       "Source layout" page covers all of them, so only README drifts (49)
-- [ ] Two `tests/test_styles.py` tests fail at HEAD (2f14611) with no app host, before
-      and after TODO 33: `test_reset_to_defaults_restores_default_theme_and_colors_immediately`
-      and `test_a_saved_custom_color_selects_the_custom_color_entry` expect the
-      secondary color box to hold a named color with no picker, but the Dark theme's
-      `key_operator` is `#303B50`, which is not one of the 32 named palette entries, so
-      the app selects "Custom color" and reveals a picker. Either the built-in themes'
-      accent / operator colors should be named palette entries - which is what
-      calculator_spec.md promises ("Each theme's own default accent and operator-key
-      color is itself one of those named entries") - or the spec and the tests should
-      follow the hexes. Decide, then fix the app or the tests (50)
+- [x] Two `tests/test_styles.py` tests failed with no app host:
+      `test_reset_to_defaults_restores_default_theme_and_colors_immediately` and
+      `test_a_saved_custom_color_selects_the_custom_color_entry` (50)
+  - Done 2026-11-14, tests only - the app is unchanged, per the decision. The note above
+    this line had gone stale on both counts: every built-in theme's accent and
+    operator-key color already IS a named palette entry (Dark's operator key is
+    `Slate #303B50`), which `test_theme_default_accents_are_named_color_options` has
+    kept green the whole time, so the dropdown really does select the named color and
+    not "Custom color". What the pair asserted wrongly was the *reveal*: a color
+    caption and its picker are shown by being put into the setting's column and hidden
+    by being taken out of it (`_sync_color_group` - a lone `visible` flip never
+    repaints on Flet 1.1), so their `visible` flag stays `True` whether or not they are
+    on screen. Both tests now ask the file's `revealed()` helper, which every other
+    color test in it already used, and the three `visible is True` assertions that could
+    never fail were converted the same way. Spec wording is unchanged - it already
+    matched the app.
 
 ## Desktop input
 

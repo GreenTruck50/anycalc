@@ -322,7 +322,9 @@ def revealed(app: AnycalcApp, control: ft.Control) -> bool:
     Those two are revealed by being put into that column - and taken back out of
     it - rather than by a `visible` flag, because on Flet 1.1 flipping only that
     flag on a control whose parent still has the same child list never repaints
-    it. The whole color group still hides behind a flag.
+    it. The whole color group still hides behind a flag. A picker or caption that
+    is out of the tree keeps its default `visible is True`, so asserting on that
+    flag says nothing: ask this helper instead.
     """
 
     return any(
@@ -439,7 +441,7 @@ def test_picking_a_color_in_a_picker_applies_it_at_once() -> None:
         app.build_settings_dialog()
         app.settings_primary_dropdown.value = styles.CUSTOM_COLOR_KEY
         app.update_settings(None)
-        assert app.settings_primary_picker.visible is True
+        assert revealed(app, app.settings_primary_picker)
         app.settings_primary_picker.color = "#12ABCD"
 
         app.pick_primary_color(picker_event(app.settings_primary_picker, "#12abcd"))
@@ -455,7 +457,7 @@ def test_picking_a_color_in_a_picker_applies_it_at_once() -> None:
         assert isinstance(option.leading_icon, ft.Icon)
         assert option.leading_icon.color == "#12ABCD"
         assert app.settings_primary_value.value == "Custom color: #12ABCD"
-        assert app.settings_primary_value.visible is True
+        assert revealed(app, app.settings_primary_value)
         assert page.saved == 2
         assert page.popped == 0
     finally:
@@ -501,9 +503,11 @@ def test_reset_to_defaults_restores_default_theme_and_colors_immediately() -> No
         assert styles.ACCENT == styles.DEFAULT_THEME.accent
         assert styles.KEY_OPERATOR == styles.DEFAULT_THEME.key_operator
         # Reset picks a built-in theme, so the color settings hide themselves
-        # again on the way out.
+        # again on the way out: the group behind a flag, the picker and the
+        # caption by leaving their column.
         assert app.settings_primary_group.visible is False
-        assert app.settings_primary_picker.visible is False
+        assert not revealed(app, app.settings_primary_picker)
+        assert not revealed(app, app.settings_primary_value)
         assert page.saved == 2
         assert page.popped == 0
     finally:
@@ -523,19 +527,21 @@ def test_a_saved_custom_color_selects_the_custom_color_entry() -> None:
     # picker - and that picker is already showing, holding the saved color.
     assert app.settings_primary_group.visible is True
     assert app.settings_primary_dropdown.value == styles.CUSTOM_COLOR_KEY
-    assert app.settings_primary_picker.visible is True
+    assert revealed(app, app.settings_primary_picker)
     assert app.settings_primary_picker.color == "#123456"
-    assert app.settings_primary_value.visible is True
+    assert revealed(app, app.settings_primary_value)
     assert app.settings_primary_value.value == "Custom color: #123456"
     option = app.settings_primary_dropdown.options[0]
     assert option.text == "Custom color (#123456)"
     assert isinstance(option.leading_icon, ft.Icon)
     assert option.leading_icon.color == "#123456"
 
-    # A named color needs no picker at all.
+    # A named color needs no picker at all: the dropdown carries it, and neither
+    # the picker nor the caption is in that setting's column.
     assert app.settings_secondary_group.visible is True
     assert app.settings_secondary_dropdown.value == styles.DEFAULT_THEME.key_operator
-    assert app.settings_secondary_picker.visible is False
+    assert not revealed(app, app.settings_secondary_picker)
+    assert not revealed(app, app.settings_secondary_value)
 
 
 def test_reset_to_defaults_drops_a_saved_custom_color() -> None:
