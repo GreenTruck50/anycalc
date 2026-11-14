@@ -75,6 +75,13 @@ computes for itself.
   on every keystroke, with the chain of hops the engine took shown under it. Each
   page reopens on the two units you last left it on - and the currency page on the
   pair you last converted between - even after a restart.
+- **Currency rates that say how old they are.** The currency page shows "Rates as
+  of <date>" under the pair and an amber badge when those numbers are not today's.
+  If both exchange providers are down the page still converts: it opens on the
+  currency list and the rate table the last live run left in client storage, prices
+  any pair from that table and says in amber that live rates are unavailable —
+  nothing is refetched-and-resaved behind the scenes, so an offline session cannot
+  age what was stored.
 - **Every dropdown searches.** Type in a unit, currency, Pi or settings box and its
   menu narrows to what matches — the unit lists run to thousands of lines, so typing
   beats scrolling. A query that names exactly one option is picked when you leave the

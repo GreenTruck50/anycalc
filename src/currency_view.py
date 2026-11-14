@@ -1,6 +1,7 @@
 """Live currency conversion form backed by the daily exchange-rate API."""
 
 import asyncio
+from datetime import date
 from decimal import Decimal, DecimalException, InvalidOperation
 from typing import Any, Callable, Protocol
 
@@ -8,13 +9,31 @@ import flet as ft
 
 from config import ERROR_INVALID_NUMBER, ERROR_NUMBER_OVERFLOW
 from conversions import format_conversion_value
-from currency_api import CurrencyApi, CurrencyApiError, CurrencyRates
+from currency_api import (
+    CurrencyApi,
+    CurrencyApiError,
+    CurrencyRates,
+    SavedCurrencyRates,
+    as_saved_currency_rates,
+    rate_age_in_days,
+    rates_from_saved,
+)
 from dropdowns import searchable
 import styles
 
 
 class _Page(Protocol):
     def update(self) -> None: ...
+
+
+# The colour the page goes to when the numbers on screen are not today's - a
+# warning that is not an error, so it is neither the theme's muted text nor its
+# error red. Amber reads on both the light and the dark themes, and the chip's
+# fill and border are the same amber at partial opacity over whatever the theme's
+# background happens to be.
+STALENESS_TEXT = "#F59E0B"
+STALENESS_FILL = ft.Colors.with_opacity(0.14, STALENESS_TEXT)
+STALENESS_EDGE = ft.Colors.with_opacity(0.45, STALENESS_TEXT)
 
 
 class CurrencyConversionView:
@@ -27,6 +46,16 @@ class CurrencyConversionView:
         app remembers them. A code the API no longer offers is ignored.
     :param on_pair_changed: called with the two codes whenever the pair on screen
         changes, so the app can remember it.
+    :param saved_currencies: the currency list the API served the last time it
+        was reached, used only when neither host answers now.
+    :param saved_rates: the rate table from that same run, used the same way.
+    :param on_currencies_loaded: called with a currency list the API just served,
+        so the app can keep it. Never called for a saved one.
+    :param on_rates_saved: called with the storable form of a rate table the API
+        just served, so the app can keep it. Never called for a saved one, which
+        is what stops an offline session from ageing the stored rates.
+    :param today: what the staleness badge counts from. A parameter rather than a
+        call to ``date.today`` so a test can hold the clock still.
     """
 
     def __init__(
@@ -36,12 +65,22 @@ class CurrencyConversionView:
         api: CurrencyApi | None = None,
         saved_pair: tuple[str, str] | None = None,
         on_pair_changed: Callable[[str, str], None] | None = None,
+        saved_currencies: dict[str, str] | None = None,
+        saved_rates: SavedCurrencyRates | None = None,
+        on_currencies_loaded: Callable[[dict[str, str]], None] | None = None,
+        on_rates_saved: Callable[[SavedCurrencyRates], None] | None = None,
+        today: Callable[[], date] = date.today,
     ) -> None:
         self.page = page
         self.make_copy_button = make_copy_button
         self.api = api or CurrencyApi()
         self.saved_pair = saved_pair
         self.on_pair_changed = on_pair_changed
+        self.saved_currencies = saved_currencies
+        self.saved_rates = saved_rates
+        self.on_currencies_loaded = on_currencies_loaded
+        self.on_rates_saved = on_rates_saved
+        self.today = today
         self.active = True
         self.request_token = 0
         self.currency_options: dict[str, str] = {}
@@ -100,6 +139,24 @@ class CurrencyConversionView:
             key="currency-rate-date",
             visible=False,
         )
+        # The badge that says the rates on screen are not today's: how many days
+        # old they are, that they came off the disk rather than off the network,
+        # or both. Hidden whenever the numbers are current.
+        self.staleness_text = ft.Text(
+            "",
+            size=10,
+            weight=ft.FontWeight.BOLD,
+            color=STALENESS_TEXT,
+        )
+        self.staleness = ft.Container(
+            key="currency-staleness",
+            content=self.staleness_text,
+            bgcolor=STALENESS_FILL,
+            border=ft.Border.all(1, STALENESS_EDGE),
+            border_radius=999,
+            padding=ft.Padding.symmetric(horizontal=8, vertical=3),
+            visible=False,
+        )
         self.retry_button = ft.TextButton(
             "Retry",
             key="currency-retry",
@@ -141,7 +198,11 @@ class CurrencyConversionView:
                 self.swap_button,
                 stretched(self.target_dropdown),
                 ft.Row([self.status, self.retry_button], spacing=8),
-                self.rate_date,
+                ft.Row(
+                    [self.rate_date, self.staleness],
+                    spacing=8,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
                 ft.Row(
                     [
                         ft.Icon(ft.Icons.SWAP_HORIZ, size=16, color=styles.TEXT_FAINT),
@@ -217,15 +278,21 @@ class CurrencyConversionView:
         self.status.color = styles.TEXT_MUTED
         self.retry_button.visible = False
         self.page.update()
+        from_save = False
         try:
             currencies = await asyncio.to_thread(self.api.get_currencies)
         except CurrencyApiError as error:
-            if self.active:
-                self.status.value = str(error)
-                self.status.color = ft.Colors.RED_400
-                self.retry_button.visible = True
-                self.page.update()
-            return
+            if self.saved_currencies is None:
+                if self.active:
+                    self.status.value = str(error)
+                    self.status.color = ft.Colors.RED_400
+                    self.retry_button.visible = True
+                    self.page.update()
+                return
+            # Neither host answered, but the one that did last time left a list
+            # behind. The page is usable on it; the amber says it is not live.
+            currencies = self.saved_currencies
+            from_save = True
 
         if not self.active:
             return
@@ -245,8 +312,18 @@ class CurrencyConversionView:
         self.source_dropdown.value, self.target_dropdown.value = self.opening_pair(
             currencies, options
         )
-        self.status.value = f"{len(currencies)} currencies available."
-        self.status.color = styles.TEXT_MUTED
+        if from_save:
+            self.status.value = (
+                f"{len(currencies)} currencies from the last saved list."
+            )
+            self.status.color = STALENESS_TEXT
+            # Worth another try: the network may well be back by the next tap.
+            self.retry_button.visible = True
+        else:
+            self.status.value = f"{len(currencies)} currencies available."
+            self.status.color = styles.TEXT_MUTED
+            if self.on_currencies_loaded is not None:
+                self.on_currencies_loaded(currencies)
         self.page.update()
         await self.run_conversion()
 
@@ -258,6 +335,7 @@ class CurrencyConversionView:
         self.result_field.value = ""
         self.rate_date.value = ""
         self.rate_date.visible = False
+        self.staleness.visible = False
 
         raw_amount = (self.input_field.value or "").strip()
         if not raw_amount:
@@ -294,12 +372,26 @@ class CurrencyConversionView:
                 self.api.get_rates,
                 source,
             )
+            from_save = False
         except CurrencyApiError as error:
-            if self.active and token == self.request_token:
-                self.result_field.error = str(error)
-                self.status.value = ""
-                self.page.update()
-            return
+            if self.saved_rates is None:
+                if self.active and token == self.request_token:
+                    self.result_field.error = str(error)
+                    self.status.value = ""
+                    self.page.update()
+                return
+            # The network is down, so the last table the app saw gets a turn. Its
+            # own error is what gets reported when it cannot price this pair
+            # either - that is the reason the user can act on.
+            try:
+                rates = rates_from_saved(self.saved_rates, source)
+            except CurrencyApiError as saved_error:
+                if self.active and token == self.request_token:
+                    self.result_field.error = str(saved_error)
+                    self.status.value = ""
+                    self.page.update()
+                return
+            from_save = True
 
         if not self.active or token != self.request_token:
             return
@@ -316,10 +408,41 @@ class CurrencyConversionView:
                 self.result_field.error = ERROR_NUMBER_OVERFLOW
                 self.status.value = ""
             else:
-                self.status.value = ""
-                self.rate_date.value = f"Rate date: {rates.date}"
+                if from_save:
+                    self.status.value = (
+                        "Live rates are unavailable - converting with the last "
+                        "saved rates."
+                    )
+                    self.status.color = STALENESS_TEXT
+                else:
+                    self.status.value = ""
+                    self.status.color = styles.TEXT_MUTED
+                    if self.on_rates_saved is not None:
+                        self.on_rates_saved(as_saved_currency_rates(source, rates))
+                self.rate_date.value = f"Rates as of {rates.date}"
                 self.rate_date.visible = True
+                label = self.staleness_label(rates, from_save)
+                self.staleness_text.value = label or ""
+                self.staleness.visible = label is not None
         self.page.update()
+
+    def staleness_label(self, rates: CurrencyRates, from_save: bool) -> str | None:
+        """What the staleness badge has to say, or None when it has nothing to say.
+
+        Nothing to say means the numbers on screen are today's and came off the
+        network. Otherwise the badge says how old they are, that they came out of
+        client storage rather than off the network, or both.
+        """
+
+        age = rate_age_in_days(rates.date, self.today())
+        parts: list[str] = []
+        if from_save:
+            parts.append("Last known")
+        if age >= 1:
+            parts.append(f"{age} day old" if age == 1 else f"{age} days old")
+        if not parts:
+            return None
+        return " — ".join(parts)
 
     async def swap_currencies(self, e: Any) -> None:
         self.source_dropdown.value, self.target_dropdown.value = (

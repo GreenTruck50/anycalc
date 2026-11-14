@@ -72,6 +72,22 @@ There should be a conversions.yaml file that says "There should be this tab with
   saved with the rest of the app data. Picking either currency and pressing the
   swap control are both choices of pair. A remembered code the API no longer
   offers is ignored, and the page falls back to USD → EUR.
+- Say how current the prices on the page are: always a "Rates as of <date>" line
+  under the pair, and beside it an amber badge whenever they are not today's -
+  "<n> days old" for a table that is behind, "Last known" for one read out of
+  client storage, or "Last known — <n> days old" for both at once. A live table
+  dated today carries no badge.
+- Keep the currency list and the rate table the last live run served in client
+  storage. When both providers fail, the page opens on the saved list and converts
+  with the saved table - pricing a pair whose base the saved table was not fetched
+  for by cross-multiplying through that base - and says in an amber line that live
+  rates are unavailable and the last saved rates are in use, instead of failing the
+  conversion.
+- Offer only what a live fetch served for saving: data that was read back out of
+  storage is never written back, so an offline session cannot age or replace what
+  was saved.
+- With nothing saved, a failed list load still shows the reason and the Retry
+  button, and a failed rate load still puts the API error in the result field.
 - Use a reusable `src/networking.py` JSON-over-HTTP client for API requests so
   future API integrations can share its `urllib` transport, timeout, validation
   errors and bounded in-memory TTL cache. Cache currency API responses for 24
@@ -815,13 +831,19 @@ There should be a conversions.yaml file that says "There should be this tab with
   on (conversion name plus its two unit IDs) and the currency page's pair. A save
   written before either existed reads back with nothing remembered, which leaves
   every page on its built-in default pair.
+- Keep the currency list and the rate table the last live run served - the list as
+  code and name, the table as its base, its date and its rates written exactly as
+  served - under a client-storage key of their own, so saving a history entry does
+  not rewrite them. A save written before either was kept reads back with nothing,
+  which leaves the currency page online-only.
 - Save with them the named variables the Scientific Calculator was left holding,
   each as its name and its value written the way the engine wrote it. A save
   written before they were kept reads back with none.
 - Save with them the angle mode the app was left in. A save written before it was
   kept, or one naming a mode the app does not offer, reads back as degrees.
-- Drop both remembered pairs and the saved variables when the app data is reset -
-  the stored keys go with everything else, so the next start finds nothing.
+- Drop both remembered pairs, the saved variables and the kept currency list and
+  rate table when the app data is reset - the stored keys go with everything else,
+  so the next start finds nothing.
 - Before enabling the app controls on startup, restore the saved history and
   theme. Restore the saved pi value and its decimal precision through the
   program-pi setter so subsequent calculations use the same pi as before

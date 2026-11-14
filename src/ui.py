@@ -40,6 +40,7 @@ from config import (
 )
 from conversion_view import ConversionView
 from conversions import load_conversion_config
+from currency_api import SavedCurrencyRates
 from currency_view import CurrencyConversionView
 from data_storage import AppDataStore, AppState
 from dropdowns import searchable
@@ -133,6 +134,13 @@ class AnycalcApp:
         # has the one pair. Both are persisted with the rest of the app state.
         self.unit_pairs: dict[str, tuple[str, str]] = {}
         self.currency_pair: tuple[str, str] | None = None
+
+        # The last currency list and rate table the exchange API actually served.
+        # They are what the currency page falls back on when neither host answers,
+        # so they are persisted - under their own storage key, because a rate
+        # table is thousands of characters no history entry should rewrite.
+        self.currency_list: dict[str, str] | None = None
+        self.currency_rates: SavedCurrencyRates | None = None
 
         # The pi page, built the first time it is opened.
         self.pi_view: PiView | None = None
@@ -472,6 +480,11 @@ class AnycalcApp:
             variables=tuple(
                 (name, str(value)) for name, value in self.variables.items()
             ),
+            currency_list=tuple(
+                (code, name)
+                for code, name in (self.currency_list or {}).items()
+            ),
+            currency_rates=self.currency_rates,
         )
 
     async def load_saved_data(self) -> None:
@@ -512,6 +525,10 @@ class AnycalcApp:
                 name: (source, target) for name, source, target in state.unit_pairs
             }
             self.currency_pair = state.currency_pair
+            # The exchange data goes back the same way: it sits here until the
+            # currency page opens and asks what it should fall back on.
+            self.currency_list = dict(state.currency_list) or None
+            self.currency_rates = state.currency_rates
             self.restore_variables(state.variables)
             self.refresh_variable_status()
             if state.pi_text is not None and state.pi_digits is not None:
@@ -1204,10 +1221,13 @@ class AnycalcApp:
         self.precision = Precision()
         self.set_angle_mode(DEFAULT_ANGLE_MODE)
         # The remembered unit / currency pairs go back to the built-in defaults
-        # too; a page already on screen keeps showing what it shows until it is
-        # opened again.
+        # too, and so does the exchange data the currency page falls back on -
+        # otherwise a reset would leave last week's rates behind. A page already
+        # on screen keeps showing what it shows until it is opened again.
         self.unit_pairs.clear()
         self.currency_pair = None
+        self.currency_list = None
+        self.currency_rates = None
         self.selected_primary_color = defaults.accent
         self.selected_secondary_color = defaults.key_operator
         self.expression = ""
@@ -2379,6 +2399,10 @@ class AnycalcApp:
             self.clipboard.make_button,
             saved_pair=self.currency_pair,
             on_pair_changed=self.remember_currency_pair,
+            saved_currencies=self.currency_list,
+            saved_rates=self.currency_rates,
+            on_currencies_loaded=self.remember_currency_list,
+            on_rates_saved=self.remember_currency_rates,
         )
         self.content_area.controls = [self.currency_view.build()]
         self.calculator_showing = False
@@ -2402,6 +2426,31 @@ class AnycalcApp:
         if self.currency_pair == (source_code, target_code):
             return
         self.currency_pair = (source_code, target_code)
+        self.page.run_task(self.save_data)
+
+    def remember_currency_list(self, currencies: dict[str, str]) -> None:
+        """Keep the currency list the API served, for the next time it does not.
+
+        Only ever called with live data, and only saves when the list actually
+        changed - which is once per run, since the API is asked once per page.
+        """
+
+        if self.currency_list == currencies:
+            return
+        self.currency_list = currencies
+        self.page.run_task(self.save_data)
+
+    def remember_currency_rates(self, rates: SavedCurrencyRates) -> None:
+        """Keep the rate table the API served, for the next time it does not.
+
+        A conversion re-runs on every keystroke, but the table behind it comes out
+        of the client's cache unchanged, so the comparison is what keeps this from
+        rewriting fifteen thousand characters per keypress.
+        """
+
+        if self.currency_rates == rates:
+            return
+        self.currency_rates = rates
         self.page.run_task(self.save_data)
 
     def _deactivate_currency_view(self) -> None:

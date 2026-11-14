@@ -10,7 +10,7 @@ How `src/` is organised after the module split, and the packaging fact that deci
 | `precision.py` | How an answer is written: the `Precision` choices (decimal places, significant figures, scientific-notation threshold, rounding mode, thousands separator), the `Decimal` rounding, grouping and un-grouping | `Precision`, `precision_from_payload()`, `round_answer()`, `format_answer()`, `apply_grouping()`, `strip_grouping()` |
 | `conversions.py` | The conversion config, route finding (forward first, `MD` formulas may be inverted, `UD` never), formula application, the reported chain of hops | `load_conversion_config()`, `convert_units()`, `find_conversion_path()`, `format_conversion_value()`, `ConversionStep`, `ConversionOutcome` |
 | `styles.py` | The named themes (Dark, Light, Midnight, Forest, Sepia, High contrast, plus the user's Custom one), the named color palette, the "Custom color" entry and the active palette | `THEMES`, `CUSTOM_THEME_NAME`, `COLOR_OPTIONS`, `color_options()`, `custom_color_label()`, `picker_color()`, `DEFAULT_THEME`, `set_active_theme()` |
-| `data_storage.py` | Validated app-state snapshots (theme, angle mode, colors, history, active pi, named variables, the remembered unit / currency pairs) in Flet SharedPreferences client storage | `AppDataStore`, `AppState` |
+| `data_storage.py` | Validated app-state snapshots (theme, angle mode, colors, history, active pi, named variables, the remembered unit / currency pairs) plus the currency list and rate table the currency page falls back on, in Flet SharedPreferences client storage | `AppDataStore`, `AppState`, `encode_currency()` |
 | `keypad.py` | Which keys each pad shows and how a key looks; the regular rows are part of the scientific pad | `REGULAR_ROWS`, `SCIENTIFIC_ROWS`, `DIALOG_KEYS`, `key_color()`, `make_key()` |
 | `clipboard.py` | The single `ft.Clipboard` behind every copy button | `ClipboardService` |
 | `history_view.py` | History card + history drawer and its calculator-scope notice | `build_history_card()`, `build_history_drawer()`, `history_notice_visible()` |
@@ -18,8 +18,8 @@ How `src/` is organised after the module split, and the packaging fact that deci
 | `conversion_view.py` | The conversion entries and the live conversion form in the main content area | `ConversionView` |
 | `networking.py` | Reusable `urllib` JSON requests and the bounded in-memory TTL cache | JSON fetch and cache helpers |
 | `dropdowns.py` | The search every dropdown offers (`enable_filter` + `editable`) and the blur rule that settles a typed query | `searchable()`, `settle_typed_query()`, `show_selection()`, `has_filter()` |
-| `currency_api.py` | Exchange-API endpoints, fallback, currencies, and response validation | `CurrencyApi`, `CurrencyRates` |
-| `currency_view.py` | The live currency conversion form and its API loading state | `CurrencyConversionView` |
+| `currency_api.py` | Exchange-API endpoints, fallback, currencies, response validation, and the saved-rate table the offline fallback reads | `CurrencyApi`, `CurrencyRates`, `SavedCurrencyRates`, `as_saved_currency_rates()`, `rates_from_saved()`, `rate_age_in_days()` |
+| `currency_view.py` | The live currency conversion form, its API loading state, its staleness badge and its offline fallback | `CurrencyConversionView`, `STALENESS_TEXT` |
 | `pi.py` | Chudnovsky/binary-splitting pi calculation and the program's active pi | pi calculation and program-pi functions |
 | `pi_value.py` | Timed pi runs, progress reporting, cancellation, and adoption | `PiComputation`, `compute_pi()`, `adopt()` |
 | `pi_view.py` | Pi digit-count form, progress, result, adoption, digit search, and digits dialog | `PiView` |

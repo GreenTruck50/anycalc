@@ -1,6 +1,7 @@
 """Persistence for the app's theme, angle mode, selected colors, calculation
-history, pi, the named variables, and the unit and currency pairs its pages last
-opened on."""
+history, pi, the named variables, the unit and currency pairs its pages last
+opened on, and the exchange data the currency page falls back on when the API is
+out of reach."""
 
 import asyncio
 import json
@@ -15,11 +16,16 @@ from config import (
     DEFAULT_HISTORY_LENGTH,
     MAX_HISTORY_ITEMS,
 )
+from currency_api import SavedCurrencyRates
 from precision import Precision, precision_from_payload
 import styles
 
 _STATE_STORAGE_KEY = "anycalc.app-state"
 _PI_STORAGE_KEY = "anycalc.program-pi"
+# The currency list and the last rate table live under a key of their own, exactly
+# as the pi does: together they run to some fifteen thousand characters, and no
+# history entry should have to rewrite them.
+_CURRENCY_STORAGE_KEY = "anycalc.currency-cache"
 _STATE_VERSION = 1
 
 
@@ -47,6 +53,12 @@ class AppState:
     # still offers, and whether its text is still a number, is the app's test -
     # the same split the remembered unit pairs follow.
     variables: tuple[tuple[str, str], ...] = ()
+    # (code, name) for every currency the exchange API listed on its last good
+    # run, plus that run's rate table. Both are what the currency page converts
+    # with when neither API host answers; they go into a storage key of their own
+    # rather than into the state JSON, so a history entry never rewrites them.
+    currency_list: tuple[tuple[str, str], ...] = ()
+    currency_rates: Optional[SavedCurrencyRates] = None
 
 
 def _decode_json(serialized: str) -> object:
@@ -59,8 +71,10 @@ def _decode_json(serialized: str) -> object:
 def decode_state(
     serialized: str,
     pi_serialized: Optional[str] = None,
+    currency_serialized: Optional[str] = None,
 ) -> AppState:
-    """Decode and validate persisted metadata and, when present, the active pi."""
+    """Decode and validate persisted metadata and, when present, the active pi
+    and the last exchange data."""
 
     payload = _decode_json(serialized)
     if not isinstance(payload, dict) or payload.get("version") != _STATE_VERSION:
@@ -171,6 +185,8 @@ def decode_state(
             raise ValueError("saved variables contain an invalid entry")
         remembered_variables[entry[0]] = entry[1]
 
+    currency_list, currency_rates = _decode_currency(currency_serialized)
+
     return AppState(
         theme=theme,
         angle_mode=angle_mode,
@@ -190,7 +206,75 @@ def decode_state(
         variables=tuple(
             (name, value) for name, value in remembered_variables.items()
         ),
+        currency_list=currency_list,
+        currency_rates=currency_rates,
     )
+
+
+def _decode_currency(
+    currency_serialized: Optional[str],
+) -> tuple[tuple[tuple[str, str], ...], Optional[SavedCurrencyRates]]:
+    """The saved currency list and rate table, checked and unpacked.
+
+    Shape is all this checks, the way every other saved field is checked here.
+    Whether a code is one the API still offers and whether a rate text is still a
+    usable number is decided where the table is read back - that is
+    ``currency_api.rates_from_saved``, which raises the same error a bad response
+    raises and lands in the same place on screen.
+    """
+
+    if currency_serialized is None:
+        # A save from before the app kept any exchange data.
+        return (), None
+    payload = _decode_json(currency_serialized)
+    if not isinstance(payload, dict) or payload.get("version") != _STATE_VERSION:
+        raise ValueError("saved currency data has an unsupported format")
+
+    # A code named twice in one save keeps the last name written for it, the rule
+    # the unit pairs and the variables already follow.
+    saved_list = payload.get("currencies")
+    if saved_list is None:
+        saved_list = []
+    if not isinstance(saved_list, list):
+        raise ValueError("saved currency list is missing or invalid")
+    currencies: dict[str, str] = {}
+    for entry in saved_list:
+        if (
+            not isinstance(entry, list)
+            or len(entry) != 2
+            or not all(isinstance(value, str) and value for value in entry)
+        ):
+            raise ValueError("saved currency list contains an invalid entry")
+        currencies[entry[0]] = entry[1]
+
+    saved_rates = payload.get("rates")
+    rates: Optional[SavedCurrencyRates] = None
+    if saved_rates is not None:
+        if not isinstance(saved_rates, dict):
+            raise ValueError("saved exchange rates are invalid")
+        base = saved_rates.get("base")
+        rate_date = saved_rates.get("date")
+        table = saved_rates.get("table")
+        if (
+            not isinstance(base, str)
+            or not base
+            or not isinstance(rate_date, str)
+            or not rate_date
+        ):
+            raise ValueError("saved exchange rates are invalid")
+        if not isinstance(table, list):
+            raise ValueError("saved exchange rates have an invalid table")
+        table_entries: dict[str, str] = {}
+        for entry in table:
+            if (
+                not isinstance(entry, list)
+                or len(entry) != 2
+                or not all(isinstance(value, str) and value for value in entry)
+            ):
+                raise ValueError("saved exchange rates contain an invalid entry")
+            table_entries[entry[0]] = entry[1]
+        rates = SavedCurrencyRates(base, rate_date, tuple(table_entries.items()))
+    return tuple(currencies.items()), rates
 
 
 def encode_state(state: AppState) -> str:
@@ -212,6 +296,34 @@ def encode_state(state: AppState) -> str:
                 list(state.currency_pair) if state.currency_pair is not None else None
             ),
             "variables": [list(entry) for entry in state.variables],
+        },
+        separators=(",", ":"),
+    )
+
+
+def encode_currency(state: AppState) -> str:
+    """Serialize the currency list and the last rate table the API served.
+
+    They get their own key for the reason the pi does: both are long, and neither
+    has anything to do with the settings and history the app saves on almost every
+    interaction.
+    """
+
+    return json.dumps(
+        {
+            "version": _STATE_VERSION,
+            "currencies": [list(entry) for entry in state.currency_list],
+            "rates": (
+                None
+                if state.currency_rates is None
+                else {
+                    "base": state.currency_rates.base,
+                    "date": state.currency_rates.date,
+                    "table": [
+                        list(entry) for entry in state.currency_rates.rates
+                    ],
+                }
+            ),
         },
         separators=(",", ":"),
     )
@@ -248,10 +360,16 @@ class AppDataStore:
         pi_serialized = await self.preferences.get(_PI_STORAGE_KEY)
         if pi_serialized is not None and not isinstance(pi_serialized, str):
             raise ValueError("saved pi data is not text")
-        return decode_state(serialized, pi_serialized)
+        currency_serialized = await self.preferences.get(_CURRENCY_STORAGE_KEY)
+        if currency_serialized is not None and not isinstance(
+            currency_serialized, str
+        ):
+            raise ValueError("saved currency data is not text")
+        return decode_state(serialized, pi_serialized, currency_serialized)
 
     async def clear(self) -> None:
-        """Drop every key the app has stored, settings, history and pi alike.
+        """Drop every key the app has stored, settings, history, pi and exchange
+        data alike.
 
         "Reset all app data" is the only caller. The keys are removed rather than
         overwritten so a reset really is what the user was promised: the next
@@ -259,7 +377,11 @@ class AppDataStore:
         """
 
         async with self._save_lock:
-            for key in (_STATE_STORAGE_KEY, _PI_STORAGE_KEY):
+            for key in (
+                _STATE_STORAGE_KEY,
+                _PI_STORAGE_KEY,
+                _CURRENCY_STORAGE_KEY,
+            ):
                 await self.preferences.remove(key)
 
     async def save(self, state: AppState) -> None:
@@ -276,3 +398,16 @@ class AppDataStore:
                 )
                 if not saved_pi:
                     raise OSError("Flet client storage did not save the active pi")
+            if state.currency_rates is not None or state.currency_list:
+                currency_serialized = await asyncio.to_thread(
+                    encode_currency,
+                    state,
+                )
+                saved_currency = await self.preferences.set(
+                    _CURRENCY_STORAGE_KEY,
+                    currency_serialized,
+                )
+                if not saved_currency:
+                    raise OSError(
+                        "Flet client storage did not save the exchange data"
+                    )

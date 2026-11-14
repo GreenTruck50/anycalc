@@ -142,7 +142,22 @@ Every item ends with its number in parentheses so it can be referred to by numbe
     evaluates each `MD` formula forward and then reverses it
     (`src/conversions.py:104-108`), so an irreversible formula raises as soon as the
     config is read - which every test in that file does.
-- [ ] Currency: staleness badge + "rates as of ..." line + offline last-known-rates fallback (37)
+- [x] Currency: staleness badge + "rates as of ..." line + offline last-known-rates fallback (37)
+  - Done 2026-11-13. The page now always says "Rates as of <date>" under the pair,
+    and when those numbers are not today's an amber `currency-staleness` pill sits
+    next to it reading "<n> days old", "Last known", or both. `AppState.currency_list`
+    and `AppState.currency_rates` (a `SavedCurrencyRates` — base, date and rates
+    exactly as served) are kept under their own `anycalc.currency-cache` client-storage
+    key, so writing a history entry never rewrites them, and only what a live fetch
+    served is ever offered back for saving — an offline session cannot age the save.
+    With both providers down the page fills its dropdowns from the saved list and
+    prices conversions off the saved table, cross-multiplying through that table's
+    base for pairs it was not fetched for, behind an amber "Live rates are unavailable
+    - converting with the last saved rates."; with nothing saved the old failures
+    still happen. Spec: `calculator_spec.md` (Currency conversion, Saved app data) and
+    `UI_SPEC.md` (The currency page → Without a network); tests:
+    `tests/test_currency_api.py`, `tests/test_currency_view.py`,
+    `tests/test_currency_cache.py`, `tests/test_data_storage.py`.
 
 ## Pi page
 

@@ -9,10 +9,12 @@ from config import (
     DEFAULT_HISTORY_LENGTH,
     MAX_HISTORY_ITEMS,
 )
+from currency_api import SavedCurrencyRates
 from data_storage import (
     AppDataStore,
     AppState,
     decode_state,
+    encode_currency,
     encode_state,
     encode_pi,
 )
@@ -448,3 +450,189 @@ def test_the_variables_are_saved_without_touching_the_saved_pi() -> None:
 
     assert restored.variables == (("x", "4"),)
     assert restored.pi_text == initial.pi_text
+
+# --- the exchange data the currency page falls back on ------------------------
+
+
+def kept_state() -> AppState:
+    """An app state carrying the currency list and table one good run served."""
+
+    return AppState(
+        "Dark",
+        (),
+        currency_list=(("usd", "US Dollar"), ("eur", "Euro")),
+        currency_rates=SavedCurrencyRates(
+            "usd", "2026-11-10", (("usd", "1"), ("eur", "0.9"))
+        ),
+    )
+
+
+def test_the_exchange_data_round_trips_with_the_rest() -> None:
+    state = kept_state()
+
+    restored = decode_state(encode_state(state), None, encode_currency(state))
+
+    assert restored == state
+
+
+def test_a_save_from_before_the_exchange_data_was_kept_carries_none() -> None:
+    restored = decode_state(encode_state(AppState("Dark", ())))
+
+    assert restored.currency_list == ()
+    assert restored.currency_rates is None
+
+
+def test_a_metadata_save_leaves_the_kept_exchange_data_alone() -> None:
+    initial = kept_state()
+    updated = AppState("Light", (("1+1", "2"),))
+
+    restored = decode_state(encode_state(updated), None, encode_currency(initial))
+
+    assert restored.theme == "Light"
+    assert restored.currency_list == initial.currency_list
+    assert restored.currency_rates == initial.currency_rates
+
+
+def test_the_state_save_carries_no_exchange_data() -> None:
+    payload = json.loads(encode_state(kept_state()))
+
+    assert "currency_list" not in payload
+    assert "currency_rates" not in payload
+
+
+def test_the_exchange_encoder_writes_json_arrays_under_its_own_keys() -> None:
+    payload = json.loads(encode_currency(kept_state()))
+
+    assert payload["version"] == 1
+    assert payload["currencies"] == [["usd", "US Dollar"], ["eur", "Euro"]]
+    assert payload["rates"] == {
+        "base": "usd",
+        "date": "2026-11-10",
+        "table": [["usd", "1"], ["eur", "0.9"]],
+    }
+
+
+def test_kept_exchange_data_without_a_rate_table_keeps_its_list() -> None:
+    serialized = json.dumps(
+        {"version": 1, "currencies": [["usd", "US Dollar"]], "rates": None}
+    )
+
+    restored = decode_state(encode_state(AppState("Dark", ())), None, serialized)
+
+    assert restored.currency_list == (("usd", "US Dollar"),)
+    assert restored.currency_rates is None
+
+
+def test_the_decoder_keeps_the_last_name_saved_for_a_currency() -> None:
+    serialized = json.dumps(
+        {
+            "version": 1,
+            "currencies": [["usd", "Dollar"], ["usd", "US Dollar"]],
+            "rates": {
+                "base": "usd",
+                "date": "2026-11-10",
+                "table": [["eur", "0.8"], ["eur", "0.9"]],
+            },
+        }
+    )
+
+    restored = decode_state(encode_state(AppState("Dark", ())), None, serialized)
+
+    assert restored.currency_list == (("usd", "US Dollar"),)
+    assert restored.currency_rates is not None
+    assert restored.currency_rates.rates == (("eur", "0.9"),)
+
+
+def test_state_decoder_rejects_currency_data_of_another_version() -> None:
+    serialized = json.dumps({"version": 2, "currencies": []})
+
+    with pytest.raises(ValueError, match="currency data has an unsupported format"):
+        decode_state(encode_state(AppState("Dark", ())), None, serialized)
+
+
+def test_state_decoder_rejects_a_malformed_currency_entry() -> None:
+    serialized = json.dumps({"version": 1, "currencies": [["usd"]]})
+
+    with pytest.raises(
+        ValueError, match="currency list contains an invalid entry"
+    ):
+        decode_state(encode_state(AppState("Dark", ())), None, serialized)
+
+
+def test_state_decoder_rejects_a_malformed_rate_row() -> None:
+    serialized = json.dumps(
+        {
+            "version": 1,
+            "rates": {"base": "usd", "date": "2026-11-10", "table": [["eur"]]},
+        }
+    )
+
+    with pytest.raises(
+        ValueError, match="exchange rates contain an invalid entry"
+    ):
+        decode_state(encode_state(AppState("Dark", ())), None, serialized)
+
+
+def test_state_decoder_rejects_kept_rates_without_a_base_or_date() -> None:
+    for table in [
+        {"base": "", "date": "2026-11-10", "table": []},
+        {"base": "usd", "date": "", "table": []},
+        {"date": "2026-11-10", "table": []},
+    ]:
+        serialized = json.dumps({"version": 1, "rates": table})
+        with pytest.raises(ValueError, match="exchange rates are invalid"):
+            decode_state(encode_state(AppState("Dark", ())), None, serialized)
+
+
+def test_state_decoder_rejects_kept_rates_without_a_table() -> None:
+    serialized = json.dumps(
+        {"version": 1, "rates": {"base": "usd", "date": "2026-11-10"}}
+    )
+
+    with pytest.raises(
+        ValueError, match="exchange rates have an invalid table"
+    ):
+        decode_state(encode_state(AppState("Dark", ())), None, serialized)
+
+
+@pytest.mark.asyncio
+async def test_client_storage_keeps_the_exchange_data_in_its_own_key(
+    monkeypatch,
+) -> None:
+    class MemoryPreferences:
+        def __init__(self) -> None:
+            self.values: dict[str, str] = {}
+
+        async def get(self, key: str) -> str | None:
+            return self.values.get(key)
+
+        async def set(self, key: str, value: str) -> bool:
+            self.values[key] = value
+            return True
+
+        async def remove(self, key: str) -> bool:
+            return self.values.pop(key, None) is not None
+
+    preferences = MemoryPreferences()
+    monkeypatch.setattr("data_storage.ft.SharedPreferences", lambda: preferences)
+    store = AppDataStore()
+
+    await store.save(kept_state())
+    assert set(preferences.values) == {
+        "anycalc.app-state",
+        "anycalc.currency-cache",
+    }
+    # A later save with nothing new to learn leaves the kept data where it is.
+    await store.save(AppState("Light", (("1+1", "2"),)))
+
+    restored = await store.load()
+
+    assert restored is not None
+    assert restored.theme == "Light"
+    assert restored.currency_list == (("usd", "US Dollar"), ("eur", "Euro"))
+    assert restored.currency_rates == kept_state().currency_rates
+
+    await store.clear()
+    assert preferences.values == {}
+    assert await store.load() is None
+

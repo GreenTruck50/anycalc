@@ -220,8 +220,9 @@ stretching trick:
 | From dropdown | `currency-from` | label "From", searchable with a `SEARCH` icon inside the field, filled once the rate table arrives |
 | Swap button | `currency-swap` | "Swap currencies", `SWAP_HORIZ` icon |
 | To dropdown | `currency-to` | the same options as From |
-| Status row | `currency-status`, `currency-retry` | "Loading available currencies…" while fetching; on failure the reason plus a Retry button (hidden until then) |
-| Rate date | `currency-rate-date` | hidden until a rate table arrives |
+| Status row | `currency-status`, `currency-retry` | "Loading available currencies…" while fetching; on failure the reason plus a Retry button (hidden until then). Amber, not grey, whenever the page is running on saved data |
+| Rate date | `currency-rate-date` | "Rates as of <date>", hidden until a rate table arrives |
+| Staleness badge | `currency-staleness` | amber pill beside the rate date — "<n> days old", "Last known", or "Last known — <n> days old"; hidden while the table is live and dated today |
 | Hint row | — | "Converts as you type or change currencies" |
 | Result field | `currency-result` | read-only, copy button as its suffix |
 
@@ -230,6 +231,29 @@ The dropdowns are built empty. Opening the page runs `load_currencies()` through
 pair is applied. Replies are token-guarded (`request_token`) and the app marks the
 view inactive (`_deactivate_currency_view`) as soon as the page is left, so a slow
 response cannot write into a page that is gone.
+
+The rate date and the staleness badge share the row under the pair. The badge is a
+`ft.Container` pill - amber `#F59E0B` text on a 14 %-opacity amber fill with a
+45 %-opacity amber border, fully rounded - rather than an error colour, because
+rates that are not today's are a warning and not a failure.
+
+### Without a network
+
+Both providers being down does not close the page. The app hands the view
+`saved_currencies` (the list the last live run served) and `saved_rates` (a
+`SavedCurrencyRates` - base, date and rates exactly as stored), and the view falls
+back on them: the dropdowns fill from the saved list behind an amber "<n>
+currencies from the last saved list.", Retry offered again because the network may
+be back by the next tap, and a conversion prices itself from the saved table -
+cross-multiplying through that table's base when the pair's base is another
+currency - behind an amber "Live rates are unavailable - converting with the last
+saved rates." The badge then reads "Last known", plus the age once that table is
+older than today.
+
+Only the view knows a fetch just failed, so only the view decides to use saved
+data. Only what a live fetch served is ever offered back to the app for saving, so
+an offline session cannot age or replace what is stored.
+
 
 ## Which pair a conversion or currency page opens on
 
