@@ -264,7 +264,15 @@ is easy to forget:
 ./build.py apk --debug         # debug: quick, debuggable, `adb install -r`
 ./build.py aab --split-per-abi # one bundle per ABI
 ./build.py linux --clean       # wipe build/ first, then build
+./build.py apk aab             # several targets, one after the other
 ```
+
+Several TARGETs go in one command and are built in the order given, each with its
+own `flet build` — `./build.py linux deb` builds the Linux bundle twice rather
+than sharing one, so it saves the running rather than the work. The mode and the
+options apply to all of them, `--clean` wipes `build/` once before the first
+target, and the first target that fails ends the run with what is already built
+left in place.
 
 `--out <dir>`, `--arch arm64-v8a`, `--python-version 3.14` and `--plain` round it
 out; anything after `--` goes straight to `flutter build`. Plain

@@ -1354,7 +1354,7 @@ There should be a conversions.yaml file that says "There should be this tab with
   Linux-host-only, produce packages for the host architecture, and use `--out
   <dir>` for the final package directory. They declare a dependency on the
   system GTK 3 runtime and do not bundle GTK or other host libraries.
-- `./build.py TARGET [MODE] [OPTIONS]` is the standing builder for all of that:
+- `./build.py TARGET [TARGET...] [MODE] [OPTIONS]` is the standing builder for all of that:
   it runs from the workspace root, prefers the project's own `.venv/bin/flet`,
   and takes the build mode as `--release` (the default, and the production
   artifact), `--debug` or `--profile`. `flet build` itself has **no** `--debug`
@@ -1365,6 +1365,16 @@ There should be a conversions.yaml file that says "There should be this tab with
   `build/` first) and `--plain` logging. A debug artifact is the one to install
   under an emulator (`adb install -r`): it builds faster and is debuggable, but
   it ships Dart JIT, so it is much larger and slower than a release build.
+- Several TARGETs may be named in one run (`./build.py apk aab`, `./build.py linux
+  deb`) and are built in the order given. The wrapper loops its own single-target
+  flow rather than sharing one build between targets - `linux deb` builds the
+  Linux bundle twice - so N targets cost what N separate runs would; what the
+  single command saves is the running. The mode and every option apply to all of
+  them. `--clean` wipes `build/` **once**, before the first target, because
+  cleaning per target would delete what the previous target produced. `--out
+  <dir>` names the artifact directory for one target and becomes the parent of a
+  `<dir>/<target>/` directory each when several are named. The first target whose
+  build fails ends the run, with the artifacts already produced left in place.
 - The builder reads package name, version, description, authors and license from
   `[project]` in `pyproject.toml`; product name, organization and Linux desktop
   categories come from `[tool.flet]` and `[tool.flet.linux]`. App IDs, desktop

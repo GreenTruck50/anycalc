@@ -18,6 +18,12 @@ silently built as release, so the mode lives here instead:
     ./build.py deb                 Debian/Ubuntu package
     ./build.py rpm                 RPM package (requires rpmbuild)
 
+Several TARGETs go in one run and are built one after another, each with its own
+`flet build` (`./build.py apk aab`, `./build.py linux deb`). It saves no work -
+each target still builds what it needs - it saves you running the script again.
+The mode and the options apply to every target in the run, and a target whose
+build fails ends the run with the artifacts already produced left in place.
+
 It always runs from the workspace root - [tool.flet.app] in pyproject.toml is
 what makes that legal instead of having to build from src/ - and always prefers
 the project's own .venv/bin/flet, so the Flet that packages the app is the same
@@ -212,9 +218,9 @@ def write_text(path: Path, content: str, mode: int = 0o644) -> None:
 
 
 USAGE = """\
-Usage: ./build.py TARGET [MODE] [OPTIONS] [-- FLUTTER-ARG...]
+Usage: ./build.py TARGET [TARGET...] [MODE] [OPTIONS] [-- FLUTTER-ARG...]
 
-TARGET (what this wrapper supports):
+TARGET (what this wrapper supports; one or more, built in the order given):
   appimage       Build the Linux bundle, then package it as an AppImage
   deb            Build the Linux bundle, then package it as a .deb
   rpm            Build the Linux bundle, then package it as an .rpm
@@ -236,7 +242,8 @@ MODE (exactly one; the default is the production build):
   --profile      flutter --profile: AOT with performance overlay, for measuring
 
 OPTIONS:
-  --out DIR            copy the artifact here instead of build/TARGET
+  --out DIR            copy the artifact here instead of build/TARGET; with several
+                       TARGETs it is their parent, one directory per target
   --split-per-abi      one APK/AAB per ABI instead of one fat multi-ABI bundle
   --arch ARCH...       ABIs/architectures to package, e.g. `--arch arm64-v8a`.
                        Android names: arm64-v8a, armeabi-v7a, x86_64
@@ -247,14 +254,29 @@ OPTIONS:
   -v, --verbose        verbose (repeat: -vv also passes --verbose to flutter)
   -h, --help           this text
 
-Anything after `--` is forwarded to the underlying `flutter build` command."""
+Anything after `--` is forwarded to the underlying `flutter build` command.
+
+SEVERAL TARGETS (give the names one after another):
+  ./build.py apk aab       both Android artifacts in one run
+  ./build.py linux deb     the desktop bundle, then the Debian package
+  Each TARGET gets its own `flet build` - nothing is shared between them, so a run
+  of N targets costs what N separate runs would. The MODE and every OPTION apply
+  to all of them, and the first target that fails ends the run."""
 
 
 @dataclass
 class Options:
-    """The parsed command line - one TARGET, one MODE, plus the options."""
+    """The parsed command line - the TARGETs to build, one MODE, plus the options.
 
-    target: str | None = None
+    ``targets`` is what was asked for, in the order given and without repeats;
+    ``target`` is the one being built right now. Every build and packaging
+    function below works on a single target, so ``main`` walks the list and
+    repoints ``target`` as it goes: several TARGETS are several runs of the same
+    flow, not one merged build.
+    """
+
+    targets: list[str] = field(default_factory=list)
+    target: str = ""
     mode: str = "release"
     out_dir: str | None = None
     python_version: str | None = None
@@ -276,11 +298,8 @@ def parse_args(argv: list[str]) -> Options:
             print(USAGE)
             raise SystemExit(0)
         elif argument in TARGETS:
-            if options.target:
-                die(
-                    f"one TARGET at a time (got '{options.target}' and '{argument}')"
-                )
-            options.target = argument
+            if argument not in options.targets:
+                options.targets.append(argument)
         elif argument in MODE_FLAGS:
             options.mode = MODE_FLAGS[argument]
         elif argument == "--out":
@@ -318,7 +337,7 @@ def parse_args(argv: list[str]) -> Options:
             raise SystemExit(2)
         index += 1
 
-    if not options.target:
+    if not options.targets:
         print("No TARGET given.\n", file=sys.stderr)
         print(USAGE, file=sys.stderr)
         raise SystemExit(2)
@@ -372,28 +391,36 @@ def resolve_rpmbuild() -> str:
 
 
 def preflight(options: Options) -> HostTools:
-    """Reject option combinations the target cannot honour, then resolve tools."""
-    target = options.target or ""
+    """Reject option combinations the targets cannot honour, then resolve tools.
+
+    Every TARGET asked for is checked up front, so a run that cannot end well
+    fails before it has spent minutes building the first artifact.
+    """
+
     tools = HostTools()
-    if target in LINUX_PACKAGE_TARGETS:
-        if platform.system() != "Linux":
-            die(f"the {target} target must be built on Linux")
-        if options.split_per_abi:
-            die(f"--split-per-abi is not supported for {target}")
-        if options.arch:
-            die(
-                f"--arch is not supported for {target}; "
-                "it uses the host architecture"
-            )
-        if target == "appimage":
-            tools.appimagetool = resolve_appimagetool()
-        elif target == "deb":
-            if not shutil.which("dpkg-deb"):
-                die("dpkg-deb is required for the deb target.")
-            if not shutil.which("dpkg"):
-                die("dpkg is required to determine the Debian package architecture.")
-        else:
-            tools.rpmbuild = resolve_rpmbuild()
+    for target in options.targets:
+        if target in LINUX_PACKAGE_TARGETS:
+            if platform.system() != "Linux":
+                die(f"the {target} target must be built on Linux")
+            if options.split_per_abi:
+                die(f"--split-per-abi is not supported for {target}")
+            if options.arch:
+                die(
+                    f"--arch is not supported for {target}; "
+                    "it uses the host architecture"
+                )
+            if target == "appimage":
+                tools.appimagetool = resolve_appimagetool()
+            elif target == "deb":
+                if not shutil.which("dpkg-deb"):
+                    die("dpkg-deb is required for the deb target.")
+                if not shutil.which("dpkg"):
+                    die(
+                        "dpkg is required to determine the Debian package "
+                        "architecture."
+                    )
+            else:
+                tools.rpmbuild = resolve_rpmbuild()
     return tools
 
 
@@ -412,8 +439,8 @@ def resolve_flet() -> str:
 
 
 def run_flet_build(options: Options, flet_path: str) -> None:
-    """Run the `flet build` step for the target (packaged targets build `linux`)."""
-    target = options.target or ""
+    """Run the `flet build` step for the target now selected (packaged targets build `linux`)."""
+    target = options.target
     flet_target = "linux" if target in LINUX_PACKAGE_TARGETS else target
 
     flet_args = ["build", flet_target, "--log-format", options.log_format, "--yes"]
@@ -434,10 +461,6 @@ def run_flet_build(options: Options, flet_path: str) -> None:
         flet_args.append("--flutter-build-args=--debug")
     elif options.mode == "profile":
         flet_args.append("--flutter-build-args=--profile")
-
-    if options.clean_first:
-        print("Cleaning build/ ...")
-        run([flet_path, "clean"])
 
     print(f"Building {flet_target} ({options.mode}) with {flet_path}")
     run([flet_path, *flet_args, *options.extra_flutter_args])
@@ -589,7 +612,7 @@ def package_linux_distribution(
     options: Options, rpmbuild: str | None, metadata: ProjectMetadata
 ) -> Path:
     """Stage build/linux as a filesystem root, then build the .deb or the .rpm."""
-    target = options.target or ""
+    target = options.target
     linux_bundle = Path("build/linux")
     if not is_executable(linux_bundle / metadata.product):
         die(f"Linux bundle executable not found: {linux_bundle}/{metadata.product}")
@@ -710,6 +733,32 @@ def list_artifacts(out_path: Path) -> None:
             size /= 1024
 
 
+def build_target(
+    options: Options,
+    target: str,
+    flet_path: str,
+    tools: HostTools,
+    metadata: ProjectMetadata,
+) -> Path:
+    """The whole flow for one TARGET: the `flet build`, then the packaging it needs.
+
+    ``options.target`` is repointed for the duration because every build and
+    packaging function here works on a single target. Several TARGETS are this flow
+    run once each - which is why a run like `./build.py linux deb` builds the Linux
+    bundle twice, once for each target, rather than sharing one.
+    """
+
+    options.target = target
+    run_flet_build(options, flet_path)
+    if target == "appimage":
+        return package_appimage(
+            options, tools.appimagetool or "appimagetool", metadata
+        )
+    if target in ("deb", "rpm"):
+        return package_linux_distribution(options, tools.rpmbuild, metadata)
+    return Path(options.out_dir or f"build/{target}")
+
+
 def main(argv: list[str] | None = None) -> None:
     options = parse_args(list(sys.argv[1:] if argv is None else argv))
     metadata = read_project_metadata()
@@ -721,19 +770,31 @@ def main(argv: list[str] | None = None) -> None:
     # src/main.py.
     os.chdir(SCRIPT_DIR)
 
-    run_flet_build(options, flet_path)
+    # One clean for the whole run: `flet clean` deletes build/ outright, so a clean
+    # per TARGET would delete what the previous TARGET has just built.
+    if options.clean_first:
+        print("Cleaning build/ ...")
+        run([flet_path, "clean"])
 
-    target = options.target or ""
-    if target == "appimage":
-        out_path = package_appimage(
-            options, tools.appimagetool or "appimagetool", metadata
+    # --out says where an artifact goes, which is only a complete answer when one
+    # TARGET was given. With several it is their parent, and each target gets a
+    # directory of its own underneath.
+    requested_out = options.out_dir
+    several = len(options.targets) > 1
+    for position, target in enumerate(options.targets, start=1):
+        if several:
+            print(f"\n=== {target} ({position} of {len(options.targets)}) ===")
+        options.out_dir = (
+            str(Path(requested_out) / target)
+            if several and requested_out
+            else requested_out
         )
-    elif target in ("deb", "rpm"):
-        out_path = package_linux_distribution(options, tools.rpmbuild, metadata)
-    else:
-        out_path = Path(options.out_dir or f"build/{target}")
+        # A target whose build fails ends the run; the artifacts already produced
+        # stay where they were written.
+        list_artifacts(build_target(options, target, flet_path, tools, metadata))
 
-    list_artifacts(out_path)
+    if several:
+        print(f"\nBuilt {len(options.targets)} targets: {', '.join(options.targets)}")
 
 
 if __name__ == "__main__":
