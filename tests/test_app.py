@@ -482,6 +482,20 @@ async def test_settings_applies_as_it_is_picked_and_resets_to_defaults(
     await tester.pump_and_settle()
     assert (await tester.find_by_key("settings-theme-dropdown")).count == 1
 
+    # The precision box is part of the dialog: five dropdowns, each reachable by
+    # its key. They sit in the scrolling column, so a couple of them are below the
+    # fold - a Column builds every child whether or not the viewport shows it. What
+    # each one does to an answer is covered without a window in
+    # tests/test_precision.py; here it is enough that the box is really on screen.
+    for key in (
+        "settings-precision-decimals",
+        "settings-precision-significant-figures",
+        "settings-precision-scientific-notation",
+        "settings-precision-rounding",
+        "settings-precision-grouping",
+    ):
+        assert (await tester.find_by_key(key)).count == 1
+
     # Nothing waits for an Apply button any more: the dialog only offers Close and
     # "Reset to defaults".
     assert (await tester.find_by_text("Apply")).count == 0

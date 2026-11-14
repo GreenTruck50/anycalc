@@ -7,7 +7,21 @@ Every item ends with its number in parentheses so it can be referred to by numbe
 - [ ] Add a regular ratio calculator (4)
 - [ ] Add a plant orbit calculator (2 bodies) (5)
 - [ ] Add a credits/about section in the settings (6)
-- [ ] Add a precision box to the settings menu (7)
+- [x] Add a precision box to the settings menu (7)
+  - Verified 2026-11-14 rather than built: item 21 shipped the box and item 22 widened
+    it. Settings carries five dropdowns - `settings-precision-decimals`,
+    `settings-precision-significant-figures`, `settings-precision-scientific-notation`,
+    `settings-precision-rounding`, `settings-precision-grouping` - built in
+    `src/ui.py`'s `build_settings_dialog()`, applied the moment one is picked by
+    `update_precision()` and restored from `self.precision` whenever the dialog opens;
+    `src/precision.py` does the rounding and the writing out. Behaviour is covered
+    without a window by `test_the_settings_dialog_offers_the_whole_precision_box` and
+    the answer / preview / history cases in tests/test_precision.py, the saved-settings
+    round trip in tests/test_settings_data.py and the searchable-box list in
+    tests/test_dropdown_filter.py - but no test had ever looked at the box on a real
+    screen, so tests/test_app.py's settings test now finds all five keys in the open
+    dialog (`flet test -k settings` → 23 passed). Spec: calculator_spec.md (Settings,
+    "Answer precision") and UI_SPEC.md's settings rows.
 - [ ] Change the app logo because it's trash (8)
 
 ## New calculators
