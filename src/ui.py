@@ -706,6 +706,7 @@ class AnycalcApp:
                 on_select=self.update_settings,
             ),
             self.page,
+            watch_focus=self.watch_field_focus,
         )
         (
             self.settings_primary_group,
@@ -779,6 +780,7 @@ class AnycalcApp:
                 on_select=self.update_angle_mode,
             ),
             self.page,
+            watch_focus=self.watch_field_focus,
         )
         # The precision box: how many significant digits a calculation works with,
         # and how an answer is written out. Every dropdown applies the moment it is
@@ -809,6 +811,7 @@ class AnycalcApp:
                 on_select=self.update_precision,
             ),
             self.page,
+            watch_focus=self.watch_field_focus,
         )
         self.settings_precision_grouping = searchable(
             ft.Dropdown(
@@ -822,6 +825,7 @@ class AnycalcApp:
                 on_select=self.update_precision,
             ),
             self.page,
+            watch_focus=self.watch_field_focus,
         )
         self.settings_history_length = searchable(
             ft.Dropdown(
@@ -835,6 +839,7 @@ class AnycalcApp:
                 on_select=self.update_history_length,
             ),
             self.page,
+            watch_focus=self.watch_field_focus,
         )
         self.settings_clear_history_button = ft.TextButton(
             key="settings-clear-history",
@@ -924,6 +929,7 @@ class AnycalcApp:
                 on_select=self.update_settings,
             ),
             self.page,
+            watch_focus=self.watch_field_focus,
         )
         value_label = ft.Text(
             key=f"{key}-value",
@@ -990,6 +996,11 @@ class AnycalcApp:
 
     def close_settings(self, event: object) -> None:
         del event
+        # One of the dialog's boxes may be holding the caret, and a blur event is
+        # not guaranteed to fire when the dialog it lives in goes away. A caret
+        # remembered after that would leave the physical keyboard mute for the rest
+        # of the session - the same reason variable_dialogs.close_dialog lets go.
+        self.text_field_focused = False
         self.page.pop_dialog()
         self.page.update()
 
@@ -1083,6 +1094,7 @@ class AnycalcApp:
                 on_select=self.update_precision,
             ),
             self.page,
+            watch_focus=self.watch_field_focus,
         )
 
     @staticmethod
@@ -1979,12 +1991,17 @@ class AnycalcApp:
     # The physical keyboard
     # ----------------------------
 
-    def watch_field_focus(self, field: ft.TextField) -> None:
-        """Note when a text field takes the caret, and when it lets go.
+    def watch_field_focus(self, field: ft.TextField | ft.Dropdown) -> None:
+        """Note when a field takes the caret, and when it lets go.
 
         A focused field consumes its own printable keys, so a "+" typed into the
         display would otherwise land twice: once as the field's edit and once as a
-        pad press. Whatever handlers the field already had are kept and still run.
+        pad press. A searchable dropdown's box is such a field too - it is a text
+        field in every way that matters here - so the app hands this watcher to
+        :func:`dropdowns.searchable` for every box it builds over the calculator
+        page, and a digit typed there stays in the box instead of pressing the pad
+        behind the dialog. Whatever handlers the field already had are kept and
+        still run.
         """
 
         already_focused = cast(Callable[[object], None] | None, field.on_focus)
@@ -2010,11 +2027,11 @@ class AnycalcApp:
 
         Three gates keep the keyboard out of someone else's business. Ctrl/Alt/Meta
         combinations are left to the system. A conversion, currency or pi page has
-        no pad to press, and a text field with the caret - the display itself, or
-        the value field of the Set Variable dialog - types its own keys. And
-        ``pad_key`` returns nothing for a key the pad on screen does not carry, so
-        the regular pad never picks up ``^`` or ``e`` from the keyboard any more
-        than it does from a tap.
+        no pad to press, and a field with the caret - the display itself, the value
+        field of the Set Variable dialog, or the box of a searchable dropdown - types
+        its own keys. And ``pad_key`` returns nothing for a key the pad on screen does
+        not carry, so the regular pad never picks up ``^`` or ``e`` from the keyboard
+        any more than it does from a tap.
         """
 
         if event.ctrl or event.alt or event.meta:

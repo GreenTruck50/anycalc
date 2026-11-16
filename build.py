@@ -289,7 +289,7 @@ class Options:
 
 
 def parse_args(argv: list[str]) -> Options:
-    """Parse the command line options for one Flet build target."""
+    """Parse the command line options for one or more Flet build targets."""
     options = Options()
     index = 0
     while index < len(argv):

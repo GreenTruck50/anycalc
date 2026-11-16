@@ -149,6 +149,11 @@ the pad on screen does not carry — which is how `^`, `e` and `√` stay
 scientific-only. `Enter` / `=` press `=`, `Backspace` presses `⌫`, `Esc` /
 `Delete` press `AC`, and `Up` / `Down` walk the stored history into the display.
 
+The keyboard stands down while a field holds the caret — the display, the Set
+Variable value field, and any searchable dropdown's box over the calculator page
+(see "Searchable dropdowns"). A digit typed into one of those boxes searches the
+box; it does not press the pad behind the dialog.
+
 ## Searchable dropdowns
 
 Every `ft.Dropdown` in the app goes through `src/dropdowns.py` — `searchable()`
@@ -176,6 +181,15 @@ What happens when the box loses focus (`settle_typed_query()`):
 
 The live handlers stay on `on_select`; the blur rule is what turns a typed query into
 a pick.
+
+While a box holds the caret the physical keyboard keeps out of it: `searchable()`
+takes a `watch_focus` hook, the app passes `AnycalcApp.watch_field_focus` (which
+takes `ft.TextField | ft.Dropdown`), and a digit typed into a box over the
+calculator page searches that box instead of pressing the pad behind the dialog.
+The hook is wired last so it chains around the blur rule rather than replacing it —
+the caret is released before the query is settled. Closing the Settings dialog
+drops the caret itself, since no blur event is promised when the dialog a box lived
+in goes away.
 
 ## The conversion page — one layout for all fifteen groups
 

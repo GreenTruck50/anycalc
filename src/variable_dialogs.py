@@ -67,6 +67,7 @@ def open_set_variable_dialog(app: AnycalcApp) -> None:
             expand=True,
         ),
         page,
+        watch_focus=app.watch_field_focus,
     )
     value_field = ft.TextField(
         label="Value",

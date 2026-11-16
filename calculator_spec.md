@@ -600,9 +600,12 @@ There should be a conversions.yaml file that says "There should be this tab with
   `-` is `−`.
 - The keyboard stands down wherever it would collide with something else. Ctrl,
   Alt and Meta combinations are left to the system. A Unit Conversion, Currency
-  Conversion or pi page has no pad, so keys do nothing there. While a text field
-  holds the caret - the display itself, or the value field of the Set Variable
-  dialog - that field takes the typing and the pad is not pressed a second time.
+  Conversion or pi page has no pad, so keys do nothing there. While a field holds
+  the caret - the display itself, the value field of the Set Variable dialog, or
+  the search box of any dropdown over the calculator page - that field takes the
+  typing and the pad is not pressed a second time. So a digit typed while searching
+  the Settings choices stays in the box: it never presses a pad key behind the
+  dialog, and the repaint such a press would have caused never wipes the query.
 - Enter while the caret sits in the display commits the expression the way the `=`
   key does; every other printable key there stays ordinary text editing.
 - The Up and Down arrows walk the stored calculations back into the display for
@@ -827,6 +830,15 @@ There should be a conversions.yaml file that says "There should be this tab with
   - a query matching several options, or none of them, or nothing typed at all,
     leaves the choice alone and puts that choice's words back in the field, so what
     is on screen is always what is chosen.
+- Treat the box as a field holding the caret for as long as it has focus. The
+  physical keyboard stands down for it exactly as it does for the display, so a
+  digit typed while searching the Settings choices searches the box instead of
+  pressing a pad key behind the dialog - and the repaint such a press would cause
+  never takes the query back out of the box. Boxes over the calculator page report
+  their caret; the unit, currency and pi boxes need not, because those pages
+  already keep the keyboard away from a pad that is not on screen. Closing the
+  Settings dialog lets go of the caret as well: a blur event is not promised when
+  the dialog it lived in goes away.
 - Keep the live handlers - re-convert, re-plan, apply a setting - on the option-pick
   event. The blur rule is what turns a query into a pick; it is not a second path
   that has to be wired to the page.

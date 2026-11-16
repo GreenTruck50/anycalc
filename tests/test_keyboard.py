@@ -13,6 +13,7 @@ from typing import cast
 import flet as ft
 
 from keypad import KEYBOARD_KEYS, pad_key, pad_keys
+from precision import engine_precision, set_engine_precision
 from stub_page import StubPage, build_app, fire
 from ui import AnycalcApp
 from variable_dialogs import open_set_variable_dialog
@@ -222,6 +223,92 @@ def test_typing_in_the_set_variable_dialog_does_not_edit_the_expression() -> Non
 
     assert page.popped == 1
     assert app.text_field_focused is False
+
+
+def test_typing_in_a_dropdown_box_does_not_press_the_pad() -> None:
+    """A searchable box holds the caret, so what is typed stays in the box.
+
+    An editable dropdown's box is a text field, and the keyboard gate closes on a
+    field that holds the caret. Without that, a digit typed while searching, say,
+    the precision box presses the pad behind the dialog - and the page repaint
+    that follows takes the query out of the box with it.
+    """
+
+    app = build_app()
+    app.build_settings_dialog()
+    box = app.settings_precision_digits
+    # Picking a count moves the process-wide Decimal context, so the value the rest
+    # of the suite is running at is noted here and handed back below.
+    before = engine_precision()
+
+    fire(box.on_focus, types.SimpleNamespace(control=box))
+    assert app.text_field_focused is True, "the box never reported the caret"
+
+    for key in "12,000":
+        app.handle_keyboard_event(key_event(key))
+    assert app.expression == "", "a digit typed in the box pressed the pad"
+
+    # Letting go hands the keys back to the pad, and the box's own blur rule - a
+    # query naming exactly one option becomes that selection - still runs. The
+    # client puts the typed words on the control before it reports the change.
+    box.text = "300"
+    fire(box.on_text_change, types.SimpleNamespace(control=box))
+    fire(box.on_blur, types.SimpleNamespace(control=box))
+    set_engine_precision(before)
+    assert app.text_field_focused is False
+    assert box.value == "300"
+
+    app.handle_keyboard_event(key_event("7"))
+    assert app.expression == "7"
+
+
+def test_every_box_over_the_calculator_page_watches_its_caret() -> None:
+    """Every searchable box the keyboard can reach with a pad showing is watched.
+
+    The conversion, currency and pi pages are not in this list on purpose: their
+    own gate already keeps the keyboard away from a pad that is not on screen.
+    """
+
+    app = build_app()
+    app.build_settings_dialog()
+    boxes = [
+        app.settings_theme_dropdown,
+        app.settings_primary_dropdown,
+        app.settings_secondary_dropdown,
+        app.settings_angle_mode,
+        app.settings_precision_digits,
+        app.settings_precision_scientific,
+        app.settings_precision_rounding,
+        app.settings_precision_grouping,
+        app.settings_history_length,
+    ]
+
+    open_set_variable_dialog(app)
+    dialog = cast(ft.AlertDialog, cast(StubPage, app.page).dialogs[-1])
+    boxes.append(cast(ft.Dropdown, cast(ft.Column, dialog.content).controls[0]))
+
+    for box in boxes:
+        name = box.key or "the variable picker"
+        assert box.enable_filter and box.editable, f"{name} is not searchable"
+        assert box.on_focus is not None, f"{name} does not report its caret"
+        assert box.on_blur is not None, f"{name} lost its query rule"
+
+
+def test_closing_the_settings_dialog_gives_the_keyboard_back() -> None:
+    """A caret inside the dialog must not outlive the dialog itself."""
+
+    app = build_app()
+    app.build_settings_dialog()
+    box = app.settings_angle_mode
+
+    fire(box.on_focus, types.SimpleNamespace(control=box))
+    assert app.text_field_focused is True
+
+    app.close_settings(types.SimpleNamespace(control=None))
+    assert app.text_field_focused is False
+
+    type_keys(app, "7")
+    assert app.expression == "7"
 
 
 def test_the_pages_keyboard_event_is_wired_to_the_app() -> None:

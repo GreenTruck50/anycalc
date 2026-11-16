@@ -53,7 +53,9 @@ computes for itself.
 - **A physical keyboard.** The real keys press the same pad a tap presses: digits,
   `+ - * / ( ) %`, `.` and `,`, plus `^` and `e` on the scientific pad, with
   `Enter` (or `=`) for `=`, `Backspace` for `⌫` and `Esc` (or `Delete`) for `AC`.
-  Up and Down arrows walk past calculations back into the display.
+  Up and Down arrows walk past calculations back into the display. Whatever holds
+  the caret keeps its own typing — a digit typed into a dropdown's search box
+  searches the box rather than pressing a key on the pad behind it.
 - **Answer precision.** A precision box in Settings decides how many significant
   digits the app calculates with — 1 to 5000, twelve by default — and how an
   answer is written: a scientific-notation threshold, half-up / half-even /

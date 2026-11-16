@@ -117,13 +117,24 @@ def settle_typed_query(dropdown: ft.Dropdown, page: _Updater, query: str) -> Non
 
 
 def searchable(
-    dropdown: ft.Dropdown, page: _Updater, *, search_icon: bool = False
+    dropdown: ft.Dropdown,
+    page: _Updater,
+    *,
+    search_icon: bool = False,
+    watch_focus: Callable[[ft.Dropdown], None] | None = None,
 ) -> ft.Dropdown:
     """Give a dropdown the built-in filter and the rule that keeps it honest.
 
     ``search_icon`` puts the magnifier inside the field, which is worth its space
     where the option list is long enough to need searching and is left out
     elsewhere so a three-choice settings box keeps looking like a box.
+
+    ``watch_focus`` is handed the dropdown so whoever holds the keyboard gate can
+    learn that this field has the caret - an editable box types its own keys, and
+    a physical digit key would otherwise land in the field *and* press the pad
+    behind it. :meth:`AnycalcApp.watch_field_focus` is the watcher the app passes;
+    it is left out only where no pad is showing to press (the conversion, currency
+    and pi pages).
 
     Whatever ``on_text_change`` / ``on_blur`` handlers the dropdown already carried
     are kept and still run, the way :meth:`AnycalcApp.watch_field_focus` keeps a
@@ -154,6 +165,10 @@ def searchable(
         dropdown.leading_icon = ft.Icons.SEARCH
     dropdown.on_text_change = remember_query
     dropdown.on_blur = resolve_query
+    if watch_focus is not None:
+        # Last, so the watcher is chained around the query rule rather than
+        # replacing it: the caret is released before the query is settled.
+        watch_focus(dropdown)
     return dropdown
 
 
