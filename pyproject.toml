@@ -94,14 +94,6 @@ dev = [
     # src/pi.py - the one a desktop run takes - the path under test.
     "gmpy2>=2.3.2",
 ]
-# Docs tooling only - `mkdocs build` locally and the Pages workflow in
-# .github/workflows/docs.yml. Deliberately not in `dependencies` (that list is
-# pip-installed INTO every flet build artifact) and not folded into `dev`: the CI
-# docs job installs just this extra, so it never has to resolve flet or build the
-# gmpy2 C extension.
-docs = [
-    "mkdocs>=1.6",
-]
 
 [build-system]
 requires = ["setuptools>=75"]
